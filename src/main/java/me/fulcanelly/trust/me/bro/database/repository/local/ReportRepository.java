@@ -43,4 +43,16 @@ public final class ReportRepository {
             statement.executeUpdate();
         }
     }
+
+    public void delete(String interactorPlayer, String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                DELETE FROM reports
+                WHERE interactor_player = ?
+                  AND owner = ?
+                """)) {
+            statement.setString(1, interactorPlayer);
+            statement.setString(2, ownerPlayer);
+            statement.executeUpdate();
+        }
+    }
 }

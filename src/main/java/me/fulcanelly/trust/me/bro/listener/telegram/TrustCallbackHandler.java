@@ -58,20 +58,25 @@ public final class TrustCallbackHandler {
         String ownerPlayer = linkedPlayer.get();
 
         try {
-            if (reportRepository.exists(interactorPlayer, ownerPlayer)) {
-                event.answer(messages.format(
-                        "callback.already-reported",
-                        "owner", ownerPlayer,
-                        "interactor", interactorPlayer));
-                return;
-            }
-
             if (!interactionCounts.exists(interactorPlayer, ownerPlayer)) {
                 event.answer(messages.format("callback.interaction-gone"));
                 return;
             }
 
+            boolean alreadyReported = reportRepository.exists(interactorPlayer, ownerPlayer);
+            boolean alreadyTrusted = trustRepository.isTrusted(ownerPlayer, interactorPlayer);
+
             if (TrustCallbackPayloadService.ACTION_TRUST.equals(action)) {
+                if (alreadyReported) {
+                    reportRepository.delete(interactorPlayer, ownerPlayer);
+                }
+                if (alreadyTrusted) {
+                    event.answer(messages.format(
+                            "callback.already-trusted",
+                            "owner", ownerPlayer,
+                            "interactor", interactorPlayer));
+                    return;
+                }
                 trustRepository.trust(ownerPlayer, interactorPlayer, telegramUserId);
                 event.answer(messages.format(
                         "callback.trusted",
@@ -80,13 +85,21 @@ public final class TrustCallbackHandler {
                 return;
             }
 
-            if (TrustCallbackPayloadService.ACTION_REPORT.equals(action)) {
-                reportRepository.report(ownerPlayer, telegramUserId, interactorPlayer, ownerPlayer);
+            if (alreadyTrusted) {
+                trustRepository.untrust(ownerPlayer, interactorPlayer);
+            }
+            if (alreadyReported) {
                 event.answer(messages.format(
-                        "callback.reported",
+                        "callback.already-reported",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
+                return;
             }
+            reportRepository.report(ownerPlayer, telegramUserId, interactorPlayer, ownerPlayer);
+            event.answer(messages.format(
+                    "callback.reported",
+                    "owner", ownerPlayer,
+                    "interactor", interactorPlayer));
         } catch (SQLException e) {
             logger.warning("TrustMeBro callback failed: " + e.getMessage());
             event.answer(messages.format("callback.db-error"));

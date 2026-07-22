@@ -38,4 +38,16 @@ public final class TrustRepository {
             statement.executeUpdate();
         }
     }
+
+    public void untrust(String ownerPlayer, String trustedPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                DELETE FROM trust_edges
+                WHERE owner_mc_name = ?
+                  AND trusted_mc_name = ?
+                """)) {
+            statement.setString(1, ownerPlayer);
+            statement.setString(2, trustedPlayer);
+            statement.executeUpdate();
+        }
+    }
 }

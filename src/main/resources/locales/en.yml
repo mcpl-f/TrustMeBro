@@ -16,6 +16,7 @@ callback:
   unknown-action: "Unknown TrustMeBro action"
   link-required: "Link your Telegram account to Minecraft first"
   already-reported: "{owner} already reported {interactor}"
+  already-trusted: "{owner} already trusts {interactor}"
   interaction-gone: "Interaction is gone"
   trusted: "{owner} now trusts {interactor}"
   reported: "{owner} reported {interactor}"
