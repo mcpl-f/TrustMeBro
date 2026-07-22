@@ -3,23 +3,28 @@ package me.fulcanelly.trust.me.bro.service.text;
 import java.util.List;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.service.LocalizationService;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public final class MinecraftWarningMessageBuilder {
+
+    private final LocalizationService messages;
 
     public String build(String ownerPlayer, List<InteractionCount> counts) {
         if (counts.isEmpty()) {
             return "";
         }
 
-        StringBuilder builder = new StringBuilder("Suspicious interactions involving your blocks:\n");
+        StringBuilder builder = new StringBuilder(messages.format("minecraft.warning.header")).append('\n');
         for (InteractionCount count : counts) {
             builder.append("- ").append(count.getInteractorPlayer()).append(": ");
-            appendPart(builder, count.getCountBreakBlocks(), "removed");
-            appendPart(builder, count.getCountPlacedBlocks(), "placed");
-            appendPart(builder, count.getCountInteractContainers(), "container interactions");
+            appendPart(builder, count.getCountBreakBlocks(), messages.format("count.removed"));
+            appendPart(builder, count.getCountPlacedBlocks(), messages.format("count.placed"));
+            appendPart(builder, count.getCountInteractContainers(), messages.format("count.container-interactions"));
             builder.append('\n');
         }
-        builder.append("Check Telegram for trust/report actions.");
+        builder.append(messages.format("minecraft.warning.footer"));
         return builder.toString();
     }
 

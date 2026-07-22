@@ -10,6 +10,7 @@ import java.util.Optional;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.tgbridge.utils.UsefulStuff;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 
 @RequiredArgsConstructor
@@ -17,10 +18,11 @@ public final class TelegramWarningMessageBuilder {
 
     private final SignupLoginReception reception;
     private final TrustCallbackPayloadService callbackPayloads;
+    private final LocalizationService messages;
 
     public String build(String interactorPlayer, List<InteractionCount> counts) {
         StringBuilder builder = new StringBuilder();
-        builder.append("Player ").append(escape(interactorPlayer)).append(" interacted with blocks associated with:\n");
+        builder.append(messages.format("telegram.warning.header", "interactor", escape(interactorPlayer))).append('\n');
 
         for (InteractionCount count : counts) {
             builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
@@ -28,7 +30,7 @@ public final class TelegramWarningMessageBuilder {
             builder.append('\n');
         }
 
-        builder.append("\nDo you trust this player?\n");
+        builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
         return builder.toString();
     }
 
@@ -39,9 +41,9 @@ public final class TelegramWarningMessageBuilder {
 
         for (InteractionCount count : counts) {
             JSONArray row = new JSONArray();
-            row.add(button("Trust " + count.getOwnerPlayer(),
+            row.add(button(messages.format("telegram.button.trust", "owner", count.getOwnerPlayer()),
                     callbackPayloads.encode(TrustCallbackPayloadService.ACTION_TRUST, interactorPlayer)));
-            row.add(button("Report " + count.getOwnerPlayer(),
+            row.add(button(messages.format("telegram.button.report", "owner", count.getOwnerPlayer()),
                     callbackPayloads.encode(TrustCallbackPayloadService.ACTION_REPORT, interactorPlayer)));
             rows.add(row);
         }
@@ -66,9 +68,9 @@ public final class TelegramWarningMessageBuilder {
 
     private String formatCounts(InteractionCount count) {
         StringBuilder builder = new StringBuilder();
-        appendPart(builder, count.getCountBreakBlocks(), "removed");
-        appendPart(builder, count.getCountPlacedBlocks(), "placed");
-        appendPart(builder, count.getCountInteractContainers(), "container interactions");
+        appendPart(builder, count.getCountBreakBlocks(), messages.format("count.removed"));
+        appendPart(builder, count.getCountPlacedBlocks(), messages.format("count.placed"));
+        appendPart(builder, count.getCountInteractContainers(), messages.format("count.container-interactions"));
         return builder.length() == 0 ? "0" : builder.toString();
     }
 
