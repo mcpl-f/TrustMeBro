@@ -71,7 +71,9 @@ public final class MigrationRunner {
                   interactor_player TEXT NOT NULL,
                   owner TEXT NOT NULL,
 
-                  created_at INTEGER NOT NULL
+                  created_at INTEGER NOT NULL,
+
+                  UNIQUE (interactor_player, owner)
                 )
                 """);
         execute("""
@@ -80,7 +82,6 @@ public final class MigrationRunner {
                   action TEXT NOT NULL,
 
                   interactor_player TEXT NOT NULL,
-                  owner TEXT NOT NULL,
 
                   created_at INTEGER NOT NULL
                 )
