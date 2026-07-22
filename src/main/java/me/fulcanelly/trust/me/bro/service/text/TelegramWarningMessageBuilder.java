@@ -35,18 +35,16 @@ public final class TelegramWarningMessageBuilder {
     }
 
     @SuppressWarnings("unchecked")
-    public String buildKeyboard(String interactorPlayer, List<InteractionCount> counts) {
+    public String buildKeyboard(String interactorPlayer) {
         JSONObject keyboard = new JSONObject();
         JSONArray rows = new JSONArray();
+        JSONArray row = new JSONArray();
 
-        for (InteractionCount count : counts) {
-            JSONArray row = new JSONArray();
-            row.add(button(messages.format("telegram.button.trust", "owner", count.getOwnerPlayer()),
-                    callbackPayloads.encode(TrustCallbackPayloadService.ACTION_TRUST, interactorPlayer)));
-            row.add(button(messages.format("telegram.button.report", "owner", count.getOwnerPlayer()),
-                    callbackPayloads.encode(TrustCallbackPayloadService.ACTION_REPORT, interactorPlayer)));
-            rows.add(row);
-        }
+        row.add(button(messages.format("telegram.button.trust"),
+                callbackPayloads.encode(TrustCallbackPayloadService.ACTION_TRUST, interactorPlayer)));
+        row.add(button(messages.format("telegram.button.report"),
+                callbackPayloads.encode(TrustCallbackPayloadService.ACTION_REPORT, interactorPlayer)));
+        rows.add(row);
 
         keyboard.put("inline_keyboard", rows);
         return keyboard.toJSONString();

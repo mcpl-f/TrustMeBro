@@ -50,7 +50,7 @@ public final class NotificationService implements Runnable {
         Message message = bot.sendMessage(
                 chatId,
                 messageBuilder.build(interactor, counts),
-                messageBuilder.buildKeyboard(interactor, counts));
+                messageBuilder.buildKeyboard(interactor));
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
         interactionCounts.attachNotification(interactor, notificationId);
     }
