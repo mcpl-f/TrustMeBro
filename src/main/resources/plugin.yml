@@ -1,0 +1,10 @@
+name: TrustMeBro
+version: ${project.version}
+description: ${project.description}
+author: fulcanelly
+api-version: 1.16
+main: me.fulcanelly.trust.me.bro.TrustSysPlugin
+
+depend:
+  - CoreProtect
+  - tg-bridge
