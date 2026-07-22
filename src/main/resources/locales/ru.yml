@@ -1,0 +1,27 @@
+telegram:
+  warning:
+    header: "Игрок {interactor} взаимодействовал с блоками, связанными с:"
+    question: "Доверяете этому игроку?"
+  button:
+    trust: "Доверять {owner}"
+    report: "Пожаловаться на {owner}"
+
+minecraft:
+  warning:
+    header: "Подозрительные взаимодействия с вашими блоками:"
+    footer: "Проверьте Telegram, чтобы доверять или пожаловаться."
+
+callback:
+  bad-action: "Некорректное действие TrustMeBro"
+  unknown-action: "Неизвестное действие TrustMeBro"
+  link-required: "Сначала привяжите Telegram к Minecraft"
+  already-reported: "{owner} уже пожаловался на {interactor}"
+  interaction-gone: "Взаимодействие больше не найдено"
+  trusted: "{owner} теперь доверяет {interactor}"
+  reported: "{owner} пожаловался на {interactor}"
+  db-error: "Ошибка базы TrustMeBro"
+
+count:
+  removed: "сломано"
+  placed: "поставлено"
+  container-interactions: "действий с контейнерами"

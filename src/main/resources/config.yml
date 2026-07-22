@@ -1,3 +1,5 @@
+default-locale: ru
+
 detection:
   debounce-time-sec: 60
   include-block-break: true

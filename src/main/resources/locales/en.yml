@@ -1,0 +1,27 @@
+telegram:
+  warning:
+    header: "Player {interactor} interacted with blocks associated with:"
+    question: "Do you trust this player?"
+  button:
+    trust: "Trust {owner}"
+    report: "Report {owner}"
+
+minecraft:
+  warning:
+    header: "Suspicious interactions involving your blocks:"
+    footer: "Check Telegram for trust/report actions."
+
+callback:
+  bad-action: "Bad TrustMeBro action"
+  unknown-action: "Unknown TrustMeBro action"
+  link-required: "Link your Telegram account to Minecraft first"
+  already-reported: "{owner} already reported {interactor}"
+  interaction-gone: "Interaction is gone"
+  trusted: "{owner} now trusts {interactor}"
+  reported: "{owner} reported {interactor}"
+  db-error: "TrustMeBro DB error"
+
+count:
+  removed: "removed"
+  placed: "placed"
+  container-interactions: "container interactions"
