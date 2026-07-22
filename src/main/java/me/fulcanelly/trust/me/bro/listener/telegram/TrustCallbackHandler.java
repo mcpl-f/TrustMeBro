@@ -12,6 +12,7 @@ import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
+import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
 
@@ -19,6 +20,7 @@ import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
 public final class TrustCallbackHandler {
 
     private final TrustCallbackPayloadService callbackPayloads;
+    private final LocalizationService messages;
     private final SignupLoginReception reception;
     private final TrustRepository trustRepository;
     private final ReportRepository reportRepository;
@@ -34,7 +36,7 @@ public final class TrustCallbackHandler {
 
         Optional<Payload> payload = callbackPayloads.decode(data);
         if (payload.isEmpty()) {
-            event.answer("Bad TrustMeBro action");
+            event.answer(messages.format("callback.bad-action"));
             return;
         }
 
@@ -42,7 +44,7 @@ public final class TrustCallbackHandler {
         String interactorPlayer = payload.get().getInteractorPlayer();
         if (!TrustCallbackPayloadService.ACTION_TRUST.equals(action)
                 && !TrustCallbackPayloadService.ACTION_REPORT.equals(action)) {
-            event.answer("Unknown TrustMeBro action");
+            event.answer(messages.format("callback.unknown-action"));
             return;
         }
 
@@ -50,35 +52,44 @@ public final class TrustCallbackHandler {
 
         Optional<String> linkedPlayer = reception.getPlayerByTg(telegramUserId);
         if (linkedPlayer.isEmpty()) {
-            event.answer("Link your Telegram account to Minecraft first");
+            event.answer(messages.format("callback.link-required"));
             return;
         }
         String ownerPlayer = linkedPlayer.get();
 
         try {
             if (reportRepository.exists(interactorPlayer, ownerPlayer)) {
-                event.answer(ownerPlayer + " already reported " + interactorPlayer);
+                event.answer(messages.format(
+                        "callback.already-reported",
+                        "owner", ownerPlayer,
+                        "interactor", interactorPlayer));
                 return;
             }
 
             if (!interactionCounts.exists(interactorPlayer, ownerPlayer)) {
-                event.answer("Interaction is gone");
+                event.answer(messages.format("callback.interaction-gone"));
                 return;
             }
 
             if (TrustCallbackPayloadService.ACTION_TRUST.equals(action)) {
                 trustRepository.trust(ownerPlayer, interactorPlayer, telegramUserId);
-                event.answer(ownerPlayer + " now trusts " + interactorPlayer);
+                event.answer(messages.format(
+                        "callback.trusted",
+                        "owner", ownerPlayer,
+                        "interactor", interactorPlayer));
                 return;
             }
 
             if (TrustCallbackPayloadService.ACTION_REPORT.equals(action)) {
                 reportRepository.report(ownerPlayer, telegramUserId, interactorPlayer, ownerPlayer);
-                event.answer(ownerPlayer + " reported " + interactorPlayer);
+                event.answer(messages.format(
+                        "callback.reported",
+                        "owner", ownerPlayer,
+                        "interactor", interactorPlayer));
             }
         } catch (SQLException e) {
             logger.warning("TrustMeBro callback failed: " + e.getMessage());
-            event.answer("TrustMeBro DB error");
+            event.answer(messages.format("callback.db-error"));
         }
     }
 }

@@ -1,0 +1,25 @@
+---
+description: Avoid pointless passthrough helpers in Java code
+globs: **/*.java
+alwaysApply: false
+---
+
+# Java Helpers
+
+Do not create private helper methods that only forward to a single obvious API call without adding behavior, naming value, validation, error handling, or reuse.
+
+Prefer direct calls when the underlying API is already clear at the call site:
+
+```java
+// Bad: hides a simple API behind an extra symbol.
+private void answer(CallbackQueryEvent event, String text) {
+    event.answer(text);
+}
+
+// Good: direct and easier to read.
+event.answer("Bad TrustMeBro action");
+```
+
+Extract a helper only when it owns meaningful behavior, such as shared branching, formatting, validation, translation, logging, retry/error policy, or an invariant the caller should not duplicate.
+
+Do not use reflection to call methods or inspect classes that are already available on the Java compile classpath. Import the real type and call the method directly; reflection is only acceptable for a real optional runtime boundary with a documented reason.
