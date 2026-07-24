@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.Location;
+import org.bukkit.Server.Spigot;
 import org.bukkit.entity.Player;
 
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
@@ -24,6 +25,7 @@ public final class SuspicionDetectionService {
 
     public void recordBlockAction(Player interactor, Location location, SuspiciousActionType actionType) {
         try {
+
             record(interactor.getName(), coreProtect.findBlockOwners(location), actionType);
         } catch (SQLException e) {
             logger.warning("CoreProtect block lookup failed: " + e.getMessage());

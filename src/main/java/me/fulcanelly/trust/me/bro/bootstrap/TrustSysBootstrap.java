@@ -3,7 +3,11 @@ package me.fulcanelly.trust.me.bro.bootstrap;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.google.common.eventbus.EventBus;
 
@@ -33,6 +37,7 @@ import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -71,7 +76,20 @@ public final class TrustSysBootstrap {
     private CoreProtectReadRepository coreProtect() {
         Plugin coreProtectPlugin = plugin.getServer().getPluginManager().getPlugin(COREPROTECT_PLUGIN_NAME);
         File coreProtectDatabase = new CoreProtectDatabaseResolver(coreProtectPlugin).resolve();
-        return new CoreProtectReadRepository(coreProtectDatabase);
+        return new CoreProtectReadRepository(coreProtectDatabase, bannedOwners());
+    }
+
+    private Supplier<Set<String>> bannedOwners() {
+        if (!plugin.getConfig().getBoolean("detection.exclude-banned-players", true)) {
+            return Set::of;
+        }
+        return () -> plugin.getServer()
+                .getBannedPlayers()
+                .stream()
+                .map(OfflinePlayer::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .map(name -> name.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
     }
 
     private BridgeServices bridgeServices() {

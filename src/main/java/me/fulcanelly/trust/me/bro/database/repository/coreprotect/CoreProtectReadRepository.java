@@ -1,21 +1,26 @@
 package me.fulcanelly.trust.me.bro.database.repository.coreprotect;
 
-import lombok.RequiredArgsConstructor;
-
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.bukkit.Location;
 import org.sqlite.SQLiteConfig;
 
-@RequiredArgsConstructor
 public final class CoreProtectReadRepository {
 
     private final File databaseFile;
+    private final Supplier<Set<String>> bannedOwners;
+
+    public CoreProtectReadRepository(File databaseFile, Supplier<Set<String>> bannedOwners) {
+        this.databaseFile = databaseFile;
+        this.bannedOwners = bannedOwners;
+    }
 
     public boolean isAvailable() {
         return databaseFile != null;
@@ -58,13 +63,17 @@ public final class CoreProtectReadRepository {
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     String user = rows.getString("user");
-                    if (user != null && !user.isBlank()) {
+                    if (user != null && !user.isBlank() && !isBanned(user)) {
                         result.add(user);
                     }
                 }
             }
         }
         return result;
+    }
+
+    private boolean isBanned(String user) {
+        return bannedOwners.get().contains(user.toLowerCase(Locale.ROOT));
     }
 
     private Integer findWorldId(String worldName) throws SQLException {

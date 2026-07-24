@@ -2,6 +2,8 @@ default-locale: ru
 
 detection:
 
+  exclude-banned-players: true
+
   debounce-time-sec: 60
   include-block-break: true
   include-block-place: true
