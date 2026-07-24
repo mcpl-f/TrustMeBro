@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
@@ -134,15 +135,27 @@ public final class InteractionCountsRepository {
         return result;
     }
 
-    public synchronized void attachNotification(String interactorPlayer, long notificationId) throws SQLException {
+    public synchronized void attachNotification(
+            String interactorPlayer,
+            List<String> ownerPlayers,
+            long notificationId) throws SQLException {
+        if (ownerPlayers.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(", ", Collections.nCopies(ownerPlayers.size(), "?"));
         try (var statement = connection.prepareStatement("""
                 UPDATE interaction_counts
                 SET notification_id = ?
                 WHERE interactor_player = ?
                   AND notification_id IS NULL
-                """)) {
+                  AND owner IN (%s)
+                """.formatted(placeholders))) {
             statement.setLong(1, notificationId);
             statement.setString(2, interactorPlayer);
+            for (int i = 0; i < ownerPlayers.size(); i++) {
+                statement.setString(i + 3, ownerPlayers.get(i));
+            }
             statement.executeUpdate();
         }
     }

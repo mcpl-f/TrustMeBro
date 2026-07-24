@@ -22,9 +22,11 @@ final class NotificationJobScheduler {
         var repositories = context.getRepositories();
         var services = context.getServices();
 
-        long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
-        long periodTicks = Math.max(20L, (debounceMillis / 2L / 50L));
-        
+        // Poll interval only; debounce itself is always re-read from config in NotificationService.
+        long periodTicks = Math.max(
+                20L,
+                Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L / 2L / 50L);
+
         NotificationService notificationService = new NotificationService(
                 repositories.getInteractionCounts(),
                 repositories.getNotifications(),
@@ -36,7 +38,6 @@ final class NotificationJobScheduler {
                 plugin,
                 bridge.getReception(),
                 bridge.getMainConfig(),
-                debounceMillis,
                 plugin.getLogger());
 
         return plugin.getServer()

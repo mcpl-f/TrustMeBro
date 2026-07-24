@@ -15,5 +15,8 @@ telegram:
   only-for-linked-players: true
   # means if owner is not linked, no notifications will be sent
 
+  max-owners-per-notification: 10
+  # owners listed in one Telegram warning: linked first, then recent lastPlayed
+
 minecraft:
   notify-on-join: true
