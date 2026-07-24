@@ -3,6 +3,7 @@ package me.fulcanelly.trust.me.bro.bootstrap;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -29,6 +30,7 @@ import me.fulcanelly.trust.me.bro.listener.minecraft.BlockBreakSuspicionListener
 import me.fulcanelly.trust.me.bro.listener.minecraft.BlockPlaceSuspicionListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.ContainerInteractionSuspicionListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.PlayerJoinNotificationListener;
+import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.NotificationService;
@@ -62,14 +64,14 @@ public final class TrustSysBootstrap {
         Services services = services(coreProtect, repositories);
 
         registerMinecraftListeners(repositories, services);
-        TrustCallbackHandler callbackHandler = registerTelegramListeners(bridge, repositories, services);
+        List<Object> telegramListeners = registerTelegramListeners(bridge, repositories, services);
         int notificationTaskId = startNotificationJob(bridge, repositories, services);
 
         return Optional.of(new TrustSysRuntime(
                 plugin,
                 database,
                 bridge.getEventBus(),
-                callbackHandler,
+                telegramListeners,
                 notificationTaskId));
     }
 
@@ -151,7 +153,7 @@ public final class TrustSysBootstrap {
                 plugin);
     }
 
-    private TrustCallbackHandler registerTelegramListeners(
+    private List<Object> registerTelegramListeners(
             BridgeServices bridge,
             Repositories repositories,
             Services services) {
@@ -163,8 +165,10 @@ public final class TrustSysBootstrap {
                 repositories.getReports(),
                 repositories.getInteractionCounts(),
                 plugin.getLogger());
+        MyTrustCommand myTrustCommand = new MyTrustCommand(bridge.getReception());
         bridge.getEventBus().register(callbackHandler);
-        return callbackHandler;
+        bridge.getEventBus().register(myTrustCommand);
+        return List.of(callbackHandler, myTrustCommand);
     }
 
     private int startNotificationJob(BridgeServices bridge, Repositories repositories, Services services) {

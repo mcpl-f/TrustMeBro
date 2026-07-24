@@ -25,7 +25,6 @@ public final class SuspicionDetectionService {
 
     public void recordBlockAction(Player interactor, Location location, SuspiciousActionType actionType) {
         try {
-
             record(interactor.getName(), coreProtect.findBlockOwners(location), actionType);
         } catch (SQLException e) {
             logger.warning("CoreProtect block lookup failed: " + e.getMessage());

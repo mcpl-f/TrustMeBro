@@ -5,6 +5,9 @@ telegram:
   button:
     trust: "Trust"
     report: "Report"
+  command:
+    mctrust:
+      stub: "TrustMeBro command is not implemented yet."
 
 minecraft:
   warning:
