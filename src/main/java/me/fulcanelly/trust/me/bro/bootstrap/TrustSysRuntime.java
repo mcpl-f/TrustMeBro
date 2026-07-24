@@ -10,6 +10,13 @@ import me.fulcanelly.trust.me.bro.database.LocalDatabase;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
+/**
+ * Holds the startup side effects that must be undone on plugin disable.
+ *
+ * Bukkit owns the lifecycle, but TrustMeBro owns its DB connection, scheduled
+ * task id, and EventBus listener instances. Keeping them together prevents
+ * shutdown cleanup from leaking back into the plugin entrypoint.
+ */
 @RequiredArgsConstructor
 public final class TrustSysRuntime {
 
