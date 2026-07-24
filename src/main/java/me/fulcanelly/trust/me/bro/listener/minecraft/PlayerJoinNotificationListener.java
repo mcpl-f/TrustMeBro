@@ -26,6 +26,11 @@ public final class PlayerJoinNotificationListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        plugin.reloadConfig();
+        if (!plugin.getConfig().getBoolean("minecraft.notify-on-join", true)) {
+            return;
+        }
+
         var player = event.getPlayer();
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {

@@ -1,10 +1,14 @@
 default-locale: ru
 
 detection:
+
   debounce-time-sec: 60
   include-block-break: true
   include-block-place: true
   include-container-interaction: true
+
+telegram:
+  notify: true
 
 minecraft:
   notify-on-join: true

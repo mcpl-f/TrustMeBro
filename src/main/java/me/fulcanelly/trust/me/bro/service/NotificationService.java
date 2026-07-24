@@ -14,6 +14,8 @@ import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRep
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
+import org.bukkit.plugin.Plugin;
+
 @RequiredArgsConstructor
 public final class NotificationService implements Runnable {
 
@@ -21,12 +23,18 @@ public final class NotificationService implements Runnable {
     private final NotificationRepository notifications;
     private final TelegramWarningMessageBuilder messageBuilder;
     private final TGBot bot;
+    private final Plugin plugin;
     private final MainConfig mainConfig;
     private final long debounceMillis;
     private final Logger logger;
 
     @Override
     public void run() {
+        plugin.reloadConfig();
+        if (!plugin.getConfig().getBoolean("telegram.notify", true)) {
+            return;
+        }
+
         if (mainConfig.getChatId() == null || mainConfig.getChatId().isBlank()) {
             return;
         }

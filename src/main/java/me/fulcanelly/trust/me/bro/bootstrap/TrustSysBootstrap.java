@@ -124,15 +124,13 @@ public final class TrustSysBootstrap {
                     new ContainerInteractionSuspicionListener(plugin, services.getSuspicionDetection()),
                     plugin);
         }
-        if (plugin.getConfig().getBoolean("minecraft.notify-on-join", true)) {
-            plugin.getServer().getPluginManager().registerEvents(
-                    new PlayerJoinNotificationListener(
-                            plugin,
-                            repositories.getInteractionCounts(),
-                            new MinecraftWarningMessageBuilder(services.getMessages()),
-                            plugin.getLogger()),
-                    plugin);
-        }
+        plugin.getServer().getPluginManager().registerEvents(
+                new PlayerJoinNotificationListener(
+                        plugin,
+                        repositories.getInteractionCounts(),
+                        new MinecraftWarningMessageBuilder(services.getMessages()),
+                        plugin.getLogger()),
+                plugin);
     }
 
     private TrustCallbackHandler registerTelegramListeners(
@@ -162,6 +160,7 @@ public final class TrustSysBootstrap {
                         services.getCallbackPayloads(),
                         services.getMessages()),
                 bridge.getBot(),
+                plugin,
                 bridge.getMainConfig(),
                 debounceMillis,
                 plugin.getLogger());
