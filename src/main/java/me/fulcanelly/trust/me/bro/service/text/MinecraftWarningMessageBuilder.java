@@ -6,6 +6,20 @@ import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Builds the short in-game warning shown when an owner joins Minecraft.
+ *
+ * Minecraft chat is only a reminder: trust/report actions still live in Telegram.
+ * The message stays compact because it may be shown immediately after login.
+ *
+ * Example:
+ *
+ * Suspicious interactions involving your blocks:
+ *
+ * - Griefer: 2 removed, 1 placed
+ * 
+ * Check Telegram for trust/report actions.
+ */
 @RequiredArgsConstructor
 public final class MinecraftWarningMessageBuilder {
 

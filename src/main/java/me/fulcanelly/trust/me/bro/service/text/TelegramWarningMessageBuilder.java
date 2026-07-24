@@ -13,6 +13,21 @@ import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 
+/**
+ * Builds the Telegram warning message and its two action buttons.
+ *
+ * Telegram is the decision surface: owners can trust or report the interactor.
+ * Callback payload contains only the action and interactor; owner is resolved from
+ * the Telegram account that clicks the button.
+ *
+ * Example:
+ *
+ * Player Griefer interacted with blocks associated with:
+ * 
+ * - Owner: 3 removed, 1 container interactions
+ *
+ * buttons "Trust" and "Report" with callback data for Griefer.
+ */
 @RequiredArgsConstructor
 public final class TelegramWarningMessageBuilder {
 
