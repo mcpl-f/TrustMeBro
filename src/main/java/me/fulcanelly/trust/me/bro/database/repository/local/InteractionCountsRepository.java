@@ -38,7 +38,6 @@ public final class InteractionCountsRepository {
                   count_break_blocks = count_break_blocks + %s,
                   count_placed_blocks = count_placed_blocks + %s,
                   count_interact_containers = count_interact_containers + %s,
-                  notification_id = NULL,
                   updated_at = excluded.updated_at
                 """.formatted(breakDelta, placeDelta, containerDelta))) {
             statement.setString(1, interactorPlayer);
