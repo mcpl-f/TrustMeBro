@@ -19,4 +19,4 @@ telegram:
   # owners listed in one Telegram warning: linked first, then recent lastPlayed
 
 minecraft:
-  notify-on-join: true
+  notify-on-join: false
