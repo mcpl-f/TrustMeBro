@@ -3,8 +3,8 @@ telegram:
     header: "Player {interactor} interacted with blocks associated with:"
     question: "Do you trust this player?"
   button:
-    trust: "Trust {owner}"
-    report: "Report {owner}"
+    trust: "Trust"
+    report: "Report"
 
 minecraft:
   warning:
