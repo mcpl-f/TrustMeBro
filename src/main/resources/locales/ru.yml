@@ -3,8 +3,8 @@ telegram:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с:"
     question: "Доверяете этому игроку?"
   button:
-    trust: "Доверять {owner}"
-    report: "Пожаловаться на {owner}"
+    trust: "Доверять"
+    report: "Пожаловаться"
 
 minecraft:
   warning:
@@ -16,6 +16,7 @@ callback:
   unknown-action: "Неизвестное действие TrustMeBro"
   link-required: "Сначала привяжите Telegram к Minecraft"
   already-reported: "{owner} уже пожаловался на {interactor}"
+  already-trusted: "{owner} уже доверяет {interactor}"
   interaction-gone: "Взаимодействие больше не найдено"
   trusted: "{owner} теперь доверяет {interactor}"
   reported: "{owner} пожаловался на {interactor}"
