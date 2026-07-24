@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import me.fulcanelly.tgbridge.tapi.Message;
 import me.fulcanelly.tgbridge.tapi.TGBot;
 import me.fulcanelly.tgbridge.tools.MainConfig;
+import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
@@ -24,6 +25,7 @@ public final class NotificationService implements Runnable {
     private final TelegramWarningMessageBuilder messageBuilder;
     private final TGBot bot;
     private final Plugin plugin;
+    private final SignupLoginReception reception;
     private final MainConfig mainConfig;
     private final long debounceMillis;
     private final Logger logger;
@@ -54,6 +56,9 @@ public final class NotificationService implements Runnable {
         if (counts.isEmpty()) {
             return;
         }
+        if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
+            return;
+        }
 
         Message message = bot.sendMessage(
                 chatId,
@@ -61,5 +66,14 @@ public final class NotificationService implements Runnable {
                 messageBuilder.buildKeyboard(interactor));
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
         interactionCounts.attachNotification(interactor, notificationId);
+    }
+
+    private boolean requiresLinkedOwner() {
+        return plugin.getConfig().getBoolean("telegram.only-for-linked-players", true);
+    }
+
+    private boolean hasLinkedOwner(List<InteractionCount> counts) {
+        return counts.stream()
+                .anyMatch(count -> reception.getTgByUser(count.getOwnerPlayer()).isPresent());
     }
 }

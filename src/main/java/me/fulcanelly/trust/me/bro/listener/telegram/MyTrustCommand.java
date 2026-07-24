@@ -28,7 +28,11 @@ public final class MyTrustCommand {
         Optional<String> linkedPlayer = reception.getPlayerByTg(telegramUserId);
 
         if (linkedPlayer.isEmpty()) {
-            event.getMessage().reply("Telegram account is not linked to Minecraft.");
+            event.getMessage()
+                    .reply(
+                            "Telegram account is not linked to Minecraft. \n" +
+                                    "Link account or specify player name to see his trust statuses.\n\n" +
+                                    "Usage: /mctrust player_name");
             return;
         }
 

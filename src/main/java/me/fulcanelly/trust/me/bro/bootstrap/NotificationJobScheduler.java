@@ -34,6 +34,7 @@ final class NotificationJobScheduler {
                         services.getMessages()),
                 bridge.getBot(),
                 plugin,
+                bridge.getReception(),
                 bridge.getMainConfig(),
                 debounceMillis,
                 plugin.getLogger());
