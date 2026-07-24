@@ -1,0 +1,24 @@
+---
+description: Preserve exact Minecraft username casing in Java code
+globs: **/*.java
+alwaysApply: false
+---
+
+# Minecraft Usernames
+
+Never lowercase, uppercase, normalize, or case-fold Minecraft usernames.
+
+Treat names from Bukkit, CoreProtect, tg-bridge registration, and local trust/report tables as exact identifiers. Do not use `toLowerCase(...)`, `toUpperCase(...)`, or `equalsIgnoreCase(...)` for player identity checks.
+
+Use exact matching:
+
+```java
+// Bad: different accounts can collapse into the same value.
+owner.equalsIgnoreCase(interactorPlayer);
+owner.toLowerCase(Locale.ROOT);
+
+// Good: preserves the actual player identifier.
+owner.equals(interactorPlayer);
+```
+
+Only transform usernames for display formatting when the transformed value is not used for identity, storage keys, trust checks, report checks, or CoreProtect filtering.

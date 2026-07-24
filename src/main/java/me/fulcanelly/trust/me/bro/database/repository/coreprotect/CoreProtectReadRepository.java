@@ -5,7 +5,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -73,7 +72,7 @@ public final class CoreProtectReadRepository {
     }
 
     private boolean isBanned(String user) {
-        return bannedOwners.get().contains(user.toLowerCase(Locale.ROOT));
+        return bannedOwners.get().contains(user);
     }
 
     private Integer findWorldId(String worldName) throws SQLException {

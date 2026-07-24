@@ -4,7 +4,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -90,7 +89,6 @@ public final class TrustSysBootstrap {
                 .stream()
                 .map(OfflinePlayer::getName)
                 .filter(name -> name != null && !name.isBlank())
-                .map(name -> name.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
     }
 

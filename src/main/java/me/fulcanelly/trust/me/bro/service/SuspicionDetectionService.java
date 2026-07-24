@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import org.bukkit.Location;
-import org.bukkit.Server.Spigot;
 import org.bukkit.entity.Player;
 
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
@@ -41,7 +40,7 @@ public final class SuspicionDetectionService {
 
     private void record(String interactorPlayer, Set<String> owners, SuspiciousActionType actionType) throws SQLException {
         for (String owner : owners) {
-            if (owner.equalsIgnoreCase(interactorPlayer)) {
+            if (owner.equals(interactorPlayer)) {
                 continue;
             }
             if (trustRepository.isTrusted(owner, interactorPlayer)) {
