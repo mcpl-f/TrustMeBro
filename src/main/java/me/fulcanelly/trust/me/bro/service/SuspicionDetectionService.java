@@ -43,9 +43,7 @@ public final class SuspicionDetectionService {
             if (owner.equals(interactorPlayer)) {
                 continue;
             }
-            if (trustRepository.isTrusted(owner, interactorPlayer)) {
-                continue;
-            }
+
             interactionCounts.increment(interactorPlayer, owner, actionType);
         }
     }
