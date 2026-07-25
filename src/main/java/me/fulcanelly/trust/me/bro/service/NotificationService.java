@@ -60,13 +60,15 @@ public final class NotificationService implements Runnable {
         if (pending.isEmpty()) {
             return false;
         }
-        if (requiresLinkedOwner() && !hasLinkedOwner(pending)) {
-            return false;
-        }
 
         var totalInteractions = pending.size();
 
         List<InteractionCount> counts = selectOwnersForNotification(pending);
+
+        if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
+            return false;
+        }
+
         if (counts.isEmpty()) {
             return false;
         }
@@ -88,8 +90,9 @@ public final class NotificationService implements Runnable {
         int limit = Math.max(1, plugin.getConfig().getInt("telegram.max-owners-per-notification", 10));
         return pending.stream()
                 .sorted(Comparator
-                        .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer())).reversed()
-                        .thenComparing(count -> lastPlayed(count.getOwnerPlayer()), Comparator.reverseOrder()))
+                        .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer()))
+                        .thenComparing((InteractionCount count) -> lastPlayed(count.getOwnerPlayer()))
+                        .reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
     }
