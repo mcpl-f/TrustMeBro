@@ -64,6 +64,8 @@ public final class NotificationService implements Runnable {
             return false;
         }
 
+        var totalInteractions = pending.size();
+
         List<InteractionCount> counts = selectOwnersForNotification(pending);
         if (counts.isEmpty()) {
             return false;
@@ -71,7 +73,7 @@ public final class NotificationService implements Runnable {
 
         Message message = bot.sendMessage(
                 chatId,
-                messageBuilder.build(interactor, counts),
+                messageBuilder.build(interactor, counts, totalInteractions),
                 messageBuilder.buildKeyboard(interactor));
 
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());

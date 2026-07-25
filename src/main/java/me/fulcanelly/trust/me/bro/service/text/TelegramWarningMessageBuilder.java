@@ -35,7 +35,7 @@ public final class TelegramWarningMessageBuilder {
     private final TrustCallbackPayloadService callbackPayloads;
     private final LocalizationService messages;
 
-    public String build(String interactorPlayer, List<InteractionCount> counts) {
+    public String build(String interactorPlayer, List<InteractionCount> counts, int totalInteractions) {
         StringBuilder builder = new StringBuilder();
         builder.append(messages.format("telegram.warning.header", "interactor", escape(interactorPlayer))).append('\n');
 
@@ -43,6 +43,10 @@ public final class TelegramWarningMessageBuilder {
             builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
             builder.append(formatCounts(count));
             builder.append('\n');
+        }
+
+        if (totalInteractions > counts.size()) {
+            builder.append("-... ").append(totalInteractions - counts.size()).append(" more");
         }
 
         builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
