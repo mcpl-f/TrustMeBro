@@ -77,9 +77,9 @@ public final class InteractionCountsRepository {
     }
 
     /**
-     * Region-aware record: merge into a nearby pending region or insert a new one.
-     * Distance is axis-aligned (no sqrt): point within mergeDistance of the region
-     * AABB.
+     * Region-aware record: merge into a nearby region (pending or already notified)
+     * or insert a new one. Distance is axis-aligned (no sqrt): point within
+     * mergeDistance of the region AABB.
      */
     public synchronized void incrementInRegion(
             String interactorPlayer,
@@ -89,7 +89,7 @@ public final class InteractionCountsRepository {
             int z,
             int mergeDistance,
             SuspiciousActionType actionType) throws SQLException {
-        Optional<Long> nearbyId = findNearbyPendingRegionId(interactorPlayer, ownerPlayer, wid, x, z, mergeDistance);
+        Optional<Long> nearbyId = findNearbyRegionId(interactorPlayer, ownerPlayer, wid, x, z, mergeDistance);
         if (nearbyId.isPresent()) {
             expandRegionAndIncrement(nearbyId.get(), x, z, actionType);
         } else {
@@ -102,8 +102,11 @@ public final class InteractionCountsRepository {
      * does),
      * the MIN/MAX below are redundant — compare against a/b directly.
      * Keep that invariant and this query can drop the extra math.
+     *
+     * Merge includes already-notified rows so nearby follow-up grief does not
+     * spawn a new pending region / Telegram spam. Prefer a still-pending match.
      */
-    private Optional<Long> findNearbyPendingRegionId(
+    private Optional<Long> findNearbyRegionId(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -116,7 +119,6 @@ public final class InteractionCountsRepository {
                 WHERE interactor_player = ?
                   AND owner = ?
                   AND wid = ?
-                  AND notification_id IS NULL
                   AND region_corner_a_x IS NOT NULL
                   AND region_corner_a_z IS NOT NULL
                   AND region_corner_b_x IS NOT NULL
@@ -125,7 +127,8 @@ public final class InteractionCountsRepository {
                             AND MAX(region_corner_a_x, region_corner_b_x) + ?
                   AND ? BETWEEN MIN(region_corner_a_z, region_corner_b_z) - ?
                             AND MAX(region_corner_a_z, region_corner_b_z) + ?
-                ORDER BY updated_at DESC
+                ORDER BY CASE WHEN notification_id IS NULL THEN 0 ELSE 1 END,
+                         updated_at DESC
                 LIMIT 1
                 """)) {
             statement.setString(1, interactorPlayer);
