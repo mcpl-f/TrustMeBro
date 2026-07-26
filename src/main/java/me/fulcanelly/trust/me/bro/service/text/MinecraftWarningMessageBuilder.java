@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 /**
  * Builds the short in-game warning shown when an owner joins Minecraft.
  *
- * Minecraft chat is only a reminder: trust/report actions still live in Telegram.
+ * Minecraft chat is only a reminder: trust/report actions still live in
+ * Telegram.
  * The message stays compact because it may be shown immediately after login.
  *
  * Example:
@@ -17,8 +18,10 @@ import lombok.RequiredArgsConstructor;
  * Suspicious interactions involving your blocks:
  *
  * - Griefer: 2 removed, 1 placed
- * 
+ *
  * Check Telegram for trust/report actions.
+ *
+ * DONT TOCH THIS FILE - its disabled for now
  */
 @RequiredArgsConstructor
 public final class MinecraftWarningMessageBuilder {
@@ -36,6 +39,14 @@ public final class MinecraftWarningMessageBuilder {
             appendPart(builder, count.getCountBreakBlocks(), messages.format("count.removed"));
             appendPart(builder, count.getCountPlacedBlocks(), messages.format("count.placed"));
             appendPart(builder, count.getCountInteractContainers(), messages.format("count.container-interactions"));
+            if (count.hasRegion()) {
+                builder.append(" @ ")
+                        .append(messages.format(
+                                "region.at",
+                                "x", count.regionCenterX(),
+                                "z", count.regionCenterZ(),
+                                "radius", count.regionRadius()));
+            }
             builder.append('\n');
         }
         builder.append(messages.format("minecraft.warning.footer"));

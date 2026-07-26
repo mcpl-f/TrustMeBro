@@ -1,6 +1,6 @@
 telegram:
   warning:
-    header: "Player {interactor} interacted with blocks associated with:"
+    header: "Player {interactor} interacted with blocks associated with:\n"
     question: "Do you trust this player?"
   button:
     trust: "Trust"
@@ -29,3 +29,13 @@ count:
   removed: "removed"
   placed: "placed"
   container-interactions: "container interactions"
+
+region:
+  at: " - {world} · x: {x}, z: {z} ± {radius}"
+
+world:
+  overworld: "Overworld"
+  nether: "Nether"
+  end: "The End"
+  custom: "{name}"
+  unknown: "w{id}"

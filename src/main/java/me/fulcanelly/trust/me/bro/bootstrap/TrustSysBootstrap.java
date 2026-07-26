@@ -34,7 +34,8 @@ public final class TrustSysBootstrap {
         LocalDatabase database = database();
         LocalRepositories repositories = LocalRepositories.buildFromConnection(database.getConnection());
         PluginServices services = PluginServices.buildFromPlugin(plugin, coreProtect, repositories);
-        BootstrapContext context = BootstrapContext.buildFromPlugin(plugin, bridge, repositories, services);
+        BootstrapContext context = BootstrapContext.buildFromPlugin(plugin, bridge, repositories, services,
+                coreProtect);
 
         new MinecraftListenerRegistrar(context).register();
         List<Object> telegramListeners = new TelegramListenerRegistrar(context).register();

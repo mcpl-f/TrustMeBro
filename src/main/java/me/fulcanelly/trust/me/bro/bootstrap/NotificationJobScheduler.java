@@ -33,7 +33,9 @@ final class NotificationJobScheduler {
                 new TelegramWarningMessageBuilder(
                         bridge.getReception(),
                         services.getCallbackPayloads(),
-                        services.getMessages()),
+                        services.getMessages(),
+                        context.getCoreProtect(),
+                        plugin),
                 bridge.getBot(),
                 plugin,
                 bridge.getReception(),

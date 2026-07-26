@@ -2,6 +2,12 @@ default-locale: ru
 
 detection:
 
+  split-by-regions:
+    # when enabled: group interactions by nearby XZ regions (CoreProtect wid)
+    # when disabled: one row per (interactor, owner) as before
+    enabled: true
+    merge-distance: 500
+
   exclude-banned-players: true
 
   debounce-time-sec: 60
@@ -20,3 +26,4 @@ telegram:
 
 minecraft:
   notify-on-join: false
+

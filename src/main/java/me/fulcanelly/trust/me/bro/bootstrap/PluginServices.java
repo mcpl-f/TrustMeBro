@@ -30,6 +30,7 @@ final class PluginServices {
                 new TrustCallbackPayloadService(),
                 new LocalizationService(plugin),
                 new SuspicionDetectionService(
+                        plugin,
                         coreProtect,
                         repositories.getTrust(),
                         repositories.getInteractionCounts(),

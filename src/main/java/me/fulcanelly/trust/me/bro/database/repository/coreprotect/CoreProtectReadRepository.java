@@ -75,13 +75,32 @@ public final class CoreProtectReadRepository {
         return bannedOwners.get().contains(user);
     }
 
-    private Integer findWorldId(String worldName) throws SQLException {
+    public Integer findWorldId(String worldName) throws SQLException {
+        if (!isAvailable()) {
+            return null;
+        }
         try (var connection = openReadOnlyConnection();
                 var statement = connection.prepareStatement("SELECT id FROM co_world WHERE world = ?")) {
             statement.setString(1, worldName);
             try (var rows = statement.executeQuery()) {
                 if (rows.next()) {
                     return rows.getInt("id");
+                }
+            }
+        }
+        return null;
+    }
+
+    public String findWorldName(int wid) throws SQLException {
+        if (!isAvailable()) {
+            return null;
+        }
+        try (var connection = openReadOnlyConnection();
+                var statement = connection.prepareStatement("SELECT world FROM co_world WHERE id = ?")) {
+            statement.setInt(1, wid);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    return rows.getString("world");
                 }
             }
         }

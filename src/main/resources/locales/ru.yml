@@ -1,6 +1,6 @@
 telegram:
   warning:
-    header: "Игрок {interactor} взаимодействовал с блоками, связанными с:"
+    header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\n"
     question: "Доверяете этому игроку?"
   button:
     trust: "Доверять"
@@ -29,3 +29,13 @@ count:
   removed: "сломано"
   placed: "поставлено"
   container-interactions: "действий с контейнерами"
+
+region:
+  at: " -{world} · x: {x}, z: {z} ± {radius}"
+
+world:
+  overworld: "Обычный мир"
+  nether: "Ад"
+  end: "Эндер мир"
+  custom: "{name}"
+  unknown: "мир {id}"

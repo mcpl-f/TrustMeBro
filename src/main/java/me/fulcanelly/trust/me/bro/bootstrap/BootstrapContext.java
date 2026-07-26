@@ -1,6 +1,7 @@
 package me.fulcanelly.trust.me.bro.bootstrap;
 
 import lombok.Value;
+import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,12 +20,14 @@ final class BootstrapContext {
     BridgeServices bridge;
     LocalRepositories repositories;
     PluginServices services;
+    CoreProtectReadRepository coreProtect;
 
     static BootstrapContext buildFromPlugin(
             JavaPlugin plugin,
             BridgeServices bridge,
             LocalRepositories repositories,
-            PluginServices services) {
-        return new BootstrapContext(plugin, bridge, repositories, services);
+            PluginServices services,
+            CoreProtectReadRepository coreProtect) {
+        return new BootstrapContext(plugin, bridge, repositories, services, coreProtect);
     }
 }

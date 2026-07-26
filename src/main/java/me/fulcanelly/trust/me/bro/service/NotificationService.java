@@ -79,9 +79,8 @@ public final class NotificationService implements Runnable {
                 messageBuilder.buildKeyboard(interactor));
 
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
-        interactionCounts.attachNotification(
-                interactor,
-                counts.stream().map(InteractionCount::getOwnerPlayer).collect(Collectors.toList()),
+        interactionCounts.attachNotificationByIds(
+                counts.stream().map(InteractionCount::getId).collect(Collectors.toList()),
                 notificationId);
         return true;
     }
