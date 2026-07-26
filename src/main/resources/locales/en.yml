@@ -31,7 +31,7 @@ count:
   container-interactions: "container interactions"
 
 region:
-  at: " - {world} · x: {x}, z: {z} ± {radius}"
+  at: " > {world} · x: {x}, z: {z} ± {radius}"
 
 world:
   overworld: "Overworld"

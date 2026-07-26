@@ -40,14 +40,14 @@ public final class MinecraftWarningMessageBuilder {
             appendPart(builder, count.getCountPlacedBlocks(), messages.format("count.placed"));
             appendPart(builder, count.getCountInteractContainers(), messages.format("count.container-interactions"));
             if (count.hasRegion()) {
-                builder.append(" @ ")
+                builder.append(" \n")
                         .append(messages.format(
                                 "region.at",
                                 "x", count.regionCenterX(),
                                 "z", count.regionCenterZ(),
                                 "radius", count.regionRadius()));
             }
-            builder.append('\n');
+            builder.append("\n\n");
         }
         builder.append(messages.format("minecraft.warning.footer"));
         return builder.toString();

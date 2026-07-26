@@ -51,13 +51,13 @@ public final class TelegramWarningMessageBuilder {
             builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
             builder.append(formatCounts(count));
             if (count.hasRegion()) {
-                builder.append(" @ ").append(formatRegion(count));
+                builder.append("\n").append(formatRegion(count));
             }
-            builder.append('\n');
+            builder.append("\n\n");
         }
 
         if (totalInteractions > counts.size()) {
-            builder.append("-... ").append(totalInteractions - counts.size()).append(" more");
+            builder.append(" ... ").append(totalInteractions - counts.size()).append(" more");
         }
 
         builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
