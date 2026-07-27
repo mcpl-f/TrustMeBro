@@ -42,10 +42,13 @@ public final class NotificationService implements Runnable {
             return;
         }
 
+        logger.info("Finding interactors ready for notification");
         long chatId = Long.parseLong(mainConfig.getChatId());
         long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
         try {
-            for (String interactor : interactionCounts.findInteractorsReadyForNotification(debounceMillis)) {
+            var interactors = interactionCounts.findInteractorsReadyForNotification(debounceMillis);
+            logger.info("Found " + interactors.size() + " interactors ready for notification");
+            for (String interactor : interactors) {
                 if (sendNotification(chatId, interactor)) {
                     return;
                 }
