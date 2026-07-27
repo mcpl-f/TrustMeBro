@@ -16,9 +16,6 @@ import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 
-import org.bukkit.World;
-import org.bukkit.plugin.Plugin;
-
 /**
  * Builds the Telegram warning message and its two action buttons.
  *
@@ -41,7 +38,6 @@ public final class TelegramWarningMessageBuilder {
     private final TrustCallbackPayloadService callbackPayloads;
     private final LocalizationService messages;
     private final CoreProtectReadRepository coreProtect;
-    private final Plugin plugin;
 
     public String build(String interactorPlayer, List<InteractionCount> counts, int totalInteractions) {
         StringBuilder builder = new StringBuilder();
@@ -118,19 +114,7 @@ public final class TelegramWarningMessageBuilder {
         } catch (SQLException ignored) {
             // fall through to id / name heuristics
         }
-
-        if (worldName != null && plugin != null) {
-            World world = plugin.getServer().getWorld(worldName);
-            if (world != null) {
-                return switch (world.getEnvironment()) {
-                    case NORMAL -> messages.format("world.overworld");
-                    case NETHER -> messages.format("world.nether");
-                    case THE_END -> messages.format("world.end");
-                    default -> messages.format("world.custom", "name", escape(worldName));
-                };
-            }
-        }
-
+        // No Bukkit getWorld() here — this builder runs on the async notification job.
         return labelByWorldName(worldName, wid);
     }
 

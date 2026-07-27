@@ -33,7 +33,8 @@ public final class NotificationService implements Runnable {
 
     @Override
     public void run() {
-        plugin.reloadConfig();
+        // Do not reloadConfig() here — FileConfiguration reload is not async-safe.
+        // Admins: /reload or restart; getConfig() reads the in-memory copy each tick.
         if (!plugin.getConfig().getBoolean("telegram.notify", true)) {
             return;
         }
@@ -93,7 +94,7 @@ public final class NotificationService implements Runnable {
         return pending.stream()
                 .sorted(Comparator
                         .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer()))
-                        .thenComparing((InteractionCount count) -> lastPlayed(count.getOwnerPlayer()))
+                        // .thenComparing((InteractionCount count) -> lastPlayed(count.getOwnerPlayer()))
                         .reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
@@ -111,7 +112,10 @@ public final class NotificationService implements Runnable {
         return reception.getTgByUser(ownerPlayer).isPresent();
     }
 
+    @SuppressWarnings("deprecation")
     private long lastPlayed(String ownerPlayer) {
+        // Must not call OfflinePlayer from the async notification job.
+        // If lastPlayed sort is re-enabled: snapshot on the main thread (sync task / cache), then read the map here.
         return plugin.getServer().getOfflinePlayer(ownerPlayer).getLastPlayed();
     }
 }
