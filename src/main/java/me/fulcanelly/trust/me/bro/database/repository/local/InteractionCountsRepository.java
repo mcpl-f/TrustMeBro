@@ -262,19 +262,19 @@ public final class InteractionCountsRepository {
         long threshold = System.currentTimeMillis() - olderThanMillis;
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement("""
-                SELECT DISTINCT interactor_player
+                SELECT DISTINCT interaction_counts.interactor_player
                 FROM interaction_counts
                 LEFT JOIN trust_edges
                     ON interaction_counts.owner = trust_edges.owner_mc_name
                     AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
                 LEFT JOIN reports
-                    ON interaction_counts.owner = reports.owner_mc_name
-                    AND interaction_counts.interactor_player = reports.interactor_mc_name
-                WHERE notification_id IS NULL
-                    AND updated_at <= ?
+                    ON interaction_counts.owner = reports.owner
+                    AND interaction_counts.interactor_player = reports.interactor_player
+                WHERE interaction_counts.notification_id IS NULL
+                    AND interaction_counts.updated_at <= ?
                     AND trust_edges.owner_mc_name IS NULL -- means no trust edge exists
-                    AND reports.owner_mc_name IS NULL -- means no report exists
-                ORDER BY updated_at ASC
+                    AND reports.owner IS NULL -- means no report exists
+                ORDER BY interaction_counts.updated_at ASC
                 """)) {
             statement.setLong(1, threshold);
             try (var rows = statement.executeQuery()) {
