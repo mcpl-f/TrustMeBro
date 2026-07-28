@@ -2,12 +2,12 @@ package me.fulcanelly.trust.me.bro.bootstrap;
 
 import lombok.Value;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
-import me.fulcanelly.trust.me.bro.service.LocalizationService;
-import me.fulcanelly.trust.me.bro.service.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
-import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
+import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
 import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
+import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 import org.bukkit.plugin.java.JavaPlugin;
 

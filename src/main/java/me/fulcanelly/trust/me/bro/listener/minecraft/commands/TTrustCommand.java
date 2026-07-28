@@ -2,10 +2,10 @@ package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
-import me.fulcanelly.trust.me.bro.service.LocalizationService;
-import me.fulcanelly.trust.me.bro.service.MinecraftOwnerNotificationService;
-import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
-import me.fulcanelly.trust.me.bro.service.TrustDecisionService.Outcome;
+import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
+import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
+import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;

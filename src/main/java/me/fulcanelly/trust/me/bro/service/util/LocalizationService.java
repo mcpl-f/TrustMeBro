@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service;
+package me.fulcanelly.trust.me.bro.service.util;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

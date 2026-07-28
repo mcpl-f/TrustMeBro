@@ -19,8 +19,8 @@ import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectRea
 import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
-import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
+import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 /**
  * Builds the in-game join warning with clickable Trust / Report actions.

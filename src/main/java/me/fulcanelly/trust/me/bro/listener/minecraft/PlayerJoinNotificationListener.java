@@ -1,13 +1,12 @@
 package me.fulcanelly.trust.me.bro.listener.minecraft;
 
 import lombok.RequiredArgsConstructor;
+import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
-
-import me.fulcanelly.trust.me.bro.service.MinecraftOwnerNotificationService;
 
 @RequiredArgsConstructor
 public final class PlayerJoinNotificationListener implements Listener {

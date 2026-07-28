@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service;
+package me.fulcanelly.trust.me.bro.service.core;
 
 import lombok.RequiredArgsConstructor;
 

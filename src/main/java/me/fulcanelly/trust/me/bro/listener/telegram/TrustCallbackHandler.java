@@ -10,11 +10,11 @@ import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
-import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
-import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
-import me.fulcanelly.trust.me.bro.service.TrustDecisionService.Outcome;
+import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
+import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 @RequiredArgsConstructor
 public final class TrustCallbackHandler {

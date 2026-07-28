@@ -3,7 +3,7 @@ package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
-import me.fulcanelly.trust.me.bro.service.LocalizationService;
+import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
