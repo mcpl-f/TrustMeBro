@@ -1,0 +1,11 @@
+---
+description: Never edit tests or run builds unless the user explicitly asks
+alwaysApply: true
+---
+
+# No tests / no build unless asked
+
+- **Do not create, edit, delete, or "fix" test files** under `src/test/` (or any `*Test.java`) unless the user explicitly asks in that message.
+- **Do not run builds or tests** (`mvn`, `mvn test`, compile-only check via Maven, etc.) unless the user explicitly asks in that message.
+- If production API changes would break tests, change production only (or ask). Do not update tests to match.
+- Failed / outdated tests are the user's problem unless they request help with tests.

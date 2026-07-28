@@ -1,0 +1,37 @@
+---
+description: Multiline method signatures must close as ") {" not "){", using trailing // on last param so the formatter keeps the space
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Multiline `) {` (not `){`)
+
+Prefer a space between `)` and `{` on multiline method/constructor signatures:
+
+```java
+// ✅ GOOD
+private String formatRegion(
+        MessageRegion region,
+        List<NamedRegion> namedRegions,
+        int mergeDistance //
+) {
+```
+
+```java
+// ❌ BAD — formatter / style collapses to "){"
+private String formatRegion(
+        MessageRegion region,
+        List<NamedRegion> namedRegions,
+        int mergeDistance
+){
+```
+
+## Why the trailing `//`
+
+The autofomatter only keeps `) {` (space before `{`) when the **last parameter line** ends with an empty line comment `//`. Without it, formatting tends toward `){`.
+
+## When to apply
+
+- Multiline parameter lists (method, constructor, or similar declarations)
+- Put ` //` at the end of the last parameter only — no text required after `//`
+- Do not use this hack on single-line signatures; keep normal `) {` there

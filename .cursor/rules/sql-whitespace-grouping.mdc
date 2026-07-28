@@ -1,0 +1,42 @@
+---
+description: Use blank lines in SQL (and similar) to separate related column/logic groups
+globs: "**/*.{java,sql}"
+alwaysApply: false
+---
+
+# SQL / schema readability with whitespace
+
+When writing `CREATE TABLE`, `INSERT` column lists, or long SQL in Java text blocks, separate **related column groups** with a blank line so the schema is scannable by kind.
+
+Typical groups:
+
+- identity / primary key
+- human labels (`name`, titles)
+- flags / booleans
+- ownership / audit (`created_by_*`, `created_at`)
+- geometry / world (`wid`, center, radius, corners)
+- counters / payload
+- foreign keys
+
+Example:
+
+```sql
+CREATE TABLE regions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+  name TEXT NOT NULL,
+
+  mutable INTEGER NOT NULL DEFAULT 1,
+
+  created_by_mc_name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+
+  world_name TEXT NOT NULL,
+  wid INTEGER,
+  center_x INTEGER NOT NULL,
+  center_z INTEGER NOT NULL,
+  radius INTEGER NOT NULL
+)
+```
+
+Do the same in Java SQL strings and in long argument lists that mirror those groups. Prefer readability over packing every column into one dense block.
