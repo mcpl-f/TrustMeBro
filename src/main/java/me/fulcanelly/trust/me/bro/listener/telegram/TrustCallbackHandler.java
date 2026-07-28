@@ -10,11 +10,11 @@ import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
+import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.service.TrustDecisionService.Outcome;
 
 @RequiredArgsConstructor
 public final class TrustCallbackHandler {
@@ -22,8 +22,7 @@ public final class TrustCallbackHandler {
     private final TrustCallbackPayloadService callbackPayloads;
     private final LocalizationService messages;
     private final SignupLoginReception reception;
-    private final TrustRepository trustRepository;
-    private final ReportRepository reportRepository;
+    private final TrustDecisionService decisions;
     private final InteractionCountsRepository interactionCounts;
     private final Logger logger;
 
@@ -63,21 +62,15 @@ public final class TrustCallbackHandler {
                 return;
             }
 
-            boolean alreadyReported = reportRepository.exists(interactorPlayer, ownerPlayer);
-            boolean alreadyTrusted = trustRepository.isTrusted(ownerPlayer, interactorPlayer);
-
             if (TrustCallbackPayloadService.ACTION_TRUST.equals(action)) {
-                if (alreadyReported) {
-                    reportRepository.delete(interactorPlayer, ownerPlayer);
-                }
-                if (alreadyTrusted) {
+                Outcome outcome = decisions.trust(ownerPlayer, interactorPlayer, telegramUserId);
+                if (outcome == Outcome.ALREADY_TRUSTED) {
                     event.answer(messages.format(
                             "callback.already-trusted",
                             "owner", ownerPlayer,
                             "interactor", interactorPlayer));
                     return;
                 }
-                trustRepository.trust(ownerPlayer, interactorPlayer, telegramUserId);
                 event.answer(messages.format(
                         "callback.trusted",
                         "owner", ownerPlayer,
@@ -85,17 +78,14 @@ public final class TrustCallbackHandler {
                 return;
             }
 
-            if (alreadyTrusted) {
-                trustRepository.untrust(ownerPlayer, interactorPlayer);
-            }
-            if (alreadyReported) {
+            Outcome outcome = decisions.report(ownerPlayer, interactorPlayer, telegramUserId);
+            if (outcome == Outcome.ALREADY_REPORTED) {
                 event.answer(messages.format(
                         "callback.already-reported",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
                 return;
             }
-            reportRepository.report(ownerPlayer, telegramUserId, interactorPlayer, ownerPlayer);
             event.answer(messages.format(
                     "callback.reported",
                     "owner", ownerPlayer,

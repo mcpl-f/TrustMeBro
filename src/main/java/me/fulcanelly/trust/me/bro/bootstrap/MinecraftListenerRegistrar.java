@@ -1,12 +1,16 @@
 package me.fulcanelly.trust.me.bro.bootstrap;
 
 import lombok.RequiredArgsConstructor;
-import me.fulcanelly.trust.me.bro.listener.minecraft.BlockBreakSuspicionListener;
-import me.fulcanelly.trust.me.bro.listener.minecraft.BlockPlaceSuspicionListener;
-import me.fulcanelly.trust.me.bro.listener.minecraft.ContainerInteractionSuspicionListener;
-import me.fulcanelly.trust.me.bro.listener.minecraft.NewTrustRegionCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.PlayerJoinNotificationListener;
+import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.BlockBreakSuspicionListener;
+import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.BlockPlaceSuspicionListener;
+import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.ContainerInteractionSuspicionListener;
+import me.fulcanelly.trust.me.bro.listener.minecraft.commands.NewTrustRegionCommand;
+import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TReportCommand;
+import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TTrustCommand;
 import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
+
+import org.bukkit.command.PluginCommand;
 
 /**
  * Registers Bukkit-side listeners for block, container, and join events.
@@ -48,15 +52,29 @@ final class MinecraftListenerRegistrar {
                         plugin.getLogger()),
                 plugin);
 
-        var newTrustRegion = plugin.getCommand("new_trust_region");
-        if (newTrustRegion != null) {
-            newTrustRegion.setExecutor(new NewTrustRegionCommand(
-                    repositories.getRegions(),
-                    context.getCoreProtect(),
-                    services.getMessages(),
-                    plugin.getLogger()));
+        bindCommand("new_trust_region", new NewTrustRegionCommand(
+                repositories.getRegions(),
+                context.getCoreProtect(),
+                services.getMessages(),
+                plugin.getLogger()));
+        bindCommand("ttrust", new TTrustCommand(
+                services.getTrustDecisions(),
+                context.getBridge().getReception(),
+                services.getMessages(),
+                plugin.getLogger()));
+        bindCommand("treport", new TReportCommand(
+                services.getTrustDecisions(),
+                context.getBridge().getReception(),
+                services.getMessages(),
+                plugin.getLogger()));
+    }
+
+    private void bindCommand(String name, org.bukkit.command.CommandExecutor executor) {
+        PluginCommand command = context.getPlugin().getCommand(name);
+        if (command != null) {
+            command.setExecutor(executor);
         } else {
-            plugin.getLogger().warning("Command new_trust_region missing from plugin.yml");
+            context.getPlugin().getLogger().warning("Command " + name + " missing from plugin.yml");
         }
     }
 }

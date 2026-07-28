@@ -41,10 +41,39 @@ Drop the plugin jar in `plugins/`, start once, edit `config.yml` if you want.
 1. Player A touches something that looks like it belongs to Player B (from CoreProtect).
 2. If B doesn’t already trust A, the plugin counts it.
 3. After a quiet period (`debounce-time-sec`), it may send one Telegram warning listing the affected people.
-4. A linked owner presses **Trust** or **Report**.
+4. A linked owner presses **Trust** or **Report** in Telegram — or uses the same actions in-game:
+   - `/ttrust <player>` — trust that player for *your* blocks
+   - `/treport <player>` — report that player
 5. Next time A messes with that owner’s stuff, trusted players stay quiet; reports stay on file.
 
 Optional: warn the player in Minecraft when they join (`minecraft.notify-on-join`).
+
+### In-game commands & permissions
+
+| Command | Permission | Default |
+| --- | --- | --- |
+| `/ttrust <player>` | `trusts.command.trust` | everyone (`true`) |
+| `/treport <player>` | `trusts.command.report` | everyone (`true`) |
+| `/new_trust_region <radius> <name>` | `trusts.region.create` | ops only |
+
+With the defaults above, `/ttrust` and `/treport` already work for all players — no LuckPerms setup required.
+
+**LuckPerms** (only if you changed defaults, or want a specific group):
+
+```bash
+# everyone (default group)
+lp group default permission set trusts.command.trust true
+lp group default permission set trusts.command.report true
+
+# or only a group, e.g. members
+lp group member permission set trusts.command.trust true
+lp group member permission set trusts.command.report true
+
+# named regions stay staff-only unless you grant this
+lp group admin permission set trusts.region.create true
+```
+
+To deny a group after leaving `default: true` in `plugin.yml`, set the permission to `false` for that group (or switch the plugin.yml defaults to `op` and grant only where you want).
 
 **Useful config knobs**
 

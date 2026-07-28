@@ -29,8 +29,7 @@ final class TelegramListenerRegistrar {
                 services.getCallbackPayloads(),
                 services.getMessages(),
                 bridge.getReception(),
-                repositories.getTrust(),
-                repositories.getReports(),
+                services.getTrustDecisions(),
                 repositories.getInteractionCounts(),
                 logger);
         MyTrustCommand myTrustCommand = new MyTrustCommand(bridge.getReception());

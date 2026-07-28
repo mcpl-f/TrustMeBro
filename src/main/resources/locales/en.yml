@@ -37,6 +37,12 @@ command:
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
     created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
+  trust:
+    players-only: "Players only."
+    self: "You cannot trust yourself."
+  report:
+    players-only: "Players only."
+    self: "You cannot report yourself."
 
 region:
   at: "> {world} · x: {x}, z: {z} ± {radius}"

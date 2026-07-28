@@ -14,8 +14,22 @@ commands:
     description: Create a named trust region at your current position
     usage: /new_trust_region <radius> <name>
     permission: trusts.region.create
+  ttrust:
+    description: Trust a player so they no longer trigger warnings for your blocks
+    usage: /ttrust <player>
+    permission: trusts.command.trust
+  treport:
+    description: Report a player for suspicious interactions with your blocks
+    usage: /treport <player>
+    permission: trusts.command.report
 
 permissions:
   trusts.region.create:
     description: Allows creating named trust regions
     default: op
+  trusts.command.trust:
+    description: Allows /ttrust
+    default: true
+  trusts.command.report:
+    description: Allows /treport
+    default: true

@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.listener.minecraft;
+package me.fulcanelly.trust.me.bro.listener.minecraft.blocks;
 
 import lombok.RequiredArgsConstructor;
 

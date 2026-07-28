@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.listener.minecraft;
+package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;

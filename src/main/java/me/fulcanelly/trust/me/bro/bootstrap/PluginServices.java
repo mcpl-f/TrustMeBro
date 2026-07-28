@@ -5,6 +5,7 @@ import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectRea
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -21,6 +22,7 @@ final class PluginServices {
     TrustCallbackPayloadService callbackPayloads;
     LocalizationService messages;
     SuspicionDetectionService suspicionDetection;
+    TrustDecisionService trustDecisions;
 
     static PluginServices buildFromPlugin(
             JavaPlugin plugin,
@@ -34,6 +36,9 @@ final class PluginServices {
                         coreProtect,
                         repositories.getTrust(),
                         repositories.getInteractionCounts(),
-                        plugin.getLogger()));
+                        plugin.getLogger()),
+                new TrustDecisionService(
+                        repositories.getTrust(),
+                        repositories.getReports()));
     }
 }

@@ -37,6 +37,12 @@ command:
     unknown-world: "Мир неизвестен CoreProtect; регион не создать."
     created: "Регион #{id} «{name}» создан: {world} {x}, {z} ± {radius}."
     failed: "Не удалось создать регион."
+  trust:
+    players-only: "Только для игроков."
+    self: "Нельзя доверять самому себе."
+  report:
+    players-only: "Только для игроков."
+    self: "Нельзя пожаловаться на самого себя."
 
 region:
   at: " > {world} · x: {x}, z: {z} ± {radius}"
