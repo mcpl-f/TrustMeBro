@@ -40,7 +40,10 @@ command:
 
 region:
   at: " > {world} · x: {x}, z: {z} ± {radius}"
-  at-named: " > регион «{name}» · {world} · x: {x}, z: {z} ± {radius}"
+  at-named: |
+    > регион «{name}»
+    в {world} x: {x}, z: {z}
+      ± {radius}
 
 world:
   overworld: "Обычный мир"

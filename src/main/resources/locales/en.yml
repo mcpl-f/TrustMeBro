@@ -39,8 +39,11 @@ command:
     failed: "Failed to create region."
 
 region:
-  at: " > {world} · x: {x}, z: {z} ± {radius}"
-  at-named: " > region \"{name}\" · {world} · x: {x}, z: {z} ± {radius}"
+  at: "> {world} · x: {x}, z: {z} ± {radius}"
+  at-named: |
+    > region «{name}»
+    at {world} x: {x}, z: {z}
+      ± {radius}
 
 world:
   overworld: "Overworld"
