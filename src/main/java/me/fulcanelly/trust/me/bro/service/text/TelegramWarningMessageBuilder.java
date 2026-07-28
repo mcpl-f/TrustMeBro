@@ -53,7 +53,7 @@ public final class TelegramWarningMessageBuilder {
         }
 
         if (totalInteractions > counts.size()) {
-            builder.append(" ... ").append(totalInteractions - counts.size()).append(" more");
+            builder.append(" ... ").append(totalInteractions - counts.size()).append(" more\n");
         }
 
         builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
