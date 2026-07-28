@@ -3,9 +3,11 @@ package me.fulcanelly.trust.me.bro.bootstrap;
 import lombok.Value;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
+import me.fulcanelly.trust.me.bro.service.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,14 +25,16 @@ final class PluginServices {
     LocalizationService messages;
     SuspicionDetectionService suspicionDetection;
     TrustDecisionService trustDecisions;
+    MinecraftOwnerNotificationService ownerNotifications;
 
     static PluginServices buildFromPlugin(
             JavaPlugin plugin,
             CoreProtectReadRepository coreProtect,
             LocalRepositories repositories) {
+        LocalizationService messages = new LocalizationService(plugin);
         return new PluginServices(
                 new TrustCallbackPayloadService(),
-                new LocalizationService(plugin),
+                messages,
                 new SuspicionDetectionService(
                         plugin,
                         coreProtect,
@@ -39,6 +43,14 @@ final class PluginServices {
                         plugin.getLogger()),
                 new TrustDecisionService(
                         repositories.getTrust(),
-                        repositories.getReports()));
+                        repositories.getReports()),
+                new MinecraftOwnerNotificationService(
+                        plugin,
+                        repositories.getInteractionCounts(),
+                        new MinecraftWarningMessageBuilder(
+                                messages,
+                                coreProtect,
+                                repositories.getRegions()),
+                        plugin.getLogger()));
     }
 }

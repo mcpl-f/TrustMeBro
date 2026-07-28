@@ -353,19 +353,36 @@ public final class InteractionCountsRepository {
         boolean biggest = "biggest".equalsIgnoreCase(strategy);
         String orderBy = biggest
                 ? """
-                        (count_break_blocks + count_placed_blocks + count_interact_containers) DESC,
-                        updated_at DESC,
-                        id DESC
+                        (interaction_counts.count_break_blocks
+                          + interaction_counts.count_placed_blocks
+                          + interaction_counts.count_interact_containers) DESC,
+                        interaction_counts.updated_at DESC,
+                        interaction_counts.id DESC
                         """
                 : """
-                        updated_at DESC,
-                        id DESC
+                        interaction_counts.updated_at DESC,
+                        interaction_counts.id DESC
                         """;
-        try (var statement = connection.prepareStatement(PENDING_SELECT + """
-                WHERE owner = ?
-                  -- AND notification_id IS NULL -- TODO not sure about this (duplicate or not tg notifications)
-                  -- prolly need to introduce a new column: is_mc_notified
-                  AND skip_reason IS NULL
+        // Exclude already trusted / reported so /ttrust|/treport can advance to the next warning.
+        try (var statement = connection.prepareStatement("""
+                SELECT interaction_counts.id, interaction_counts.interactor_player, interaction_counts.owner,
+                       interaction_counts.count_break_blocks, interaction_counts.count_placed_blocks,
+                       interaction_counts.count_interact_containers,
+                       interaction_counts.wid, interaction_counts.region_corner_a_x,
+                       interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_x,
+                       interaction_counts.region_corner_b_z
+                FROM interaction_counts
+                LEFT JOIN trust_edges
+                    ON interaction_counts.owner = trust_edges.owner_mc_name
+                    AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
+                LEFT JOIN reports
+                    ON interaction_counts.owner = reports.owner
+                    AND interaction_counts.interactor_player = reports.interactor_player
+                WHERE interaction_counts.owner = ?
+                  -- AND interaction_counts.notification_id IS NULL -- TODO: duplicate vs TG; maybe is_mc_notified
+                  AND interaction_counts.skip_reason IS NULL
+                  AND trust_edges.owner_mc_name IS NULL
+                  AND reports.owner IS NULL
                 ORDER BY %s
                 LIMIT 1
                 """.formatted(orderBy))) {

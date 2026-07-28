@@ -3,9 +3,11 @@ package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
+import me.fulcanelly.trust.me.bro.service.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.TrustDecisionService;
 import me.fulcanelly.trust.me.bro.service.TrustDecisionService.Outcome;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,12 +25,13 @@ public final class TTrustCommand implements CommandExecutor {
     private final TrustDecisionService decisions;
     private final SignupLoginReception reception;
     private final LocalizationService messages;
+    private final MinecraftOwnerNotificationService ownerNotifications;
     private final Logger logger;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(messages.format("command.trust.players-only"));
+            reply(sender, ChatColor.GRAY, messages.format("command.trust.players-only"));
             return true;
         }
         if (args.length != 1) {
@@ -39,7 +42,7 @@ public final class TTrustCommand implements CommandExecutor {
         String interactorPlayer = args[0];
 
         if (ownerPlayer.equals(interactorPlayer)) {
-            player.sendMessage(messages.format("command.trust.self"));
+            reply(player, ChatColor.GRAY, messages.format("command.trust.self"));
             return true;
         }
 
@@ -49,21 +52,27 @@ public final class TTrustCommand implements CommandExecutor {
             Outcome outcome = decisions.trust(ownerPlayer, interactorPlayer, telegramUserId);
 
             if (outcome == Outcome.ALREADY_TRUSTED) {
-                player.sendMessage(messages.format(
+                reply(player, ChatColor.GRAY, messages.format(
                         "callback.already-trusted",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
+                ownerNotifications.fetchAndNotifyAsync(player);
                 return true;
             }
 
-            player.sendMessage(messages.format(
+            reply(player, ChatColor.GREEN, messages.format(
                     "callback.trusted",
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
+            ownerNotifications.fetchAndNotifyAsync(player);
         } catch (Exception e) {
             logger.warning("ttrust failed: " + e.getMessage());
-            player.sendMessage(messages.format("callback.db-error"));
+            reply(player, ChatColor.GRAY, messages.format("callback.db-error"));
         }
         return true;
+    }
+
+    private void reply(CommandSender sender, ChatColor color, String text) {
+        sender.sendMessage(color + text);
     }
 }

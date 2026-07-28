@@ -8,7 +8,6 @@ import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.ContainerInteraction
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.NewTrustRegionCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TReportCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TTrustCommand;
-import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
 
 import org.bukkit.command.PluginCommand;
 
@@ -45,14 +44,7 @@ final class MinecraftListenerRegistrar {
                     plugin);
         }
         plugin.getServer().getPluginManager().registerEvents(
-                new PlayerJoinNotificationListener(
-                        plugin,
-                        repositories.getInteractionCounts(),
-                        new MinecraftWarningMessageBuilder(
-                                services.getMessages(),
-                                context.getCoreProtect(),
-                                repositories.getRegions()),
-                        plugin.getLogger()),
+                new PlayerJoinNotificationListener(plugin, services.getOwnerNotifications()),
                 plugin);
 
         bindCommand("new_trust_region", new NewTrustRegionCommand(
@@ -64,11 +56,13 @@ final class MinecraftListenerRegistrar {
                 services.getTrustDecisions(),
                 context.getBridge().getReception(),
                 services.getMessages(),
+                services.getOwnerNotifications(),
                 plugin.getLogger()));
         bindCommand("treport", new TReportCommand(
                 services.getTrustDecisions(),
                 context.getBridge().getReception(),
                 services.getMessages(),
+                services.getOwnerNotifications(),
                 plugin.getLogger()));
     }
 
