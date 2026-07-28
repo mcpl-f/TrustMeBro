@@ -3,8 +3,8 @@ telegram:
     header: "Player {interactor} interacted with blocks associated with:\n"
     question: "Do you trust this player?"
   button:
-    trust: "Trust"
-    report: "Report"
+    trust: "Trust ✅"
+    report: "Report ❌"
   command:
     mctrust:
       stub: "TrustMeBro command is not implemented yet."
