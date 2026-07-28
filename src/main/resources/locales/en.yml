@@ -47,9 +47,11 @@ command:
   trust:
     players-only: "Players only."
     self: "You cannot trust yourself."
+    unknown-player: "Player {player} not found."
   report:
     players-only: "Players only."
     self: "You cannot report yourself."
+    unknown-player: "Player {player} not found."
 
 region:
   at: "> {world} · x: {x}, z: {z} ± {radius}"

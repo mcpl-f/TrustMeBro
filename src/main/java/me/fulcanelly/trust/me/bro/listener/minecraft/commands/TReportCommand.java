@@ -6,6 +6,7 @@ import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
+import me.fulcanelly.trust.me.bro.service.util.MinecraftPlayers;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -44,6 +45,13 @@ public final class TReportCommand implements CommandExecutor {
 
         if (ownerPlayer.equals(interactorPlayer)) {
             reply(player, ChatColor.GRAY, messages.format("command.report.self"));
+            return true;
+        }
+
+        if (!MinecraftPlayers.isKnownPlayer(player.getServer(), interactorPlayer)) {
+            reply(player, ChatColor.GRAY, messages.format(
+                    "command.report.unknown-player",
+                    "player", interactorPlayer));
             return true;
         }
 

@@ -47,9 +47,11 @@ command:
   trust:
     players-only: "Только для игроков."
     self: "Нельзя доверять самому себе."
+    unknown-player: "Игрок {player} не найден."
   report:
     players-only: "Только для игроков."
     self: "Нельзя пожаловаться на самого себя."
+    unknown-player: "Игрок {player} не найден."
 
 region:
   at: " > {world} · x: {x}, z: {z} ± {radius}"
