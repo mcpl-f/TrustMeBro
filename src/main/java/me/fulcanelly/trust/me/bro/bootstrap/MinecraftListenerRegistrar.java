@@ -48,7 +48,10 @@ final class MinecraftListenerRegistrar {
                 new PlayerJoinNotificationListener(
                         plugin,
                         repositories.getInteractionCounts(),
-                        new MinecraftWarningMessageBuilder(services.getMessages()),
+                        new MinecraftWarningMessageBuilder(
+                                services.getMessages(),
+                                context.getCoreProtect(),
+                                repositories.getRegions()),
                         plugin.getLogger()),
                 plugin);
 

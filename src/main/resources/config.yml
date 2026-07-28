@@ -25,5 +25,10 @@ telegram:
   # owners listed in one Telegram warning: linked first, then recent lastPlayed
 
 minecraft:
+
+  fetch-interactions-strategy: recent
+  # avaliable options: recent | biggest
+  # means: fetch interactors by created_at DESC or by sum of interactions DESC
+
   notify-on-join: false
 

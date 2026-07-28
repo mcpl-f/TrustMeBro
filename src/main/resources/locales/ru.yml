@@ -11,8 +11,15 @@ telegram:
 
 minecraft:
   warning:
-    header: "Подозрительные взаимодействия с вашими блоками:"
-    footer: "Проверьте Telegram, чтобы доверять или пожаловаться."
+    header: "Игрок {interactor} взаимодействовал с блоками, связанными с вами"
+    question: "Доверяете этому игроку?"
+    count-line: "- {count} {label}"
+    button:
+      trust: "[Доверять]"
+      report: "[Пожаловаться]"
+      trust-hover: "Выполнить /ttrust {interactor}"
+      report-hover: "Выполнить /treport {interactor}"
+    hint: "Нажмите или пропишите команду /ttrust {interactor} или /treport {interactor}"
 
 callback:
   bad-action: "Некорректное действие TrustMeBro"

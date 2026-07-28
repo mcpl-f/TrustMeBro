@@ -338,6 +338,47 @@ public final class InteractionCountsRepository {
         return result;
     }
 
+    /**
+     * One pending row for join notification, chosen by strategy.
+     *
+     * <p>{@code recent} — newest {@code updated_at}; {@code biggest} — highest
+     * break+place+container sum (ties broken by newest).
+     *
+     * TODO: bad idea to dispatch strategy at repository level, it should be done in the service layer
+     */
+    public synchronized Optional<InteractionCount> findTopPendingInteractionForOwner(
+            String ownerPlayer,
+            String strategy //
+    ) throws SQLException {
+        boolean biggest = "biggest".equalsIgnoreCase(strategy);
+        String orderBy = biggest
+                ? """
+                        (count_break_blocks + count_placed_blocks + count_interact_containers) DESC,
+                        updated_at DESC,
+                        id DESC
+                        """
+                : """
+                        updated_at DESC,
+                        id DESC
+                        """;
+        try (var statement = connection.prepareStatement(PENDING_SELECT + """
+                WHERE owner = ?
+                  -- AND notification_id IS NULL -- TODO not sure about this (duplicate or not tg notifications)
+                  -- prolly need to introduce a new column: is_mc_notified
+                  AND skip_reason IS NULL
+                ORDER BY %s
+                LIMIT 1
+                """.formatted(orderBy))) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapRow(rows));
+            }
+        }
+    }
+
     public synchronized void markSkippedByIds(List<Long> ids, String skipReason) throws SQLException {
         if (ids.isEmpty()) {
             return;
