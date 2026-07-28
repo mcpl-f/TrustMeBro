@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service;
+package me.fulcanelly.trust.me.bro.jobs;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,6 +16,7 @@ import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
+import me.fulcanelly.trust.me.bro.service.NotificationSkipReason;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
 import org.bukkit.plugin.Plugin;

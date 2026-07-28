@@ -1,7 +1,7 @@
 package me.fulcanelly.trust.me.bro.bootstrap;
 
 import lombok.RequiredArgsConstructor;
-import me.fulcanelly.trust.me.bro.service.NotificationService;
+import me.fulcanelly.trust.me.bro.jobs.NotificationService;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
 /**
