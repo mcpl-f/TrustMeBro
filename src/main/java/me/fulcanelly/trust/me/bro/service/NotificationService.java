@@ -54,7 +54,7 @@ public final class NotificationService implements Runnable {
                 if (sendNotification(chatId, interactor)) {
                     return;
                 }
-                logger.info("Notification for " + interactor + " took " + (System.currentTimeMillis() - start) + "ms");
+                logger.info("Notification about interactor " + interactor + " took " + (System.currentTimeMillis() - start) + "ms");
             }
         } catch (Exception e) {
             logger.warning("Trust notification job failed: " + e.getMessage());
