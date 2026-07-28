@@ -8,11 +8,14 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.tgbridge.utils.UsefulStuff;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
@@ -42,6 +45,7 @@ public final class TelegramWarningMessageBuilder {
     private final TrustCallbackPayloadService callbackPayloads;
     private final LocalizationService messages;
     private final CoreProtectReadRepository coreProtect;
+    private final RegionsRepository regions;
 
     public String build(
             String interactorPlayer,
@@ -55,10 +59,14 @@ public final class TelegramWarningMessageBuilder {
         // Nearby owner-regions become one header + several "- owner: counts" lines.
         List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(counts, mergeDistance);
 
+        // Named admin regions (optional label next to coords when within
+        // merge-distance).
+        List<NamedRegion> namedRegions = loadNamedRegions();
+
         for (RegionOwnerGroup group : groups) {
             if (group.hasRegion()) {
                 // Shared place first, then every owner touched there.
-                builder.append(formatRegion(group.getRegion())).append('\n');
+                builder.append(formatRegion(group.getRegion(), namedRegions, mergeDistance)).append('\n');
                 for (InteractionCount count : group.getInteractions()) {
                     builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
                     builder.append(formatCounts(count)).append('\n');
@@ -79,6 +87,14 @@ public final class TelegramWarningMessageBuilder {
 
         builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
         return builder.toString();
+    }
+
+    private List<NamedRegion> loadNamedRegions() {
+        try {
+            return regions.findAll();
+        } catch (SQLException e) {
+            return List.of();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -119,13 +135,46 @@ public final class TelegramWarningMessageBuilder {
         return builder.length() == 0 ? "0" : builder.toString();
     }
 
-    private String formatRegion(MessageRegion region) {
-        return messages.format(
-                "region.at",
-                "world", formatWorld(region.getWorldId()),
-                "x", region.centerX(),
-                "z", region.centerZ(),
-                "radius", region.displayRadius());
+    private String formatRegion(
+            MessageRegion region,
+            List<NamedRegion> namedRegions,
+            int mergeDistance //
+    ) {
+        String world = formatWorld(region.getWorldId());
+        String matchingNames = matchingNamedRegionLabels(region, namedRegions, mergeDistance);
+
+        if (matchingNames.isEmpty()) {
+            return messages.format(
+                    "region.at",
+                    "world", world,
+                    "x", region.centerX(),
+                    "z", region.centerZ(),
+                    "radius", region.displayRadius());
+        } else {
+            return messages.format(
+                    "region.at-named",
+                    "name", escape(matchingNames),
+                    "world", world,
+                    "x", region.centerX(),
+                    "z", region.centerZ(),
+                    "radius", region.displayRadius());
+        }
+    }
+
+    /**
+     * Names of admin regions whose area is within mergeDistance of this interaction
+     * box.
+     */
+    private String matchingNamedRegionLabels(
+            MessageRegion interactionArea,
+            List<NamedRegion> namedRegions,
+            int mergeDistance //
+    ) {
+        return namedRegions.stream()
+                .filter(named -> interactionArea.isWithinMergeDistanceOf(
+                        named.toMessageRegion(), mergeDistance))
+                .map(NamedRegion::getName)
+                .collect(Collectors.joining(" / "));
     }
 
     private String formatWorld(int wid) {

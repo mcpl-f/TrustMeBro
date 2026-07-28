@@ -30,8 +30,17 @@ count:
   placed: "поставлено"
   container-interactions: "действий с контейнерами"
 
+command:
+  new-trust-region:
+    players-only: "Только для игроков."
+    bad-radius: "Радиус должен быть целым числом ≥ 0."
+    unknown-world: "Мир неизвестен CoreProtect; регион не создать."
+    created: "Регион #{id} «{name}» создан: {world} {x}, {z} ± {radius}."
+    failed: "Не удалось создать регион."
+
 region:
   at: " > {world} · x: {x}, z: {z} ± {radius}"
+  at-named: " > регион «{name}» · {world} · x: {x}, z: {z} ± {radius}"
 
 world:
   overworld: "Обычный мир"

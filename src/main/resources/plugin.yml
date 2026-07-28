@@ -8,3 +8,14 @@ main: me.fulcanelly.trust.me.bro.TrustSysPlugin
 depend:
   - CoreProtect
   - tg-bridge
+
+commands:
+  new_trust_region:
+    description: Create a named trust region at your current position
+    usage: /new_trust_region <radius> <name>
+    permission: trusts.region.create
+
+permissions:
+  trusts.region.create:
+    description: Allows creating named trust regions
+    default: op

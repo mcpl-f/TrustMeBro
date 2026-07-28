@@ -5,6 +5,7 @@ import java.sql.Connection;
 import lombok.Value;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
 
@@ -22,12 +23,14 @@ final class LocalRepositories {
     InteractionCountsRepository interactionCounts;
     NotificationRepository notifications;
     ReportRepository reports;
+    RegionsRepository regions;
 
     static LocalRepositories buildFromConnection(Connection connection) {
         return new LocalRepositories(
                 new TrustRepository(connection),
                 new InteractionCountsRepository(connection),
                 new NotificationRepository(connection),
-                new ReportRepository(connection));
+                new ReportRepository(connection),
+                new RegionsRepository(connection));
     }
 }

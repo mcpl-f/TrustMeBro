@@ -40,6 +40,11 @@ public final class MigrationRunner {
             applyMigration01Regions();
             markApplied(1);
         }
+        if (!applied.contains(2)) {
+            applyMigration02NamedRegions();
+            markApplied(2);
+        }
+
     }
 
     private void applyBaseline() throws SQLException {
@@ -174,6 +179,29 @@ public final class MigrationRunner {
                 CREATE UNIQUE INDEX interaction_counts_legacy_uq
                 ON interaction_counts(interactor_player, owner)
                 WHERE wid IS NULL
+                """);
+    }
+
+    /**
+     * Named admin-defined trust regions (center + radius), used in Telegram labels.
+     */
+    private void applyMigration02NamedRegions() throws SQLException {
+        execute("""
+                CREATE TABLE IF NOT EXISTS regions (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                  name TEXT NOT NULL,
+
+                  mutable INTEGER NOT NULL DEFAULT 1,
+
+                  created_by_mc_name TEXT NOT NULL,
+                  created_at INTEGER NOT NULL,
+
+                  wid INTEGER NOT NULL,
+                  center_x INTEGER NOT NULL,
+                  center_z INTEGER NOT NULL,
+                  radius INTEGER NOT NULL
+                )
                 """);
     }
 

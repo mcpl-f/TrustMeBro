@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.listener.minecraft.BlockBreakSuspicionListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.BlockPlaceSuspicionListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.ContainerInteractionSuspicionListener;
+import me.fulcanelly.trust.me.bro.listener.minecraft.NewTrustRegionCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.PlayerJoinNotificationListener;
 import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
 
@@ -46,5 +47,16 @@ final class MinecraftListenerRegistrar {
                         new MinecraftWarningMessageBuilder(services.getMessages()),
                         plugin.getLogger()),
                 plugin);
+
+        var newTrustRegion = plugin.getCommand("new_trust_region");
+        if (newTrustRegion != null) {
+            newTrustRegion.setExecutor(new NewTrustRegionCommand(
+                    repositories.getRegions(),
+                    context.getCoreProtect(),
+                    services.getMessages(),
+                    plugin.getLogger()));
+        } else {
+            plugin.getLogger().warning("Command new_trust_region missing from plugin.yml");
+        }
     }
 }

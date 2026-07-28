@@ -19,7 +19,7 @@ telegram:
   notify: true
 
   only-for-linked-players: true
-  # means if owner is not linked, no notifications will be sent
+  # when true: send only if at least one pending owner is TG-linked; list only linked owners
 
   max-owners-per-notification: 10
   # owners listed in one Telegram warning: linked first, then recent lastPlayed
