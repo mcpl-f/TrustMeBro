@@ -271,6 +271,7 @@ public final class InteractionCountsRepository {
                     ON interaction_counts.owner = reports.owner
                     AND interaction_counts.interactor_player = reports.interactor_player
                 WHERE interaction_counts.notification_id IS NULL
+                    AND interaction_counts.skip_reason IS NULL
                     AND interaction_counts.updated_at <= ?
                     AND trust_edges.owner_mc_name IS NULL -- means no trust edge exists
                     AND reports.owner IS NULL -- means no report exists
@@ -291,6 +292,7 @@ public final class InteractionCountsRepository {
         try (var statement = connection.prepareStatement(PENDING_SELECT + """
                 WHERE interactor_player = ?
                   AND notification_id IS NULL
+                  AND skip_reason IS NULL
                 ORDER BY owner ASC, id ASC
                 """)) {
             statement.setString(1, interactorPlayer);
@@ -323,6 +325,7 @@ public final class InteractionCountsRepository {
         try (var statement = connection.prepareStatement(PENDING_SELECT + """
                 WHERE owner = ?
                   AND notification_id IS NULL
+                  AND skip_reason IS NULL
                 ORDER BY updated_at ASC, id ASC
                 """)) {
             statement.setString(1, ownerPlayer);
@@ -333,6 +336,27 @@ public final class InteractionCountsRepository {
             }
         }
         return result;
+    }
+
+    public synchronized void markSkippedByIds(List<Long> ids, String skipReason) throws SQLException {
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(", ", Collections.nCopies(ids.size(), "?"));
+        try (var statement = connection.prepareStatement("""
+                UPDATE interaction_counts
+                SET skip_reason = ?
+                WHERE notification_id IS NULL
+                  AND skip_reason IS NULL
+                  AND id IN (%s)
+                """.formatted(placeholders))) {
+            statement.setString(1, skipReason);
+            for (int i = 0; i < ids.size(); i++) {
+                statement.setLong(i + 2, ids.get(i));
+            }
+            statement.executeUpdate();
+        }
     }
 
     public synchronized void attachNotification(

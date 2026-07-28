@@ -44,7 +44,10 @@ public final class MigrationRunner {
             applyMigration02NamedRegions();
             markApplied(2);
         }
-
+        if (!applied.contains(3)) {
+            applyMigration03SkipReason();
+            markApplied(3);
+        }
     }
 
     private void applyBaseline() throws SQLException {
@@ -202,6 +205,17 @@ public final class MigrationRunner {
                   center_z INTEGER NOT NULL,
                   radius INTEGER NOT NULL
                 )
+                """);
+    }
+
+    /**
+     * Why a pending interaction was not sent to Telegram (e.g. no linked owner).
+     * Rows with skip_reason set are no longer treated as pending for notifications.
+     */
+    private void applyMigration03SkipReason() throws SQLException {
+        execute("""
+                ALTER TABLE interaction_counts
+                ADD COLUMN skip_reason TEXT
                 """);
     }
 

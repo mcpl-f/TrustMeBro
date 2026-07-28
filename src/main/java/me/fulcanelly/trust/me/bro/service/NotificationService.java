@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,21 +51,31 @@ public final class NotificationService implements Runnable {
             var interactors = interactionCounts.findInteractorsReadyForNotification(debounceMillis);
             logger.info("Found " + interactors.size() + " interactors ready for notification");
             for (String interactor : interactors) {
-                var start = System.currentTimeMillis();
-                if (sendNotification(chatId, interactor)) {
+
+                long start = System.currentTimeMillis();
+                Optional<String> skipReason = sendNotification(chatId, interactor);
+                long tookMs = System.currentTimeMillis() - start;
+
+                if (skipReason.isEmpty()) {
+                    logger.info("Sent notification about " + interactor + " in " + tookMs + "ms");
                     return;
                 }
-                logger.info("Notification about interactor " + interactor + " took " + (System.currentTimeMillis() - start) + "ms");
+
+                logger.info("Skipped " + interactor + " (" + skipReason.get() + ") in " + tookMs + "ms");
             }
         } catch (Exception e) {
             logger.warning("Trust notification job failed: " + e.getMessage());
         }
     }
 
-    private boolean sendNotification(long chatId, String interactor) throws SQLException {
+    /**
+     * @return empty if a Telegram message was sent; otherwise the skip reason code
+     *         (also persisted on the pending rows when applicable)
+     */
+    private Optional<String> sendNotification(long chatId, String interactor) throws SQLException {
         List<InteractionCount> pending = interactionCounts.findPendingByInteractor(interactor);
         if (pending.isEmpty()) {
-            return false;
+            return Optional.of(NotificationSkipReason.ALREADY_HANDLED);
         }
 
         var totalInteractions = pending.size();
@@ -72,11 +83,13 @@ public final class NotificationService implements Runnable {
         List<InteractionCount> counts = selectOwnersForNotification(pending);
 
         if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
-            return false;
+            markSkipped(pending, NotificationSkipReason.NO_LINKED_OWNER);
+            return Optional.of(NotificationSkipReason.NO_LINKED_OWNER);
         }
 
         if (counts.isEmpty()) {
-            return false;
+            markSkipped(pending, NotificationSkipReason.NO_LINKED_OWNER);
+            return Optional.of(NotificationSkipReason.NO_LINKED_OWNER);
         }
 
         int mergeDistance = Math.max(
@@ -91,7 +104,13 @@ public final class NotificationService implements Runnable {
         interactionCounts.attachNotificationByIds(
                 counts.stream().map(InteractionCount::getId).collect(Collectors.toList()),
                 notificationId);
-        return true;
+        return Optional.empty();
+    }
+
+    private void markSkipped(List<InteractionCount> rows, String reason) throws SQLException {
+        interactionCounts.markSkippedByIds(
+                rows.stream().map(InteractionCount::getId).collect(Collectors.toList()),
+                reason);
     }
 
     private List<InteractionCount> selectOwnersForNotification(List<InteractionCount> pending) {
@@ -99,7 +118,8 @@ public final class NotificationService implements Runnable {
         return pending.stream()
                 .sorted(Comparator
                         .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer()))
-                        // .thenComparing((InteractionCount count) -> lastPlayed(count.getOwnerPlayer()))
+                        // .thenComparing((InteractionCount count) ->
+                        // lastPlayed(count.getOwnerPlayer()))
                         .reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
@@ -120,7 +140,8 @@ public final class NotificationService implements Runnable {
     @SuppressWarnings("deprecation")
     private long lastPlayed(String ownerPlayer) {
         // Must not call OfflinePlayer from the async notification job.
-        // If lastPlayed sort is re-enabled: snapshot on the main thread (sync task / cache), then read the map here.
+        // If lastPlayed sort is re-enabled: snapshot on the main thread (sync task /
+        // cache), then read the map here.
         return plugin.getServer().getOfflinePlayer(ownerPlayer).getLastPlayed();
     }
 }
