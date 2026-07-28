@@ -15,12 +15,16 @@ import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectRea
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.service.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
+import me.fulcanelly.trust.me.bro.service.region.RegionMessageGrouper;
+import me.fulcanelly.trust.me.bro.service.region.RegionOwnerGroup;
 
 /**
  * Builds the Telegram warning message and its two action buttons.
  *
  * Telegram is the decision surface: owners can trust or report the interactor.
- * Callback payload contains only the action and interactor; owner is resolved from
+ * Callback payload contains only the action and interactor; owner is resolved
+ * from
  * the Telegram account that clicks the button.
  *
  * Example:
@@ -39,17 +43,34 @@ public final class TelegramWarningMessageBuilder {
     private final LocalizationService messages;
     private final CoreProtectReadRepository coreProtect;
 
-    public String build(String interactorPlayer, List<InteractionCount> counts, int totalInteractions) {
+    public String build(
+            String interactorPlayer,
+            List<InteractionCount> counts,
+            int totalInteractions,
+            int mergeDistance //
+    ) {
         StringBuilder builder = new StringBuilder();
         builder.append(messages.format("telegram.warning.header", "interactor", escape(interactorPlayer))).append('\n');
 
-        for (InteractionCount count : counts) {
-            builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
-            builder.append(formatCounts(count));
-            if (count.hasRegion()) {
-                builder.append("\n").append(formatRegion(count));
+        // Nearby owner-regions become one header + several "- owner: counts" lines.
+        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(counts, mergeDistance);
+
+        for (RegionOwnerGroup group : groups) {
+            if (group.hasRegion()) {
+                // Shared place first, then every owner touched there.
+                builder.append(formatRegion(group.getRegion())).append('\n');
+                for (InteractionCount count : group.getInteractions()) {
+                    builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
+                    builder.append(formatCounts(count)).append('\n');
+                }
+                builder.append('\n');
+            } else {
+                // Legacy / no coordinates: one owner line, no region header, no merging.
+                for (InteractionCount count : group.getInteractions()) {
+                    builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
+                    builder.append(formatCounts(count)).append("\n\n");
+                }
             }
-            builder.append("\n\n");
         }
 
         if (totalInteractions > counts.size()) {
@@ -98,13 +119,13 @@ public final class TelegramWarningMessageBuilder {
         return builder.length() == 0 ? "0" : builder.toString();
     }
 
-    private String formatRegion(InteractionCount count) {
+    private String formatRegion(MessageRegion region) {
         return messages.format(
                 "region.at",
-                "world", formatWorld(count.getWid()),
-                "x", count.regionCenterX(),
-                "z", count.regionCenterZ(),
-                "radius", count.regionRadius());
+                "world", formatWorld(region.getWorldId()),
+                "x", region.centerX(),
+                "z", region.centerZ(),
+                "radius", region.displayRadius());
     }
 
     private String formatWorld(int wid) {

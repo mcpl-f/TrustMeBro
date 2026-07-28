@@ -50,9 +50,11 @@ public final class NotificationService implements Runnable {
             var interactors = interactionCounts.findInteractorsReadyForNotification(debounceMillis);
             logger.info("Found " + interactors.size() + " interactors ready for notification");
             for (String interactor : interactors) {
+                var start = System.currentTimeMillis();
                 if (sendNotification(chatId, interactor)) {
                     return;
                 }
+                logger.info("Notification for " + interactor + " took " + (System.currentTimeMillis() - start) + "ms");
             }
         } catch (Exception e) {
             logger.warning("Trust notification job failed: " + e.getMessage());
@@ -77,9 +79,12 @@ public final class NotificationService implements Runnable {
             return false;
         }
 
+        int mergeDistance = Math.max(
+                0,
+                plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
         Message message = bot.sendMessage(
                 chatId,
-                messageBuilder.build(interactor, counts, totalInteractions),
+                messageBuilder.build(interactor, counts, totalInteractions, mergeDistance),
                 messageBuilder.buildKeyboard(interactor));
 
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
