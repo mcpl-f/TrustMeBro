@@ -13,9 +13,12 @@ import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
 import me.fulcanelly.trust.me.bro.database.repository.model.PeopleAggregateStat;
+import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
 import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder.PeopleLine;
+import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder.SuspiciousLine;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 import org.bukkit.plugin.Plugin;
@@ -45,10 +48,13 @@ public final class TrustStatsCommand {
         }
 
         int topSize = Math.max(1, plugin.getConfig().getInt("telegram.stats-top-size", DEFAULT_TOP_SIZE));
+        int mergeDistance = Math.max(
+                0,
+                plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
 
         try {
             var trustedLines = loadTrustedLines(topSize);
-            var suspiciousLines = interactionCounts.findTopSuspicious(topSize);
+            var suspiciousLines = loadSuspiciousLines(topSize, mergeDistance);
             var reportedLines = loadReportedLines(topSize);
 
             String reply = messageBuilder.build(
@@ -56,7 +62,6 @@ public final class TrustStatsCommand {
                     trustedLines,
                     suspiciousLines,
                     reportedLines);
-
             event.getMessage().reply(reply);
         } catch (SQLException e) {
             logger.warning("truststats failed: " + e.getMessage());
@@ -66,12 +71,23 @@ public final class TrustStatsCommand {
 
     private List<PeopleLine> loadTrustedLines(int topSize) throws SQLException {
         List<PeopleLine> lines = new ArrayList<>();
-
         for (PeopleAggregateStat row : trust.findTopTrusted(topSize)) {
-            List<String> names = row.getPeopleCount() <= TrustStatsMessageBuilder.NAMES_THRESHOLD
-                    ? trust.findTrusters(row.getPlayer(), TrustStatsMessageBuilder.NAMES_THRESHOLD)
-                    : List.of();
+            List<String> names = trust.findTrusters(
+                    row.getPlayer(),
+                    TrustStatsMessageBuilder.NAMES_THRESHOLD);
             lines.add(new PeopleLine(row.getPlayer(), row.getPeopleCount(), names));
+        }
+        return lines;
+    }
+
+    private List<SuspiciousLine> loadSuspiciousLines(int topSize, int mergeDistance) throws SQLException {
+        List<SuspiciousLine> lines = new ArrayList<>();
+        for (SuspiciousPlayerStat row : interactionCounts.findTopSuspicious(topSize)) {
+            NamedRegionHits regions = interactionCounts.findNamedRegionsTouchedByInteractor(
+                    row.getPlayer(),
+                    mergeDistance,
+                    TrustStatsMessageBuilder.REGIONS_DISPLAY_LIMIT);
+            lines.add(new SuspiciousLine(row, regions.getNames(), regions.getTotalCount()));
         }
         return lines;
     }
@@ -79,9 +95,9 @@ public final class TrustStatsCommand {
     private List<PeopleLine> loadReportedLines(int topSize) throws SQLException {
         List<PeopleLine> lines = new ArrayList<>();
         for (PeopleAggregateStat row : reports.findTopReported(topSize)) {
-            List<String> names = row.getPeopleCount() <= TrustStatsMessageBuilder.NAMES_THRESHOLD
-                    ? reports.findReporters(row.getPlayer(), TrustStatsMessageBuilder.NAMES_THRESHOLD)
-                    : List.of();
+            List<String> names = reports.findReporters(
+                    row.getPlayer(),
+                    TrustStatsMessageBuilder.NAMES_THRESHOLD);
             lines.add(new PeopleLine(row.getPlayer(), row.getPeopleCount(), names));
         }
         return lines;

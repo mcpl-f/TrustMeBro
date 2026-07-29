@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
 
@@ -489,6 +490,116 @@ public final class InteractionCountsRepository {
             }
         }
         return result;
+    }
+
+    /**
+     * Named admin regions this interactor touched (AABB + mergeDistance), without
+     * loading every interaction row into Java.
+     *
+     * <p>{@code nameLimit} caps returned names; {@link NamedRegionHits#getTotalCount()}
+     * is the full distinct count for “and N others”.
+     */
+    public synchronized NamedRegionHits findNamedRegionsTouchedByInteractor(
+            String interactorPlayer,
+            int mergeDistance,
+            int nameLimit //
+    ) throws SQLException {
+        int pad = Math.max(0, mergeDistance);
+        int total = countNamedRegionsTouchedByInteractor(interactorPlayer, pad);
+        if (total == 0 || nameLimit <= 0) {
+            return new NamedRegionHits(List.of(), total);
+        }
+
+        var names = new ArrayList<String>();
+        try (var statement = connection.prepareStatement("""
+                SELECT regions.name AS region_name,
+
+                       SUM(interaction_counts.count_break_blocks
+                           + interaction_counts.count_placed_blocks
+                           + interaction_counts.count_interact_containers) AS weight
+
+                FROM regions
+                INNER JOIN interaction_counts
+                    ON interaction_counts.interactor_player = ?
+
+                    AND interaction_counts.wid IS NOT NULL
+                    AND interaction_counts.region_corner_a_x IS NOT NULL
+                    AND interaction_counts.region_corner_a_z IS NOT NULL
+
+                    AND interaction_counts.region_corner_b_x IS NOT NULL
+                    AND interaction_counts.region_corner_b_z IS NOT NULL
+
+                    AND interaction_counts.wid = regions.wid
+
+
+                    AND MIN(interaction_counts.region_corner_a_x, interaction_counts.region_corner_b_x) - ?
+                        <= regions.center_x + regions.radius
+
+                    AND regions.center_x - regions.radius - ?
+                        <= MAX(interaction_counts.region_corner_a_x, interaction_counts.region_corner_b_x)
+
+                    AND MIN(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z) - ?
+                        <= regions.center_z + regions.radius
+                        
+                    AND regions.center_z - regions.radius - ?
+                        <= MAX(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z)
+
+                GROUP BY regions.id, regions.name
+                ORDER BY weight DESC, regions.name ASC
+                LIMIT ?
+                """)) {
+            statement.setString(1, interactorPlayer);
+            statement.setInt(2, pad);
+            statement.setInt(3, pad);
+            statement.setInt(4, pad);
+            statement.setInt(5, pad);
+            statement.setInt(6, nameLimit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    names.add(rows.getString("region_name"));
+                }
+            }
+        }
+        return new NamedRegionHits(names, total);
+    }
+
+    private int countNamedRegionsTouchedByInteractor(String interactorPlayer, int pad)
+            throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                SELECT COUNT(DISTINCT regions.id) AS region_count
+                FROM regions
+                INNER JOIN interaction_counts
+                    ON interaction_counts.interactor_player = ?
+
+                    AND interaction_counts.wid IS NOT NULL
+
+                    AND interaction_counts.region_corner_a_x IS NOT NULL
+                    AND interaction_counts.region_corner_a_z IS NOT NULL
+
+                    AND interaction_counts.region_corner_b_x IS NOT NULL
+                    AND interaction_counts.region_corner_b_z IS NOT NULL
+                    AND interaction_counts.wid = regions.wid
+                    AND MIN(interaction_counts.region_corner_a_x, interaction_counts.region_corner_b_x) - ?
+                        <= regions.center_x + regions.radius
+                    AND regions.center_x - regions.radius - ?
+                        <= MAX(interaction_counts.region_corner_a_x, interaction_counts.region_corner_b_x)
+                    AND MIN(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z) - ?
+                        <= regions.center_z + regions.radius
+                    AND regions.center_z - regions.radius - ?
+                        <= MAX(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z)
+                """)) {
+            statement.setString(1, interactorPlayer);
+            statement.setInt(2, pad);
+            statement.setInt(3, pad);
+            statement.setInt(4, pad);
+            statement.setInt(5, pad);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    return 0;
+                }
+                return rows.getInt("region_count");
+            }
+        }
     }
 
     private InteractionCount mapRow(ResultSet rows) throws SQLException {

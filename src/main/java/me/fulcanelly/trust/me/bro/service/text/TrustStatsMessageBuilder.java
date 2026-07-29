@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
@@ -20,8 +21,11 @@ import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
  * - Alex, доверяют 12
  *
  * Топ 3 подозрительных:
- * - Griefer, взаимодействий 140, владельцев 8
- * - Miner, взаимодействий 40, владельцев 2
+ * - Herozero, взаимодействий 7582, владельцев 332
+ * ^ в регионах «а» / «б» — и 5 других
+ * - I_dead_to_lol, взаимодействий 5584, владельцев 257
+ * - M1laxa, взаимодействий 2275, владельцев 155
+ * ^ в регионах «а» / «б» / «в»
  *
  * Топ 3 по жалобам:
  * - Griefer, пожаловались Alice, Bob, Carol
@@ -32,13 +36,15 @@ import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 public final class TrustStatsMessageBuilder {
 
     public static final int NAMES_THRESHOLD = 3;
+    /** How many named regions to list before “and N others”. */
+    public static final int REGIONS_DISPLAY_LIMIT = 2;
 
     private final LocalizationService messages;
 
     public String build(
             int topSize,
             List<PeopleLine> trusted,
-            List<SuspiciousPlayerStat> suspicious,
+            List<SuspiciousLine> suspicious,
             List<PeopleLine> reported //
     ) {
         StringBuilder builder = new StringBuilder();
@@ -54,18 +60,7 @@ public final class TrustStatsMessageBuilder {
 
         builder.append(messages.format("telegram.command.truststats.suspicious-header", "n", topSize))
                 .append('\n');
-        if (suspicious.isEmpty()) {
-            builder.append(messages.format("telegram.command.truststats.empty")).append('\n');
-        } else {
-            for (SuspiciousPlayerStat row : suspicious) {
-                builder.append(messages.format(
-                        "telegram.command.truststats.suspicious-line",
-                        "player", escape(row.getPlayer()),
-                        "interactions", row.getInteractionsSum(),
-                        "owners", row.getOwnersInvolvedCount()))
-                        .append('\n');
-            }
-        }
+        appendSuspiciousSection(builder, suspicious);
         builder.append('\n');
 
         builder.append(messages.format("telegram.command.truststats.reported-header", "n", topSize))
@@ -77,6 +72,42 @@ public final class TrustStatsMessageBuilder {
                 "telegram.command.truststats.reported-by-names");
 
         return builder.toString().trim();
+    }
+
+    private void appendSuspiciousSection(StringBuilder builder, List<SuspiciousLine> rows) {
+        if (rows.isEmpty()) {
+            builder.append(messages.format("telegram.command.truststats.empty")).append('\n');
+            return;
+        }
+        for (SuspiciousLine row : rows) {
+            SuspiciousPlayerStat stat = row.getStat();
+            builder.append(messages.format(
+                    "telegram.command.truststats.suspicious-line",
+                    "player", escape(stat.getPlayer()),
+                    "interactions", stat.getInteractionsSum(),
+                    "owners", stat.getOwnersInvolvedCount()))
+                    .append('\n');
+
+            if (row.getTotalRegions() <= 0 || row.getRegionNames().isEmpty()) {
+                continue;
+            }
+
+            String names = row.getRegionNames().stream()
+                    .map(name -> "«" + escape(name) + "»")
+                    .collect(Collectors.joining(" / "));
+            int others = row.getTotalRegions() - row.getRegionNames().size();
+            if (others > 0) {
+                builder.append(messages.format(
+                        "telegram.command.truststats.suspicious-regions-more",
+                        "names", names,
+                        "others", others));
+            } else {
+                builder.append(messages.format(
+                        "telegram.command.truststats.suspicious-regions",
+                        "names", names));
+            }
+            builder.append('\n');
+        }
     }
 
     private void appendPeopleSection(
@@ -118,5 +149,12 @@ public final class TrustStatsMessageBuilder {
         String player;
         int peopleCount;
         List<String> peopleNames;
+    }
+
+    @Value
+    public static class SuspiciousLine {
+        SuspiciousPlayerStat stat;
+        List<String> regionNames;
+        int totalRegions;
     }
 }
