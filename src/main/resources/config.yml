@@ -24,6 +24,9 @@ telegram:
   max-owners-per-notification: 10
   # owners listed in one Telegram warning: linked first, then recent lastPlayed
 
+  stats-top-size: 3
+  # /truststats: how many players per Top section
+
 minecraft:
 
   fetch-interactions-strategy: recent

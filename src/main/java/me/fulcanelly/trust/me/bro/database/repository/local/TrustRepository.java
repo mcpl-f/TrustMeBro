@@ -4,6 +4,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.fulcanelly.trust.me.bro.database.repository.model.PeopleAggregateStat;
 
 @RequiredArgsConstructor
 public final class TrustRepository {
@@ -49,5 +53,55 @@ public final class TrustRepository {
             statement.setString(2, trustedPlayer);
             statement.executeUpdate();
         }
+    }
+
+    /** Players with the most trusters (owners who trust them). Counts only — no name concat. */
+    public List<PeopleAggregateStat> findTopTrusted(int limit) throws SQLException {
+        var result = new ArrayList<PeopleAggregateStat>();
+        try (var statement = connection.prepareStatement("""
+                SELECT trusted_mc_name,
+
+                       COUNT(*) AS people_count
+
+                FROM trust_edges
+                GROUP BY trusted_mc_name
+                ORDER BY people_count DESC, trusted_mc_name ASC
+                LIMIT ?
+                """)) {
+            statement.setInt(1, limit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(new PeopleAggregateStat(
+                            rows.getString("trusted_mc_name"),
+                            rows.getInt("people_count")));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Owners who trust {@code trustedPlayer} (trusters), capped by {@code limit}.
+     *
+     * <p>Not "trustees" — a trustee is the person being trusted; a truster grants trust.
+     */
+    public List<String> findTrusters(String trustedPlayer, int limit) throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement("""
+                SELECT owner_mc_name
+                FROM trust_edges
+                WHERE trusted_mc_name = ?
+                ORDER BY created_at ASC, owner_mc_name ASC
+                LIMIT ?
+                """)) {
+            statement.setString(1, trustedPlayer);
+            statement.setInt(2, limit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString("owner_mc_name"));
+                }
+            }
+        }
+        return result;
     }
 }

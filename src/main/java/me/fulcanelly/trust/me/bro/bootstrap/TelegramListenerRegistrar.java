@@ -6,6 +6,8 @@ import java.util.logging.Logger;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
+import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
+import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder;
 
 /**
  * Registers Telegram/EventBus listeners owned by TrustMeBro.
@@ -33,9 +35,18 @@ final class TelegramListenerRegistrar {
                 repositories.getInteractionCounts(),
                 logger);
         MyTrustCommand myTrustCommand = new MyTrustCommand(bridge.getReception());
+        TrustStatsCommand trustStatsCommand = new TrustStatsCommand(
+                context.getPlugin(),
+                repositories.getTrust(),
+                repositories.getInteractionCounts(),
+                repositories.getReports(),
+                new TrustStatsMessageBuilder(services.getMessages()),
+                services.getMessages(),
+                logger);
 
         bridge.getEventBus().register(callbackHandler);
         bridge.getEventBus().register(myTrustCommand);
-        return List.of(callbackHandler, myTrustCommand);
+        bridge.getEventBus().register(trustStatsCommand);
+        return List.of(callbackHandler, myTrustCommand, trustStatsCommand);
     }
 }

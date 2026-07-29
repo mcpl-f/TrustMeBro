@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
+import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
 
 @RequiredArgsConstructor
 public final class InteractionCountsRepository {
@@ -460,6 +461,34 @@ public final class InteractionCountsRepository {
             }
             statement.executeUpdate();
         }
+    }
+
+    /** Interactors with the highest total block/container interaction counts. */
+    public synchronized List<SuspiciousPlayerStat> findTopSuspicious(int limit) throws SQLException {
+        var result = new ArrayList<SuspiciousPlayerStat>();
+        try (var statement = connection.prepareStatement("""
+                SELECT interactor_player,
+
+                       SUM(count_break_blocks + count_placed_blocks + count_interact_containers)
+                         AS interactions_sum,
+                       COUNT(DISTINCT owner) AS owners_count
+
+                FROM interaction_counts
+                GROUP BY interactor_player
+                ORDER BY interactions_sum DESC, interactor_player ASC
+                LIMIT ?
+                """)) {
+            statement.setInt(1, limit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(new SuspiciousPlayerStat(
+                            rows.getString("interactor_player"),
+                            rows.getLong("interactions_sum"),
+                            rows.getInt("owners_count")));
+                }
+            }
+        }
+        return result;
     }
 
     private InteractionCount mapRow(ResultSet rows) throws SQLException {

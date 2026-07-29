@@ -8,6 +8,17 @@ telegram:
   command:
     mctrust:
       stub: "Команда TrustMeBro пока не реализована."
+    truststats:
+      trusted-header: "Топ {n} самых доверенных:"
+      trusted-by-count: "- {player}, доверяют {count}"
+      trusted-by-names: "- {player}, доверяют {names}"
+      suspicious-header: "Топ {n} подозрительных:"
+      suspicious-line: "- {player}, взаимодействий {interactions}, владельцев {owners}"
+      reported-header: "Топ {n} по жалобам:"
+      reported-by-count: "- {player}, пожаловались {count}"
+      reported-by-names: "- {player}, пожаловались {names}"
+      empty: "- (пусто)"
+      failed: "Не удалось загрузить статистику."
 
 minecraft:
   warning:

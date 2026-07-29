@@ -4,6 +4,10 @@ import lombok.RequiredArgsConstructor;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import me.fulcanelly.trust.me.bro.database.repository.model.PeopleAggregateStat;
 
 @RequiredArgsConstructor
 public final class ReportRepository {
@@ -54,5 +58,51 @@ public final class ReportRepository {
             statement.setString(2, ownerPlayer);
             statement.executeUpdate();
         }
+    }
+
+    /** Players with the most reports. Counts only — no name concat. */
+    public List<PeopleAggregateStat> findTopReported(int limit) throws SQLException {
+        var result = new ArrayList<PeopleAggregateStat>();
+        try (var statement = connection.prepareStatement("""
+                SELECT interactor_player,
+
+                       COUNT(*) AS people_count
+
+                FROM reports
+                GROUP BY interactor_player
+                ORDER BY people_count DESC, interactor_player ASC
+                LIMIT ?
+                """)) {
+            statement.setInt(1, limit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(new PeopleAggregateStat(
+                            rows.getString("interactor_player"),
+                            rows.getInt("people_count")));
+                }
+            }
+        }
+        return result;
+    }
+
+    /** Owners who reported {@code interactorPlayer}, capped by {@code limit}. */
+    public List<String> findReporters(String interactorPlayer, int limit) throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement("""
+                SELECT owner
+                FROM reports
+                WHERE interactor_player = ?
+                ORDER BY created_at ASC, owner ASC
+                LIMIT ?
+                """)) {
+            statement.setString(1, interactorPlayer);
+            statement.setInt(2, limit);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString("owner"));
+                }
+            }
+        }
+        return result;
     }
 }
