@@ -9,6 +9,16 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * TODOS:
+ *
+ * 1) telegram should use default locale, while minecraft should use player's locale
+ * -> prolly extend and implement another class for minecraft localization
+ *
+ * 2) locales should be stored in plugin folder, so that user can edit them easily
+ *
+ * LocalizationService
+ */
 public final class LocalizationService {
 
     private static final String DEFAULT_LOCALE = "ru";
