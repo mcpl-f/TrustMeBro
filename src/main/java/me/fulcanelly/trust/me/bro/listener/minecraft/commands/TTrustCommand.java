@@ -64,7 +64,7 @@ public final class TTrustCommand implements CommandExecutor {
                         "callback.already-trusted",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
-                ownerNotifications.fetchAndNotifyAsync(player);
+                ownerNotifications.notifyNow(player);
                 return true;
             }
 
@@ -72,7 +72,7 @@ public final class TTrustCommand implements CommandExecutor {
                     "callback.trusted",
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
-            ownerNotifications.fetchAndNotifyAsync(player);
+            ownerNotifications.notifyNow(player);
         } catch (Exception e) {
             logger.warning("ttrust failed: " + e.getMessage());
             reply(player, ChatColor.GRAY, messages.format("callback.db-error"));

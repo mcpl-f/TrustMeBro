@@ -44,3 +44,5 @@ minecraft:
 
   notify-on-join: false
 
+  notify-instantly: true
+  # when true: if owner is online, notify immediately on new interaction (and without debounce)

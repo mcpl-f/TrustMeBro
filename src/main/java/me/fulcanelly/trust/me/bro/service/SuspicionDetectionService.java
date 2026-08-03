@@ -14,6 +14,7 @@ import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectRea
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
+import me.fulcanelly.trust.me.bro.service.core.InstantMinecraftNotifyService;
 
 @RequiredArgsConstructor
 public final class SuspicionDetectionService {
@@ -22,6 +23,7 @@ public final class SuspicionDetectionService {
     private final CoreProtectReadRepository coreProtect;
     private final TrustRepository trustRepository;
     private final InteractionCountsRepository interactionCounts;
+    private final InstantMinecraftNotifyService instantNotify;
     private final Logger logger;
 
     public void recordBlockAction(Player interactor, Location location, SuspiciousActionType actionType) {
@@ -75,6 +77,8 @@ public final class SuspicionDetectionService {
             } else {
                 interactionCounts.increment(interactorPlayer, owner, actionType);
             }
+
+            instantNotify.notifyOwnerIfEnabled(owner);
         }
     }
 }

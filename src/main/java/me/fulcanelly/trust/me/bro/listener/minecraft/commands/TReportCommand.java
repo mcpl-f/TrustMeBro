@@ -65,7 +65,7 @@ public final class TReportCommand implements CommandExecutor {
                         "callback.already-reported",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
-                ownerNotifications.fetchAndNotifyAsync(player);
+                ownerNotifications.notifyNow(player);
                 return true;
             }
 
@@ -73,7 +73,7 @@ public final class TReportCommand implements CommandExecutor {
                     "callback.reported",
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
-            ownerNotifications.fetchAndNotifyAsync(player);
+            ownerNotifications.notifyNow(player);
         } catch (Exception e) {
             logger.warning("treport failed: " + e.getMessage());
             reply(player, ChatColor.GRAY, messages.format("callback.db-error"));

@@ -35,12 +35,12 @@ public final class MinecraftOwnerNotificationService {
         long delayTicks = ThreadLocalRandom.current().nextLong(DELAY_MIN_TICKS, DELAY_MAX_TICKS + 1);
         plugin.getServer().getScheduler().runTaskLater(
                 plugin,
-                () -> fetchAndNotifyAsync(player),
+                () -> notifyNow(player),
                 delayTicks);
     }
 
-    /** After /ttrust or /treport: show the next pending warning if any. */
-    public void fetchAndNotifyAsync(Player player) {
+    /** Immediate path: no delay (instant notify / after /ttrust|/treport). */
+    public void notifyNow(Player player) {
         plugin.getServer().getScheduler().runTaskAsynchronously(
                 plugin,
                 () -> fetchAndNotify(player));

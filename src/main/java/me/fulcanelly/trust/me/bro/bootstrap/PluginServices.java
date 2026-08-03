@@ -4,6 +4,7 @@ import lombok.Value;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.service.core.InstantMinecraftNotifyService;
 import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
 import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
@@ -32,6 +33,17 @@ final class PluginServices {
             CoreProtectReadRepository coreProtect,
             LocalRepositories repositories) {
         LocalizationService messages = new LocalizationService(plugin);
+        MinecraftOwnerNotificationService ownerNotifications = new MinecraftOwnerNotificationService(
+                plugin,
+                repositories.getInteractionCounts(),
+                new MinecraftWarningMessageBuilder(
+                        messages,
+                        coreProtect,
+                        repositories.getRegions()),
+                plugin.getLogger());
+        InstantMinecraftNotifyService instantNotify = new InstantMinecraftNotifyService(
+                plugin,
+                ownerNotifications);
         return new PluginServices(
                 new TrustCallbackPayloadService(),
                 messages,
@@ -40,17 +52,11 @@ final class PluginServices {
                         coreProtect,
                         repositories.getTrust(),
                         repositories.getInteractionCounts(),
+                        instantNotify,
                         plugin.getLogger()),
                 new TrustDecisionService(
                         repositories.getTrust(),
                         repositories.getReports()),
-                new MinecraftOwnerNotificationService(
-                        plugin,
-                        repositories.getInteractionCounts(),
-                        new MinecraftWarningMessageBuilder(
-                                messages,
-                                coreProtect,
-                                repositories.getRegions()),
-                        plugin.getLogger()));
+                ownerNotifications);
     }
 }
