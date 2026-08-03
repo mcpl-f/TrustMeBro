@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
+import me.fulcanelly.trust.me.bro.bootstrap.bundles.BridgeServices;
+import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
+import me.fulcanelly.trust.me.bro.bootstrap.register.MinecraftListenerRegistrar;
+import me.fulcanelly.trust.me.bro.bootstrap.register.NotificationJobScheduler;
+import me.fulcanelly.trust.me.bro.bootstrap.register.TelegramListenerRegistrar;
 import me.fulcanelly.trust.me.bro.database.LocalDatabase;
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;

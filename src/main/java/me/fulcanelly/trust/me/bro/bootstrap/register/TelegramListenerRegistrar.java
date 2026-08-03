@@ -1,8 +1,9 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.register;
 
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
@@ -15,11 +16,11 @@ import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
  * so runtime shutdown can unregister the same objects cleanly.
  */
 @RequiredArgsConstructor
-final class TelegramListenerRegistrar {
+public final class TelegramListenerRegistrar {
 
     private final AppContext context;
 
-    List<Object> register() {
+    public List<Object> register() {
         var eventBus = context.getBridge().getEventBus();
 
         TrustCallbackHandler callbackHandler = new TrustCallbackHandler(context);

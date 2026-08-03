@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.bundles;
 
 import com.google.common.eventbus.EventBus;
 
@@ -27,7 +27,7 @@ public class BridgeServices {
     SignupLoginReception reception;
     EventBus eventBus;
 
-    static BridgeServices buildFromPlugin(JavaPlugin plugin) {
+    public static BridgeServices buildFromPlugin(JavaPlugin plugin) {
         Bridge bridge = (Bridge) plugin.getServer().getPluginManager().getPlugin(TG_BRIDGE_PLUGIN_NAME);
         return new BridgeServices(
                 bridge.getInjector().getInstance(TGBot.class),

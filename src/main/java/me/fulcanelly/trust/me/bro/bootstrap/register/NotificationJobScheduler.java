@@ -1,6 +1,7 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.register;
 
 import lombok.RequiredArgsConstructor;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.jobs.NotificationService;
 
 /**
@@ -11,11 +12,11 @@ import me.fulcanelly.trust.me.bro.jobs.NotificationService;
  * Bukkit scheduling settings are visible in one small place.
  */
 @RequiredArgsConstructor
-final class NotificationJobScheduler {
+public final class NotificationJobScheduler {
 
     private final AppContext context;
 
-    int start() {
+    public int start() {
         var plugin = context.getPlugin();
 
         // Poll interval only; debounce itself is always re-read from config in NotificationService.

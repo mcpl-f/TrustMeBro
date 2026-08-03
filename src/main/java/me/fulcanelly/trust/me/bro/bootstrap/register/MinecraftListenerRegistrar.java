@@ -1,6 +1,7 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.register;
 
 import lombok.RequiredArgsConstructor;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.listener.minecraft.PlayerJoinNotificationListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.BlockBreakSuspicionListener;
 import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.BlockPlaceSuspicionListener;
@@ -19,11 +20,11 @@ import org.bukkit.command.PluginCommand;
  * listener registration based on config flags.
  */
 @RequiredArgsConstructor
-final class MinecraftListenerRegistrar {
+public final class MinecraftListenerRegistrar {
 
     private final AppContext context;
 
-    void register() {
+    public void register() {
         var plugin = context.getPlugin();
 
         if (plugin.getConfig().getBoolean("detection.include-block-break", true)) {

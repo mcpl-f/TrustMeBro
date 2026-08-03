@@ -1,6 +1,7 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.bundles;
 
 import lombok.Value;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
 import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
@@ -19,7 +20,7 @@ public class PluginServices {
     TrustDecisionService trustDecisions;
     MinecraftOwnerNotificationService ownerNotifications;
 
-    static PluginServices build(AppContext context) {
+    public static PluginServices build(AppContext context) {
         MinecraftOwnerNotificationService ownerNotifications = new MinecraftOwnerNotificationService(context);
         return new PluginServices(
                 new SuspicionDetectionService(context),

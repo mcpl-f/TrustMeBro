@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.bootstrap;
+package me.fulcanelly.trust.me.bro.bootstrap.bundles;
 
 import java.sql.Connection;
 
@@ -25,7 +25,7 @@ public class LocalRepositories {
     ReportRepository reports;
     RegionsRepository regions;
 
-    static LocalRepositories buildFromConnection(Connection connection) {
+    public static LocalRepositories buildFromConnection(Connection connection) {
         return new LocalRepositories(
                 new TrustRepository(connection),
                 new InteractionCountsRepository(connection),
