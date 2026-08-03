@@ -18,6 +18,15 @@ detection:
 telegram:
   notify: true
 
+  min-interactions:
+    enabled: true
+
+    # when enabled: notify only if place OR break OR chest count meets its minimum (SQL filter)
+    # when disabled: notify for any pending interaction (after debounce)
+    place-count: 20
+    break-count: 10
+    chest-inter-count: 2
+
   only-for-linked-players: true
   # when true: send only if at least one pending owner is TG-linked; list only linked owners
 

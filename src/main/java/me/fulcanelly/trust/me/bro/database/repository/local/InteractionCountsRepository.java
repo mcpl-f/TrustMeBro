@@ -3,6 +3,7 @@ package me.fulcanelly.trust.me.bro.database.repository.local;
 import lombok.RequiredArgsConstructor;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import me.fulcanelly.trust.me.bro.config.MinInteractionThresholds;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
@@ -260,9 +262,16 @@ public final class InteractionCountsRepository {
         }
     }
 
-    public synchronized List<String> findInteractorsReadyForNotification(long olderThanMillis) throws SQLException {
-        long threshold = System.currentTimeMillis() - olderThanMillis;
+    public synchronized List<String> findInteractorsReadyForNotification(
+            long olderThanMillis,
+            MinInteractionThresholds minInteractions //
+    ) throws SQLException {
+        long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
         var result = new ArrayList<String>();
+
+        // Optional OR-thresholds stay in the WHERE so sub-min rows keep waiting (not skipped).
+        String minInteractionsSql = minInteractionsSql("interaction_counts.", minInteractions);
+
         try (var statement = connection.prepareStatement("""
                 SELECT DISTINCT interaction_counts.interactor_player
                 FROM interaction_counts
@@ -277,9 +286,12 @@ public final class InteractionCountsRepository {
                     AND interaction_counts.updated_at <= ?
                     AND trust_edges.owner_mc_name IS NULL -- means no trust edge exists
                     AND reports.owner IS NULL -- means no report exists
+                    %s
                 ORDER BY interaction_counts.updated_at ASC
-                """)) {
-            statement.setLong(1, threshold);
+                """.formatted(minInteractionsSql))) {
+            int i = 1;
+            statement.setLong(i++, updatedAtCutoff);
+            bindMinInteractions(statement, i, minInteractions);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     result.add(rows.getString("interactor_player"));
@@ -289,15 +301,23 @@ public final class InteractionCountsRepository {
         return result;
     }
 
-    public synchronized List<InteractionCount> findPendingByInteractor(String interactorPlayer) throws SQLException {
+    public synchronized List<InteractionCount> findPendingByInteractor(
+            String interactorPlayer,
+            MinInteractionThresholds minInteractions //
+    ) throws SQLException {
         var result = new ArrayList<InteractionCount>();
+        String minInteractionsSql = minInteractionsSql("", minInteractions);
+
         try (var statement = connection.prepareStatement(PENDING_SELECT + """
                 WHERE interactor_player = ?
                   AND notification_id IS NULL
                   AND skip_reason IS NULL
+                  %s
                 ORDER BY owner ASC, id ASC
-                """)) {
-            statement.setString(1, interactorPlayer);
+                """.formatted(minInteractionsSql))) {
+            int i = 1;
+            statement.setString(i++, interactorPlayer);
+            bindMinInteractions(statement, i, minInteractions);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     result.add(mapRow(rows));
@@ -305,6 +325,38 @@ public final class InteractionCountsRepository {
             }
         }
         return result;
+    }
+
+    /**
+     * Empty when disabled. When enabled: place OR break OR chest meets its min.
+     *
+     * @param columnPrefix {@code "interaction_counts."} or {@code ""}
+     */
+    private static String minInteractionsSql(String columnPrefix, MinInteractionThresholds min) {
+        if (!min.isEnabled()) {
+            return "";
+        }
+        return """
+                AND (
+                    %scount_placed_blocks >= ?
+                    OR %scount_break_blocks >= ?
+                    OR %scount_interact_containers >= ?
+                )
+                """.formatted(columnPrefix, columnPrefix, columnPrefix);
+    }
+
+    private static int bindMinInteractions(
+            PreparedStatement statement,
+            int index,
+            MinInteractionThresholds min //
+    ) throws SQLException {
+        if (!min.isEnabled()) {
+            return index;
+        }
+        statement.setInt(index++, min.getPlaceCount());
+        statement.setInt(index++, min.getBreakCount());
+        statement.setInt(index++, min.getChestInterCount());
+        return index;
     }
 
     public synchronized boolean exists(String interactorPlayer, String ownerPlayer) throws SQLException {

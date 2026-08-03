@@ -13,6 +13,7 @@ import me.fulcanelly.tgbridge.tapi.Message;
 import me.fulcanelly.tgbridge.tapi.TGBot;
 import me.fulcanelly.tgbridge.tools.MainConfig;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
+import me.fulcanelly.trust.me.bro.config.MinInteractionThresholds;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
@@ -48,13 +49,16 @@ public final class NotificationService implements Runnable {
         logger.info("Finding interactors ready for notification");
         long chatId = Long.parseLong(mainConfig.getChatId());
         long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
+        MinInteractionThresholds minInteractions = MinInteractionThresholds.from(plugin.getConfig());
         try {
-            var interactors = interactionCounts.findInteractorsReadyForNotification(debounceMillis);
+            var interactors = interactionCounts.findInteractorsReadyForNotification(
+                    debounceMillis,
+                    minInteractions);
             logger.info("Found " + interactors.size() + " interactors ready for notification");
             for (String interactor : interactors) {
 
                 long start = System.currentTimeMillis();
-                Optional<String> skipReason = sendNotification(chatId, interactor);
+                Optional<String> skipReason = sendNotification(chatId, interactor, minInteractions);
                 long tookMs = System.currentTimeMillis() - start;
 
                 if (skipReason.isEmpty()) {
@@ -73,8 +77,14 @@ public final class NotificationService implements Runnable {
      * @return empty if a Telegram message was sent; otherwise the skip reason code
      *         (also persisted on the pending rows when applicable)
      */
-    private Optional<String> sendNotification(long chatId, String interactor) throws SQLException {
-        List<InteractionCount> pending = interactionCounts.findPendingByInteractor(interactor);
+    private Optional<String> sendNotification(
+            long chatId,
+            String interactor,
+            MinInteractionThresholds minInteractions //
+    ) throws SQLException {
+        List<InteractionCount> pending = interactionCounts.findPendingByInteractor(
+                interactor,
+                minInteractions);
         if (pending.isEmpty()) {
             return Optional.of(NotificationSkipReason.ALREADY_HANDLED);
         }
