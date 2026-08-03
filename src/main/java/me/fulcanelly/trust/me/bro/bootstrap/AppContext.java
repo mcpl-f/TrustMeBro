@@ -9,8 +9,8 @@ import me.fulcanelly.trust.me.bro.bootstrap.bundles.BridgeServices;
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.PluginServices;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
-import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
+import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 import org.bukkit.plugin.java.JavaPlugin;
 

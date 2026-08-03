@@ -8,9 +8,9 @@ import com.google.common.eventbus.Subscribe;
 import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
-import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
-import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
+import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Payload;
 
 @RequiredArgsConstructor
 public final class TrustCallbackHandler {
