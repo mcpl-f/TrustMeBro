@@ -2,32 +2,25 @@ package me.fulcanelly.trust.me.bro.listener.telegram;
 
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import com.google.common.eventbus.Subscribe;
 
 import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import lombok.RequiredArgsConstructor;
-import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService.Payload;
-import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
-import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 @RequiredArgsConstructor
 public final class TrustCallbackHandler {
 
-    private final TrustCallbackPayloadService callbackPayloads;
-    private final LocalizationService messages;
-    private final SignupLoginReception reception;
-    private final TrustDecisionService decisions;
-    private final InteractionCountsRepository interactionCounts;
-    private final Logger logger;
+    private final AppContext context;
 
     @Subscribe
     public void onCallback(CallbackQueryEvent event) {
+        var callbackPayloads = context.getCallbackPayloads();
+        var messages = context.getMessages();
         String data = event.getData();
         if (!callbackPayloads.isTrustCallback(data)) {
             return;
@@ -49,7 +42,7 @@ public final class TrustCallbackHandler {
 
         long telegramUserId = event.getFrom().getId();
 
-        Optional<String> linkedPlayer = reception.getPlayerByTg(telegramUserId);
+        Optional<String> linkedPlayer = context.getBridge().getReception().getPlayerByTg(telegramUserId);
         if (linkedPlayer.isEmpty()) {
             event.answer(messages.format("callback.link-required"));
             return;
@@ -57,10 +50,12 @@ public final class TrustCallbackHandler {
         String ownerPlayer = linkedPlayer.get();
 
         try {
-            if (!interactionCounts.exists(interactorPlayer, ownerPlayer)) {
+            if (!context.getRepositories().getInteractionCounts().exists(interactorPlayer, ownerPlayer)) {
                 event.answer(messages.format("callback.interaction-gone"));
                 return;
             }
+
+            var decisions = context.getServices().getTrustDecisions();
 
             if (TrustCallbackPayloadService.ACTION_TRUST.equals(action)) {
                 Outcome outcome = decisions.trust(ownerPlayer, interactorPlayer, telegramUserId);
@@ -91,7 +86,7 @@ public final class TrustCallbackHandler {
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
         } catch (SQLException e) {
-            logger.warning("TrustMeBro callback failed: " + e.getMessage());
+            context.getLogger().warning("TrustMeBro callback failed: " + e.getMessage());
             event.answer(messages.format("callback.db-error"));
         }
     }

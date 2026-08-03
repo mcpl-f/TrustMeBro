@@ -7,14 +7,14 @@ import com.google.common.eventbus.Subscribe;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
-import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 
 @RequiredArgsConstructor
 public final class MyTrustCommand {
 
     private static final Pattern COMMAND = Pattern.compile("^/mctrust(@\\S+)?(\\s.*)?$");
 
-    private final SignupLoginReception reception;
+    private final AppContext context;
 
     @Subscribe
     public void onCommand(CommandEvent event) {
@@ -25,7 +25,7 @@ public final class MyTrustCommand {
         }
 
         long telegramUserId = event.getMessage().getFrom().getId();
-        Optional<String> linkedPlayer = reception.getPlayerByTg(telegramUserId);
+        Optional<String> linkedPlayer = context.getBridge().getReception().getPlayerByTg(telegramUserId);
 
         if (linkedPlayer.isEmpty()) {
             event.getMessage()

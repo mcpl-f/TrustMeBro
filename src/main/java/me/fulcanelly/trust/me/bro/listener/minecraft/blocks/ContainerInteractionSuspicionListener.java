@@ -9,15 +9,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.plugin.Plugin;
 
-import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 
 @RequiredArgsConstructor
 public final class ContainerInteractionSuspicionListener implements Listener {
 
-    private final Plugin plugin;
-    private final SuspicionDetectionService detectionService;
+    private final AppContext context;
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
@@ -44,8 +42,10 @@ public final class ContainerInteractionSuspicionListener implements Listener {
         Player player = (Player) event.getWhoClicked();
         BlockState holder = (BlockState) top.getHolder();
         var location = holder.getLocation();
+        var plugin = context.getPlugin();
 
-        Runnable task = () -> detectionService.recordContainerAction(player, location);
+        Runnable task = () -> context.getServices().getSuspicionDetection()
+                .recordContainerAction(player, location);
         plugin.getServer()
                 .getScheduler()
                 .runTaskAsynchronously(plugin, task);

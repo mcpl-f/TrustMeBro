@@ -17,7 +17,7 @@ import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
  * This keeps local persistence wiring explicit and easy to scan.
  */
 @Value
-final class LocalRepositories {
+public class LocalRepositories {
 
     TrustRepository trust;
     InteractionCountsRepository interactionCounts;

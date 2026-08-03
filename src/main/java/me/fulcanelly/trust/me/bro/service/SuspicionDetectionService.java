@@ -1,36 +1,30 @@
 package me.fulcanelly.trust.me.bro.service;
 
-import lombok.RequiredArgsConstructor;
-
 import java.sql.SQLException;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
-import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
 import me.fulcanelly.trust.me.bro.service.core.InstantMinecraftNotifyService;
 
-@RequiredArgsConstructor
 public final class SuspicionDetectionService {
 
-    private final Plugin plugin;
-    private final CoreProtectReadRepository coreProtect;
-    private final TrustRepository trustRepository;
-    private final InteractionCountsRepository interactionCounts;
+    private final AppContext context;
     private final InstantMinecraftNotifyService instantNotify;
-    private final Logger logger;
+
+    public SuspicionDetectionService(AppContext context) {
+        this.context = context;
+        this.instantNotify = new InstantMinecraftNotifyService(context);
+    }
 
     public void recordBlockAction(Player interactor, Location location, SuspiciousActionType actionType) {
         try {
-            record(interactor.getName(), coreProtect.findBlockOwners(location), location, actionType);
+            record(interactor.getName(), context.getCoreProtect().findBlockOwners(location), location, actionType);
         } catch (SQLException e) {
-            logger.warning("CoreProtect block lookup failed: " + e.getMessage());
+            context.getLogger().warning("CoreProtect block lookup failed: " + e.getMessage());
         }
     }
 
@@ -38,11 +32,11 @@ public final class SuspicionDetectionService {
         try {
             record(
                     interactor.getName(),
-                    coreProtect.findContainerOwners(location),
+                    context.getCoreProtect().findContainerOwners(location),
                     location,
                     SuspiciousActionType.INTERACT_CONTAINER);
         } catch (SQLException e) {
-            logger.warning("CoreProtect container lookup failed: " + e.getMessage());
+            context.getLogger().warning("CoreProtect container lookup failed: " + e.getMessage());
         }
     }
 
@@ -52,6 +46,10 @@ public final class SuspicionDetectionService {
             Location location,
             SuspiciousActionType actionType //
     ) throws SQLException {
+        var plugin = context.getPlugin();
+        var coreProtect = context.getCoreProtect();
+        var interactionCounts = context.getRepositories().getInteractionCounts();
+
         // TODO: consider to cache these values
         boolean splitByRegions = plugin.getConfig().getBoolean("detection.split-by-regions.enabled", false);
         int mergeDistance = Math.max(0, plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));

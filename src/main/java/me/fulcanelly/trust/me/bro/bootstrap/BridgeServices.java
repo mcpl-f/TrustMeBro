@@ -18,7 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * named access to bot, config, account linking, and EventBus.
  */
 @Value
-final class BridgeServices {
+public class BridgeServices {
 
     private static final String TG_BRIDGE_PLUGIN_NAME = "tg-bridge";
 

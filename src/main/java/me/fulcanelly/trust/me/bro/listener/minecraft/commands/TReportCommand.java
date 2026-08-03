@@ -1,11 +1,8 @@
 package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 
 import lombok.RequiredArgsConstructor;
-import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
-import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
-import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
-import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.MinecraftPlayers;
 
 import org.bukkit.ChatColor;
@@ -14,8 +11,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.logging.Logger;
-
 /**
  * /treport &lt;player&gt; — same as Telegram Report: record a complaint about
  * that player.
@@ -23,14 +18,12 @@ import java.util.logging.Logger;
 @RequiredArgsConstructor
 public final class TReportCommand implements CommandExecutor {
 
-    private final TrustDecisionService decisions;
-    private final SignupLoginReception reception;
-    private final LocalizationService messages;
-    private final MinecraftOwnerNotificationService ownerNotifications;
-    private final Logger logger;
+    private final AppContext context;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        var messages = context.getMessages();
+
         if (!(sender instanceof Player player)) {
             reply(sender, ChatColor.GRAY, messages.format("command.report.players-only"));
             return true;
@@ -55,17 +48,18 @@ public final class TReportCommand implements CommandExecutor {
             return true;
         }
 
-        Long telegramUserId = reception.getTgByUser(ownerPlayer).orElse(null);
+        Long telegramUserId = context.getBridge().getReception().getTgByUser(ownerPlayer).orElse(null);
 
         try {
-            Outcome outcome = decisions.report(ownerPlayer, interactorPlayer, telegramUserId);
+            Outcome outcome = context.getServices().getTrustDecisions()
+                    .report(ownerPlayer, interactorPlayer, telegramUserId);
 
             if (outcome == Outcome.ALREADY_REPORTED) {
                 reply(player, ChatColor.GRAY, messages.format(
                         "callback.already-reported",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
-                ownerNotifications.notifyNow(player);
+                context.getServices().getOwnerNotifications().notifyNow(player);
                 return true;
             }
 
@@ -73,9 +67,9 @@ public final class TReportCommand implements CommandExecutor {
                     "callback.reported",
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
-            ownerNotifications.notifyNow(player);
+            context.getServices().getOwnerNotifications().notifyNow(player);
         } catch (Exception e) {
-            logger.warning("treport failed: " + e.getMessage());
+            context.getLogger().warning("treport failed: " + e.getMessage());
             reply(player, ChatColor.GRAY, messages.format("callback.db-error"));
         }
         return true;

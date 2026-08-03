@@ -1,13 +1,11 @@
 package me.fulcanelly.trust.me.bro.bootstrap;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
-import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder;
 
 /**
  * Registers Telegram/EventBus listeners owned by TrustMeBro.
@@ -19,34 +17,18 @@ import me.fulcanelly.trust.me.bro.service.text.TrustStatsMessageBuilder;
 @RequiredArgsConstructor
 final class TelegramListenerRegistrar {
 
-    private final BootstrapContext context;
+    private final AppContext context;
 
     List<Object> register() {
-        var bridge = context.getBridge();
-        var repositories = context.getRepositories();
-        var services = context.getServices();
-        Logger logger = context.getPlugin().getLogger();
+        var eventBus = context.getBridge().getEventBus();
 
-        TrustCallbackHandler callbackHandler = new TrustCallbackHandler(
-                services.getCallbackPayloads(),
-                services.getMessages(),
-                bridge.getReception(),
-                services.getTrustDecisions(),
-                repositories.getInteractionCounts(),
-                logger);
-        MyTrustCommand myTrustCommand = new MyTrustCommand(bridge.getReception());
-        TrustStatsCommand trustStatsCommand = new TrustStatsCommand(
-                context.getPlugin(),
-                repositories.getTrust(),
-                repositories.getInteractionCounts(),
-                repositories.getReports(),
-                new TrustStatsMessageBuilder(services.getMessages()),
-                services.getMessages(),
-                logger);
+        TrustCallbackHandler callbackHandler = new TrustCallbackHandler(context);
+        MyTrustCommand myTrustCommand = new MyTrustCommand(context);
+        TrustStatsCommand trustStatsCommand = new TrustStatsCommand(context);
 
-        bridge.getEventBus().register(callbackHandler);
-        bridge.getEventBus().register(myTrustCommand);
-        bridge.getEventBus().register(trustStatsCommand);
+        eventBus.register(callbackHandler);
+        eventBus.register(myTrustCommand);
+        eventBus.register(trustStatsCommand);
         return List.of(callbackHandler, myTrustCommand, trustStatsCommand);
     }
 }

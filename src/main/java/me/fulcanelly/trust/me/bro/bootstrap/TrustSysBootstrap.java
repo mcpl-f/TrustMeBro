@@ -33,13 +33,11 @@ public final class TrustSysBootstrap {
         BridgeServices bridge = BridgeServices.buildFromPlugin(plugin);
         LocalDatabase database = database();
         LocalRepositories repositories = LocalRepositories.buildFromConnection(database.getConnection());
-        PluginServices services = PluginServices.buildFromPlugin(plugin, coreProtect, repositories);
-        BootstrapContext context = BootstrapContext.buildFromPlugin(plugin, bridge, repositories, services,
-                coreProtect);
+        AppContext app = AppContext.create(plugin, bridge, repositories, coreProtect);
 
-        new MinecraftListenerRegistrar(context).register();
-        List<Object> telegramListeners = new TelegramListenerRegistrar(context).register();
-        int notificationTaskId = new NotificationJobScheduler(context).start();
+        new MinecraftListenerRegistrar(app).register();
+        List<Object> telegramListeners = new TelegramListenerRegistrar(app).register();
+        int notificationTaskId = new NotificationJobScheduler(app).start();
 
         return Optional.of(new TrustSysRuntime(
                 plugin,

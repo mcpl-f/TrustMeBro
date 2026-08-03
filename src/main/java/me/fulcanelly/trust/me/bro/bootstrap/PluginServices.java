@@ -1,62 +1,29 @@
 package me.fulcanelly.trust.me.bro.bootstrap;
 
 import lombok.Value;
-import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 import me.fulcanelly.trust.me.bro.service.SuspicionDetectionService;
-import me.fulcanelly.trust.me.bro.service.TrustCallbackPayloadService;
-import me.fulcanelly.trust.me.bro.service.core.InstantMinecraftNotifyService;
 import me.fulcanelly.trust.me.bro.service.core.MinecraftOwnerNotificationService;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService;
-import me.fulcanelly.trust.me.bro.service.text.MinecraftWarningMessageBuilder;
-import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
-
-import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Groups TrustMeBro service objects that are shared by listeners and jobs.
+ * Groups TrustMeBro service objects that depend on {@link AppContext}.
  *
- * These services are built after repositories and CoreProtect access exist.
- * Keeping them in one bundle avoids long parameter lists while preserving
- * explicit construction order in the bootstrap.
+ * Built after AppContext leaf fields exist. Services store AppContext and
+ * resolve repos/bridge/messages through it; InstantMinecraftNotifyService
+ * resolves ownerNotifications via {@code context.getServices()} only at call time.
  */
 @Value
-final class PluginServices {
+public class PluginServices {
 
-    TrustCallbackPayloadService callbackPayloads;
-    LocalizationService messages;
     SuspicionDetectionService suspicionDetection;
     TrustDecisionService trustDecisions;
     MinecraftOwnerNotificationService ownerNotifications;
 
-    static PluginServices buildFromPlugin(
-            JavaPlugin plugin,
-            CoreProtectReadRepository coreProtect,
-            LocalRepositories repositories) {
-        LocalizationService messages = new LocalizationService(plugin);
-        MinecraftOwnerNotificationService ownerNotifications = new MinecraftOwnerNotificationService(
-                plugin,
-                repositories.getInteractionCounts(),
-                new MinecraftWarningMessageBuilder(
-                        messages,
-                        coreProtect,
-                        repositories.getRegions()),
-                plugin.getLogger());
-        InstantMinecraftNotifyService instantNotify = new InstantMinecraftNotifyService(
-                plugin,
-                ownerNotifications);
+    static PluginServices build(AppContext context) {
+        MinecraftOwnerNotificationService ownerNotifications = new MinecraftOwnerNotificationService(context);
         return new PluginServices(
-                new TrustCallbackPayloadService(),
-                messages,
-                new SuspicionDetectionService(
-                        plugin,
-                        coreProtect,
-                        repositories.getTrust(),
-                        repositories.getInteractionCounts(),
-                        instantNotify,
-                        plugin.getLogger()),
-                new TrustDecisionService(
-                        repositories.getTrust(),
-                        repositories.getReports()),
+                new SuspicionDetectionService(context),
+                new TrustDecisionService(context),
                 ownerNotifications);
     }
 }

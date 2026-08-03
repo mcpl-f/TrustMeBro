@@ -1,43 +1,41 @@
 package me.fulcanelly.trust.me.bro.jobs;
 
-import lombok.RequiredArgsConstructor;
-
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import me.fulcanelly.tgbridge.tapi.Message;
-import me.fulcanelly.tgbridge.tapi.TGBot;
-import me.fulcanelly.tgbridge.tools.MainConfig;
-import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.config.MinInteractionThresholds;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
 import me.fulcanelly.trust.me.bro.service.NotificationSkipReason;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
-import org.bukkit.plugin.Plugin;
-
-@RequiredArgsConstructor
 public final class NotificationService implements Runnable {
 
-    private final InteractionCountsRepository interactionCounts;
-    private final NotificationRepository notifications;
+    private final AppContext context;
     private final TelegramWarningMessageBuilder messageBuilder;
-    private final TGBot bot;
-    private final Plugin plugin;
-    private final SignupLoginReception reception;
-    private final MainConfig mainConfig;
-    private final Logger logger;
+
+    public NotificationService(AppContext context) {
+        this.context = context;
+        var bridge = context.getBridge();
+        this.messageBuilder = new TelegramWarningMessageBuilder(
+                bridge.getReception(),
+                context.getCallbackPayloads(),
+                context.getMessages(),
+                context.getCoreProtect(),
+                context.getRepositories().getRegions());
+    }
 
     @Override
     public void run() {
         // Do not reloadConfig() here — FileConfiguration reload is not async-safe.
         // Admins: /reload or restart; getConfig() reads the in-memory copy each tick.
+        var plugin = context.getPlugin();
+        var mainConfig = context.getBridge().getMainConfig();
+
         if (!plugin.getConfig().getBoolean("telegram.notify", true)) {
             return;
         }
@@ -46,15 +44,15 @@ public final class NotificationService implements Runnable {
             return;
         }
 
-        logger.info("Finding interactors ready for notification");
+        context.getLogger().info("Finding interactors ready for notification");
         long chatId = Long.parseLong(mainConfig.getChatId());
         long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
         MinInteractionThresholds minInteractions = MinInteractionThresholds.from(plugin.getConfig());
         try {
-            var interactors = interactionCounts.findInteractorsReadyForNotification(
-                    debounceMillis,
-                    minInteractions);
-            logger.info("Found " + interactors.size() + " interactors ready for notification");
+            var interactors = context.getRepositories().getInteractionCounts()
+                    .findInteractorsReadyForNotification(debounceMillis, minInteractions);
+
+            context.getLogger().info("Found " + interactors.size() + " interactors ready for notification");
             for (String interactor : interactors) {
 
                 long start = System.currentTimeMillis();
@@ -62,14 +60,14 @@ public final class NotificationService implements Runnable {
                 long tookMs = System.currentTimeMillis() - start;
 
                 if (skipReason.isEmpty()) {
-                    logger.info("Sent notification about " + interactor + " in " + tookMs + "ms");
+                    context.getLogger().info("Sent notification about " + interactor + " in " + tookMs + "ms");
                     return;
                 }
 
-                logger.info("Skipped " + interactor + " (" + skipReason.get() + ") in " + tookMs + "ms");
+                context.getLogger().info("Skipped " + interactor + " (" + skipReason.get() + ") in " + tookMs + "ms");
             }
         } catch (Exception e) {
-            logger.warning("Trust notification job failed: " + e.getMessage());
+            context.getLogger().warning("Trust notification job failed: " + e.getMessage());
         }
     }
 
@@ -82,6 +80,10 @@ public final class NotificationService implements Runnable {
             String interactor,
             MinInteractionThresholds minInteractions //
     ) throws SQLException {
+        var interactionCounts = context.getRepositories().getInteractionCounts();
+        var notifications = context.getRepositories().getNotifications();
+        var plugin = context.getPlugin();
+
         List<InteractionCount> pending = interactionCounts.findPendingByInteractor(
                 interactor,
                 minInteractions);
@@ -106,7 +108,7 @@ public final class NotificationService implements Runnable {
         int mergeDistance = Math.max(
                 0,
                 plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
-        Message message = bot.sendMessage(
+        Message message = context.getBridge().getBot().sendMessage(
                 chatId,
                 messageBuilder.build(interactor, counts, totalInteractions, mergeDistance),
                 messageBuilder.buildKeyboard(interactor));
@@ -119,13 +121,13 @@ public final class NotificationService implements Runnable {
     }
 
     private void markSkipped(List<InteractionCount> rows, String reason) throws SQLException {
-        interactionCounts.markSkippedByIds(
+        context.getRepositories().getInteractionCounts().markSkippedByIds(
                 rows.stream().map(InteractionCount::getId).collect(Collectors.toList()),
                 reason);
     }
 
     private List<InteractionCount> selectOwnersForNotification(List<InteractionCount> pending) {
-        int limit = Math.max(1, plugin.getConfig().getInt("telegram.max-owners-per-notification", 10));
+        int limit = Math.max(1, context.getPlugin().getConfig().getInt("telegram.max-owners-per-notification", 10));
         return pending.stream()
                 .sorted(Comparator
                         .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer()))
@@ -137,7 +139,7 @@ public final class NotificationService implements Runnable {
     }
 
     private boolean requiresLinkedOwner() {
-        return plugin.getConfig().getBoolean("telegram.only-for-linked-players", true);
+        return context.getPlugin().getConfig().getBoolean("telegram.only-for-linked-players", true);
     }
 
     private boolean hasLinkedOwner(List<InteractionCount> counts) {
@@ -145,7 +147,7 @@ public final class NotificationService implements Runnable {
     }
 
     private boolean isLinked(String ownerPlayer) {
-        return reception.getTgByUser(ownerPlayer).isPresent();
+        return context.getBridge().getReception().getTgByUser(ownerPlayer).isPresent();
     }
 
     @SuppressWarnings("deprecation")
@@ -153,6 +155,6 @@ public final class NotificationService implements Runnable {
         // Must not call OfflinePlayer from the async notification job.
         // If lastPlayed sort is re-enabled: snapshot on the main thread (sync task /
         // cache), then read the map here.
-        return plugin.getServer().getOfflinePlayer(ownerPlayer).getLastPlayed();
+        return context.getPlugin().getServer().getOfflinePlayer(ownerPlayer).getLastPlayed();
     }
 }

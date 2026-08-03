@@ -1,9 +1,7 @@
 package me.fulcanelly.trust.me.bro.listener.minecraft.commands;
 
 import lombok.RequiredArgsConstructor;
-import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
-import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,7 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -21,13 +18,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public final class NewTrustRegionCommand implements CommandExecutor {
 
-    private final RegionsRepository regions;
-    private final CoreProtectReadRepository coreProtect;
-    private final LocalizationService messages;
-    private final Logger logger;
+    private final AppContext context;
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        var messages = context.getMessages();
+
         if (!(sender instanceof Player player)) {
             sender.sendMessage(messages.format("command.new-trust-region.players-only"));
             return true;
@@ -60,12 +56,12 @@ public final class NewTrustRegionCommand implements CommandExecutor {
         int centerZ = location.getBlockZ();
 
         try {
-            Integer wid = coreProtect.findWorldId(worldName);
+            Integer wid = context.getCoreProtect().findWorldId(worldName);
             if (wid == null) {
                 player.sendMessage(messages.format("command.new-trust-region.unknown-world"));
                 return true;
             }
-            long id = regions.insert(
+            long id = context.getRepositories().getRegions().insert(
                     name,
                     true,
                     player.getName(),
@@ -83,7 +79,7 @@ public final class NewTrustRegionCommand implements CommandExecutor {
                     "z", centerZ,
                     "world", worldName));
         } catch (Exception e) {
-            logger.warning("new_trust_region failed: " + e.getMessage());
+            context.getLogger().warning("new_trust_region failed: " + e.getMessage());
             player.sendMessage(messages.format("command.new-trust-region.failed"));
         }
         return true;

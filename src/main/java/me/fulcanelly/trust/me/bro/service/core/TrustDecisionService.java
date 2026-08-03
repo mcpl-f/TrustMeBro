@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.sql.SQLException;
 
-import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
+import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 
 /**
  * Shared trust / report writes used by Telegram callbacks and Minecraft commands.
@@ -20,10 +19,12 @@ public final class TrustDecisionService {
         ALREADY_REPORTED
     }
 
-    private final TrustRepository trustRepository;
-    private final ReportRepository reportRepository;
+    private final AppContext context;
 
     public Outcome trust(String ownerPlayer, String interactorPlayer, Long telegramUserId) throws SQLException {
+        var trustRepository = context.getRepositories().getTrust();
+        var reportRepository = context.getRepositories().getReports();
+
         if (reportRepository.exists(interactorPlayer, ownerPlayer)) {
             reportRepository.delete(interactorPlayer, ownerPlayer);
         }
@@ -35,6 +36,9 @@ public final class TrustDecisionService {
     }
 
     public Outcome report(String ownerPlayer, String interactorPlayer, Long telegramUserId) throws SQLException {
+        var trustRepository = context.getRepositories().getTrust();
+        var reportRepository = context.getRepositories().getReports();
+
         if (trustRepository.isTrusted(ownerPlayer, interactorPlayer)) {
             trustRepository.untrust(ownerPlayer, interactorPlayer);
         }
