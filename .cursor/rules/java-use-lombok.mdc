@@ -1,0 +1,33 @@
+---
+description: Use Lombok instead of hand-written getters/constructors
+globs: **/*.java
+alwaysApply: false
+---
+
+# Lombok
+
+Do not hand-write getters, setters, `equals`/`hashCode`/`toString`, or boilerplate constructors. Use Lombok.
+
+Match existing project style:
+
+- `@Value` — immutable DTOs / models (preferred over `record` here)
+- `@RequiredArgsConstructor` — classes whose fields are `final` dependencies
+- `@Getter` — mutable types that still need accessors
+- `@AllArgsConstructor(access = AccessLevel.PRIVATE)` — when a static factory owns construction
+
+```java
+// Bad
+public final class ActivityBox {
+    private final int wid;
+    public ActivityBox(int wid) { this.wid = wid; }
+    public int wid() { return wid; }
+}
+
+// Good
+@Value
+public class ActivityBox {
+    int wid;
+}
+```
+
+Keep real methods (domain helpers, factories like `from(...)`, merge logic). Only drop the boilerplate accessors/ctors Lombok already generates.

@@ -1,0 +1,37 @@
+---
+description: Never use GROUP_CONCAT / string aggregation of unbounded row sets in SQL
+globs: "**/*.{java,sql}"
+alwaysApply: false
+---
+
+# No unbounded SQL string aggregation
+
+Do **not** use `GROUP_CONCAT`, `STRING_AGG`, or similar to glue many row values into one string in a query.
+
+Why: the concatenated result is unbounded in size and can blow memory / crash the process when a player has many trusters, reporters, etc.
+
+```sql
+-- BAD
+SELECT trusted_mc_name,
+       GROUP_CONCAT(owner_mc_name, ', ') AS people_names
+FROM trust_edges
+GROUP BY trusted_mc_name
+```
+
+```sql
+-- GOOD: count in one query
+SELECT trusted_mc_name, COUNT(*) AS people_count
+FROM trust_edges
+GROUP BY trusted_mc_name
+ORDER BY people_count DESC
+LIMIT ?
+
+-- GOOD: names in a separate LIMITED query when needed
+SELECT owner_mc_name
+FROM trust_edges
+WHERE trusted_mc_name = ?
+ORDER BY created_at ASC
+LIMIT ?
+```
+
+Same rule for reports and any other “list of names under a group” display.
