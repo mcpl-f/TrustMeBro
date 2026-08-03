@@ -10,25 +10,24 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.expr.model.ActivityBox;
 
+/**
+ * Pages {@link ActivityBox} rows from SQL table {@code interaction_counts}
+ * (table name stays; Java name is ActivityBox).
+ */
 @RequiredArgsConstructor
-public final class InteractionCountsExprRepository {
+public final class ActivityBoxRepository {
 
     private final Connection connection;
 
-    public List<ActivityBox> findPageWithGeometry(int offset, int limit) throws SQLException {
+    public List<ActivityBox> findPage(int offset, int limit) throws SQLException {
         var result = new ArrayList<ActivityBox>();
         try (PreparedStatement statement = connection.prepareStatement("""
                 SELECT id,
-                       interactor_player,
-                       owner,
                        wid,
-
                        region_corner_a_x,
                        region_corner_a_z,
-
                        region_corner_b_x,
-                       region_corner_b_z,
-                       (count_break_blocks + count_placed_blocks + count_interact_containers) AS weight
+                       region_corner_b_z
                 FROM interaction_counts
                 WHERE wid IS NOT NULL
                   AND region_corner_a_x IS NOT NULL
@@ -48,14 +47,11 @@ public final class InteractionCountsExprRepository {
                     int bz = rows.getInt("region_corner_b_z");
                     result.add(new ActivityBox(
                             rows.getLong("id"),
-                            rows.getString("interactor_player"),
-                            rows.getString("owner"),
                             rows.getInt("wid"),
                             Math.min(ax, bx),
                             Math.min(az, bz),
                             Math.max(ax, bx),
-                            Math.max(az, bz),
-                            rows.getLong("weight")));
+                            Math.max(az, bz)));
                 }
             }
         }

@@ -2,20 +2,17 @@ package me.fulcanelly.trust.me.expr.model;
 
 import lombok.Value;
 
-/** One activity row from {@code interaction_counts} with geometry. */
+/**
+ * One {@code interaction_counts} row with XZ geometry (SQL corners → min/max).
+ * Canonical Java name for that concept in {@code expr} — not “page with geometry”, not bare “box”.
+ */
 @Value
 public class ActivityBox {
 
     long id;
-    String interactor;
-    String owner;
-
     int wid;
     int minX;
     int minZ;
-
     int maxX;
     int maxZ;
-
-    long weight; // (count_break_blocks + count_placed_blocks + count_interact_containers)
 }

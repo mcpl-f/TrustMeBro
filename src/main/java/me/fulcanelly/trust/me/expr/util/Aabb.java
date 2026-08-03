@@ -1,17 +1,12 @@
 package me.fulcanelly.trust.me.expr.util;
 
 import lombok.experimental.UtilityClass;
-import me.fulcanelly.trust.me.expr.model.RegionBox;
 
+/**
+ * Axis-aligned merge-distance: same wid + padded XZ overlap (no sqrt).
+ */
 @UtilityClass
 public class Aabb {
-
-    public static boolean withinMergeDistance(RegionBox a, RegionBox b, int mergeDistance) {
-        return withinMergeDistance(
-                a.getWid(), a.getMinX(), a.getMinZ(), a.getMaxX(), a.getMaxZ(),
-                b.getWid(), b.getMinX(), b.getMinZ(), b.getMaxX(), b.getMaxZ(),
-                mergeDistance);
-    }
 
     public static boolean withinMergeDistance(
             int widA, int minXa, int minZa, int maxXa, int maxZa,

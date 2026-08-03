@@ -8,7 +8,11 @@ import java.sql.Statement;
 
 import lombok.RequiredArgsConstructor;
 
-/** Ensures suggested-region tables exist on a raw prod DB copy. */
+/**
+ * DDL for the offline experiment on a DB copy: create suggested tables, drop
+ * legacy center/radius/weight cols, optional {@code regions.based_on_*}.
+ * Declines / based_on unused by discovery — defer when shrinking ({@code expr.md}).
+ */
 @RequiredArgsConstructor
 public final class ExprSchemaRepository {
 
@@ -21,16 +25,11 @@ public final class ExprSchemaRepository {
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
 
                       wid INTEGER NOT NULL,
-                      center_x INTEGER NOT NULL,
-                      center_z INTEGER NOT NULL,
-                      radius INTEGER NOT NULL,
 
                       min_x INTEGER NOT NULL,
                       min_z INTEGER NOT NULL,
                       max_x INTEGER NOT NULL,
                       max_z INTEGER NOT NULL,
-
-                      weight INTEGER NOT NULL DEFAULT 0,
 
                       status TEXT NOT NULL DEFAULT 'pending',
 
@@ -59,6 +58,10 @@ public final class ExprSchemaRepository {
                     )
                     """);
         }
+        dropColumnIfExists("suggested_regions", "center_x");
+        dropColumnIfExists("suggested_regions", "center_z");
+        dropColumnIfExists("suggested_regions", "radius");
+        dropColumnIfExists("suggested_regions", "weight");
         if (!columnExists("regions", "based_on_suggested_region_id")) {
             try (Statement statement = connection.createStatement()) {
                 statement.execute("""
@@ -67,6 +70,15 @@ public final class ExprSchemaRepository {
                           REFERENCES suggested_regions(id)
                         """);
             }
+        }
+    }
+
+    private void dropColumnIfExists(String table, String column) throws SQLException {
+        if (!columnExists(table, column)) {
+            return;
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("ALTER TABLE " + table + " DROP COLUMN " + column);
         }
     }
 

@@ -4,11 +4,12 @@ import java.util.List;
 
 import lombok.Value;
 
-/** Result of one discovery pass. */
+/** One discover pass: counters + dirty persisted + brand-new suggested. */
 @Value
 public class DiscoveryResult {
 
     int scanned;
-    int skippedCovered;
-    List<SuggestedCandidate> newCandidates;
+    int skippedNamed;
+    List<SuggestedRegion> dirtySuggested;
+    List<NewSuggestedRegion> newSuggested;
 }

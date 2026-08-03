@@ -225,6 +225,7 @@ public final class MigrationRunner {
 
     /**
      * Review queue for uncovered activity clusters (path toward named regions).
+     * Geometry is min/max AABB only (reshape like {@code interaction_counts}).
      */
     private void applyMigration04SuggestedRegions() throws SQLException {
         execute("""
@@ -232,16 +233,11 @@ public final class MigrationRunner {
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
 
                   wid INTEGER NOT NULL,
-                  center_x INTEGER NOT NULL,
-                  center_z INTEGER NOT NULL,
-                  radius INTEGER NOT NULL,
 
                   min_x INTEGER NOT NULL,
                   min_z INTEGER NOT NULL,
                   max_x INTEGER NOT NULL,
                   max_z INTEGER NOT NULL,
-
-                  weight INTEGER NOT NULL DEFAULT 0,
 
                   status TEXT NOT NULL DEFAULT 'pending',
 

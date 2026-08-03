@@ -1,58 +1,38 @@
 package me.fulcanelly.trust.me.expr.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
-import lombok.RequiredArgsConstructor;
-import me.fulcanelly.trust.me.expr.model.SuggestedCandidate;
+import me.fulcanelly.trust.me.expr.model.NewSuggestedRegion;
 
-@RequiredArgsConstructor
+/** Console dump of new suggested regions. */
 public final class SuggestedRegionPrinter {
 
-    private final int nameLimit;
-
-    public void printTop(List<SuggestedCandidate> candidates, int topN) {
+    public void printTop(List<NewSuggestedRegion> newSuggested, int topN) {
         System.out.println("=== Top " + topN + " new suggested regions (this run) ===");
         System.out.println();
 
-        if (candidates.isEmpty()) {
+        if (newSuggested.isEmpty()) {
             System.out.println("(none — everything uncovered is already suggested or named)");
             return;
         }
 
-        int show = Math.min(topN, candidates.size());
+        int show = Math.min(topN, newSuggested.size());
         for (int i = 0; i < show; i++) {
-            printOne(i + 1, candidates.get(i));
+            printOne(i + 1, newSuggested.get(i));
         }
     }
 
-    private void printOne(int rank, SuggestedCandidate c) {
-        System.out.printf(Locale.ROOT, "region #%d (weight %d)%n", rank, c.getWeight());
-        System.out.println("- interactors: " + joinLimited(c.getInteractors()));
-        System.out.println("- owners: " + joinLimited(c.getOwners()));
+    private void printOne(int rank, NewSuggestedRegion region) {
+        System.out.printf(Locale.ROOT, "region #%d (activity boxes %d)%n", rank, region.getActivityBoxIds().size());
         System.out.printf(
                 Locale.ROOT,
-                "- world wid=%d  x=%d, z=%d%n",
-                c.getWid(),
-                c.centerX(),
-                c.centerZ());
-        System.out.printf(Locale.ROOT, "- ± %d%n", c.displayRadius());
+                "- wid=%d  min=(%d,%d)  max=(%d,%d)%n",
+                region.getWid(),
+                region.getMinX(),
+                region.getMinZ(),
+                region.getMaxX(),
+                region.getMaxZ());
         System.out.println();
-    }
-
-    private String joinLimited(Set<String> names) {
-        if (names.isEmpty()) {
-            return "(none)";
-        }
-        List<String> list = new ArrayList<>(names);
-        int n = Math.min(nameLimit, list.size());
-        String joined = String.join(", ", list.subList(0, n));
-        int others = list.size() - n;
-        if (others > 0) {
-            return joined + " … +" + others;
-        }
-        return joined;
     }
 }

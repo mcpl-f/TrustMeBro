@@ -8,35 +8,34 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.expr.model.ActivityBox;
 import me.fulcanelly.trust.me.expr.model.DiscoveryResult;
-import me.fulcanelly.trust.me.expr.model.RegionBox;
-import me.fulcanelly.trust.me.expr.model.SuggestedCandidate;
-import me.fulcanelly.trust.me.expr.repository.InteractionCountsExprRepository;
+import me.fulcanelly.trust.me.expr.model.NamedRegionBox;
+import me.fulcanelly.trust.me.expr.model.NewSuggestedRegion;
+import me.fulcanelly.trust.me.expr.model.SuggestedRegion;
+import me.fulcanelly.trust.me.expr.repository.ActivityBoxRepository;
 import me.fulcanelly.trust.me.expr.util.Aabb;
 
 /**
- * Page activity → skip covered → online-merge nearby boxes into candidates.
+ * Path-B loop: page activity boxes → hard-skip named → absorb existing suggested →
+ * merge/create new suggested. Greedy first-hit (order-dependent).
  */
 @RequiredArgsConstructor
 public final class SuggestedRegionDiscoveryService {
 
-    private final InteractionCountsExprRepository interactionCounts;
+    private final ActivityBoxRepository activityBoxes;
     private final int pageSize;
     private final int mergeDistance;
 
-    /**
-     * How many geo activity boxes are outside the given coverage
-     * (typically named regions only — suggested ignored).
-     */
-    public int countNotCovered(List<RegionBox> coverage) throws SQLException {
+    /** Pre-stat: activity boxes not near any named region (ignores suggested). */
+    public int countUncoveredByNamed(List<NamedRegionBox> namedRegions) throws SQLException {
         int uncovered = 0;
         int offset = 0;
         while (true) {
-            List<ActivityBox> page = interactionCounts.findPageWithGeometry(offset, pageSize);
+            List<ActivityBox> page = activityBoxes.findPage(offset, pageSize);
             if (page.isEmpty()) {
                 break;
             }
-            for (ActivityBox box : page) {
-                if (!isCovered(box, coverage)) {
+            for (ActivityBox activityBox : page) {
+                if (!isCoveredByNamed(activityBox, namedRegions)) {
                     uncovered++;
                 }
             }
@@ -48,25 +47,31 @@ public final class SuggestedRegionDiscoveryService {
         return uncovered;
     }
 
-    public DiscoveryResult discover(List<RegionBox> coverage) throws SQLException {
-        List<SuggestedCandidate> candidates = new ArrayList<>();
+    public DiscoveryResult discover(
+            List<NamedRegionBox> namedRegions,
+            List<SuggestedRegion> existingSuggested //
+    ) throws SQLException {
+        List<NewSuggestedRegion> newSuggested = new ArrayList<>();
         int offset = 0;
         int scanned = 0;
-        int skippedCovered = 0;
+        int skippedNamed = 0;
 
         while (true) {
-            List<ActivityBox> page = interactionCounts.findPageWithGeometry(offset, pageSize);
+            List<ActivityBox> page = activityBoxes.findPage(offset, pageSize);
             if (page.isEmpty()) {
                 break;
             }
             scanned += page.size();
 
-            for (ActivityBox box : page) {
-                if (isCovered(box, coverage)) {
-                    skippedCovered++;
+            for (ActivityBox activityBox : page) {
+                if (isCoveredByNamed(activityBox, namedRegions)) {
+                    skippedNamed++;
                     continue;
                 }
-                mergeOrCreate(candidates, box);
+                if (absorbIntoExisting(existingSuggested, activityBox)) {
+                    continue;
+                }
+                mergeOrCreate(newSuggested, activityBox);
             }
 
             if (page.size() < pageSize) {
@@ -75,32 +80,50 @@ public final class SuggestedRegionDiscoveryService {
             offset += pageSize;
         }
 
-        candidates.sort(Comparator.comparingLong(SuggestedCandidate::getWeight).reversed());
-        return new DiscoveryResult(scanned, skippedCovered, candidates);
+        List<SuggestedRegion> dirtySuggested = new ArrayList<>();
+        for (SuggestedRegion region : existingSuggested) {
+            if (region.isDirty()) {
+                dirtySuggested.add(region);
+            }
+        }
+
+        newSuggested.sort(Comparator.comparingInt((NewSuggestedRegion r) -> r.getActivityBoxIds().size()).reversed());
+        return new DiscoveryResult(scanned, skippedNamed, dirtySuggested, newSuggested);
     }
 
-    private boolean isCovered(ActivityBox box, List<RegionBox> coverage) {
-        RegionBox activity = new RegionBox(
-                "activity", box.getWid(), box.getMinX(), box.getMinZ(), box.getMaxX(), box.getMaxZ());
-        for (RegionBox region : coverage) {
-            if (Aabb.withinMergeDistance(activity, region, mergeDistance)) {
+    private boolean absorbIntoExisting(List<SuggestedRegion> existing, ActivityBox activityBox) {
+        for (SuggestedRegion region : existing) {
+            if (region.absorb(activityBox, mergeDistance)) {
                 return true;
             }
         }
         return false;
     }
 
-    private void mergeOrCreate(List<SuggestedCandidate> candidates, ActivityBox box) {
-        for (SuggestedCandidate candidate : candidates) {
+    private boolean isCoveredByNamed(ActivityBox activityBox, List<NamedRegionBox> namedRegions) {
+        for (NamedRegionBox named : namedRegions) {
             if (Aabb.withinMergeDistance(
-                    box.getWid(), box.getMinX(), box.getMinZ(), box.getMaxX(), box.getMaxZ(),
-                    candidate.getWid(), candidate.getMinX(), candidate.getMinZ(), candidate.getMaxX(),
-                    candidate.getMaxZ(),
+                    activityBox.getWid(), activityBox.getMinX(), activityBox.getMinZ(),
+                    activityBox.getMaxX(), activityBox.getMaxZ(),
+                    named.getWid(), named.getMinX(), named.getMinZ(), named.getMaxX(), named.getMaxZ(),
                     mergeDistance)) {
-                candidate.merge(box);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void mergeOrCreate(List<NewSuggestedRegion> newSuggested, ActivityBox activityBox) {
+        for (NewSuggestedRegion region : newSuggested) {
+            if (Aabb.withinMergeDistance(
+                    activityBox.getWid(), activityBox.getMinX(), activityBox.getMinZ(),
+                    activityBox.getMaxX(), activityBox.getMaxZ(),
+                    region.getWid(), region.getMinX(), region.getMinZ(), region.getMaxX(), region.getMaxZ(),
+                    mergeDistance)) {
+                region.merge(activityBox);
                 return;
             }
         }
-        candidates.add(SuggestedCandidate.from(box));
+        newSuggested.add(NewSuggestedRegion.from(activityBox));
     }
 }
