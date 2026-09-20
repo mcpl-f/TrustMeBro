@@ -1,4 +1,5 @@
 # Trust Me Bro
+<img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/mcpl-f/TrustMeBro/total"> <img src="https://img.shields.io/github/stars/mcpl-f/TrustMeBro"/>
 
 A Minecraft plugin that asks: *do you trust this person with your stuff?*
 
