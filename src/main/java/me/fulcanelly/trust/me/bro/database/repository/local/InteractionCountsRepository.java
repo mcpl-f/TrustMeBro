@@ -29,7 +29,9 @@ public final class InteractionCountsRepository {
 
     private final Connection connection;
 
-    /** @return id of the (legacy, region-less) row that was incremented or created */
+    /**
+     * @return id of the (legacy, region-less) row that was incremented or created
+     */
     public synchronized long increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
             throws SQLException {
         long now = System.currentTimeMillis();
@@ -120,10 +122,13 @@ public final class InteractionCountsRepository {
      * Merge includes already-notified rows so nearby follow-up grief does not
      * spawn a new pending region / Telegram spam. Prefer a still-pending match.
      *
-     * WARNING: "region" here is NOT the {@code regions} table (NamedRegion). It is an
-     * activity box stored on an {@code interaction_counts} row, and the returned id is
+     * WARNING: "region" here is NOT the {@code regions} table (NamedRegion). It is
+     * an
+     * activity box stored on an {@code interaction_counts} row, and the returned id
+     * is
      * {@code interaction_counts.id}.
-     * TODO: rename (e.g. activity box / interaction area) or move the region-row logic
+     * TODO: rename (e.g. activity box / interaction area) or move the region-row
+     * logic
      * into its own repository / aggregator, the name is misleading.
      */
     private Optional<Long> findNearbyRegionId(
@@ -170,9 +175,11 @@ public final class InteractionCountsRepository {
     }
 
     /**
-     * WARNING: {@code id} is {@code interaction_counts.id}, and "region" is the activity box on
+     * WARNING: {@code id} is {@code interaction_counts.id}, and "region" is the
+     * activity box on
      * that row, not the {@code regions} table.
-     * TODO: rename or move into its own repository / aggregator (see findNearbyRegionId).
+     * TODO: rename or move into its own repository / aggregator (see
+     * findNearbyRegionId).
      */
     private void expandRegionAndIncrement(long id, int x, int z, SuspiciousActionType actionType) throws SQLException {
         long now = System.currentTimeMillis();
@@ -243,9 +250,11 @@ public final class InteractionCountsRepository {
     }
 
     /**
-     * WARNING: inserts a new {@code interaction_counts} row with an activity box, it does NOT
+     * WARNING: inserts a new {@code interaction_counts} row with an activity box,
+     * it does NOT
      * create a named region in the {@code regions} table.
-     * TODO: rename or move into its own repository / aggregator (see findNearbyRegionId).
+     * TODO: rename or move into its own repository / aggregator (see
+     * findNearbyRegionId).
      *
      * @return id of the inserted {@code interaction_counts} row
      */
@@ -301,7 +310,8 @@ public final class InteractionCountsRepository {
         long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
         var result = new ArrayList<String>();
 
-        // Optional OR-thresholds stay in the WHERE so sub-min rows keep waiting (not skipped).
+        // Optional OR-thresholds stay in the WHERE so sub-min rows keep waiting (not
+        // skipped).
         String minInteractionsSql = minInteractionsSql("interaction_counts.", minInteractions);
 
         try (var statement = connection.prepareStatement("""
@@ -406,6 +416,38 @@ public final class InteractionCountsRepository {
         }
     }
 
+    /**
+     * Players who interacted with {@code ownerPlayer}'s stuff while the owner has
+     * neither
+     * trusted nor reported them. Counts players, not rows. Ignores notification
+     * state,
+     * skip reasons and min-interaction thresholds: "no decision yet" is all that
+     * matters.
+     */
+    public synchronized int countUndecidedInteractors(String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                SELECT COUNT(DISTINCT interaction_counts.interactor_player)
+                FROM interaction_counts
+                
+                LEFT JOIN trust_edges
+                    ON interaction_counts.owner = trust_edges.owner_mc_name
+                    AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
+                LEFT JOIN reports
+                    ON interaction_counts.owner = reports.owner
+                    AND interaction_counts.interactor_player = reports.interactor_player
+
+                WHERE interaction_counts.owner = ?
+                  AND trust_edges.owner_mc_name IS NULL
+                  AND reports.owner IS NULL
+                """)) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
+
     public synchronized List<InteractionCount> findPendingForOwner(String ownerPlayer) throws SQLException {
         var result = new ArrayList<InteractionCount>();
         try (var statement = connection.prepareStatement(PENDING_SELECT + """
@@ -427,10 +469,12 @@ public final class InteractionCountsRepository {
     /**
      * One pending row for join notification, chosen by strategy.
      *
-     * <p>{@code recent} — newest {@code updated_at}; {@code biggest} — highest
+     * <p>
+     * {@code recent} — newest {@code updated_at}; {@code biggest} — highest
      * break+place+container sum (ties broken by newest).
      *
-     * TODO: bad idea to dispatch strategy at repository level, it should be done in the service layer
+     * TODO: bad idea to dispatch strategy at repository level, it should be done in
+     * the service layer
      */
     public synchronized Optional<InteractionCount> findTopPendingInteractionForOwner(
             String ownerPlayer,
@@ -449,7 +493,8 @@ public final class InteractionCountsRepository {
                         interaction_counts.updated_at DESC,
                         interaction_counts.id DESC
                         """;
-        // Exclude already trusted / reported so /ttrust|/treport can advance to the next warning.
+        // Exclude already trusted / reported so /ttrust|/treport can advance to the
+        // next warning.
         try (var statement = connection.prepareStatement("""
                 SELECT interaction_counts.id, interaction_counts.interactor_player, interaction_counts.owner,
                        interaction_counts.count_break_blocks, interaction_counts.count_placed_blocks,
@@ -580,7 +625,9 @@ public final class InteractionCountsRepository {
      * Named admin regions this interactor touched (AABB + mergeDistance), without
      * loading every interaction row into Java.
      *
-     * <p>{@code nameLimit} caps returned names; {@link NamedRegionHits#getTotalCount()}
+     * <p>
+     * {@code nameLimit} caps returned names;
+     * {@link NamedRegionHits#getTotalCount()}
      * is the full distinct count for “and N others”.
      */
     public synchronized NamedRegionHits findNamedRegionsTouchedByInteractor(
@@ -624,7 +671,7 @@ public final class InteractionCountsRepository {
 
                     AND MIN(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z) - ?
                         <= regions.center_z + regions.radius
-                        
+
                     AND regions.center_z - regions.radius - ?
                         <= MAX(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z)
 

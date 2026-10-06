@@ -104,4 +104,28 @@ public final class TrustRepository {
         }
         return result;
     }
+
+    /** How many owners trust {@code trustedPlayer}. */
+    public int countTrusters(String trustedPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM trust_edges WHERE trusted_mc_name = ?")) {
+            statement.setString(1, trustedPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
+
+    /** How many players {@code ownerPlayer} trusts. */
+    public int countTrusted(String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM trust_edges WHERE owner_mc_name = ?")) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
 }

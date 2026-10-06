@@ -10,6 +10,22 @@ telegram:
   command:
     mctrust:
       stub: "Команда TrustMeBro пока не реализована."
+    myprofile:
+      text: |-
+        👤 Ваш профиль
+
+        Репутация
+        ✅ Доверяют вам — {trusters}
+        🚩 Пожаловались на вас — {reporters}
+
+        Ваши оценки
+        ✅ Доверяете — {trusted}
+        👁 Наблюдаете — {watched}
+        🚩 Пожаловались — {reported}
+
+        ⏳ Ожидают решения — {pending}
+      not-linked: "Ваш Telegram не привязан к Minecraft. Сначала привяжите аккаунт."
+      failed: "Не удалось загрузить профиль."
     truststats:
       trusted-header: "Топ {n} самых доверенных:"
       trusted-by-count: "- {player}, доверяют {count}"

@@ -10,6 +10,22 @@ telegram:
   command:
     mctrust:
       stub: "TrustMeBro command is not implemented yet."
+    myprofile:
+      text: |-
+        👤 Your profile
+
+        Reputation
+        ✅ Trust you — {trusters}
+        🚩 Reported you — {reporters}
+
+        Your decisions
+        ✅ You trust — {trusted}
+        👁 You watch — {watched}
+        🚩 You reported — {reported}
+
+        ⏳ Waiting for your decision — {pending}
+      not-linked: "Your Telegram account is not linked to Minecraft. Link it first."
+      failed: "Failed to load your profile."
     truststats:
       trusted-header: "Top {n} trusted players:"
       trusted-by-count: "- {player}, trusted by {count}"
