@@ -29,7 +29,8 @@ public final class InteractionCountsRepository {
 
     private final Connection connection;
 
-    public synchronized void increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
+    /** @return id of the (legacy, region-less) row that was incremented or created */
+    public synchronized long increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
             throws SQLException {
         long now = System.currentTimeMillis();
         int breakDelta = actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0;
@@ -53,7 +54,7 @@ public final class InteractionCountsRepository {
             statement.setString(5, interactorPlayer);
             statement.setString(6, ownerPlayer);
             if (statement.executeUpdate() > 0) {
-                return;
+                return findLegacyRowId(interactorPlayer, ownerPlayer);
             }
         }
 
@@ -78,14 +79,46 @@ public final class InteractionCountsRepository {
             statement.setLong(7, now);
             statement.executeUpdate();
         }
+        return lastInsertRowId();
+    }
+
+    /** UPDATE does not return the row id, but material counts need it as the FK. */
+    private long findLegacyRowId(String interactorPlayer, String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement("""
+                SELECT id
+                FROM interaction_counts
+                WHERE interactor_player = ?
+                  AND owner = ?
+                  AND wid IS NULL
+                """)) {
+            statement.setString(1, interactorPlayer);
+            statement.setString(2, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    throw new SQLException("interaction_counts row disappeared right after update");
+                }
+                return rows.getLong("id");
+            }
+        }
+    }
+
+    /** Same reason for INSERT: we need the new row id for the material counts FK. */
+    private long lastInsertRowId() throws SQLException {
+        try (var statement = connection.createStatement();
+                var rows = statement.executeQuery("SELECT last_insert_rowid()")) {
+            rows.next();
+            return rows.getLong(1);
+        }
     }
 
     /**
      * Region-aware record: merge into a nearby region (pending or already notified)
      * or insert a new one. Distance is axis-aligned (no sqrt): point within
      * mergeDistance of the region AABB.
+     *
+     * @return id of the region row that was incremented or created
      */
-    public synchronized void incrementInRegion(
+    public synchronized long incrementInRegion(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -96,9 +129,10 @@ public final class InteractionCountsRepository {
         Optional<Long> nearbyId = findNearbyRegionId(interactorPlayer, ownerPlayer, wid, x, z, mergeDistance);
         if (nearbyId.isPresent()) {
             expandRegionAndIncrement(nearbyId.get(), x, z, actionType);
-        } else {
-            insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
+            return nearbyId.get();
         }
+        insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
+        return lastInsertRowId();
     }
 
     /*
@@ -109,6 +143,12 @@ public final class InteractionCountsRepository {
      *
      * Merge includes already-notified rows so nearby follow-up grief does not
      * spawn a new pending region / Telegram spam. Prefer a still-pending match.
+     *
+     * WARNING: "region" here is NOT the {@code regions} table (NamedRegion). It is an
+     * activity box stored on an {@code interaction_counts} row, and the returned id is
+     * {@code interaction_counts.id}.
+     * TODO: rename (e.g. activity box / interaction area) or move the region-row logic
+     * into its own repository / aggregator, the name is misleading.
      */
     private Optional<Long> findNearbyRegionId(
             String interactorPlayer,
@@ -153,6 +193,11 @@ public final class InteractionCountsRepository {
         return Optional.empty();
     }
 
+    /**
+     * WARNING: {@code id} is {@code interaction_counts.id}, and "region" is the activity box on
+     * that row, not the {@code regions} table.
+     * TODO: rename or move into its own repository / aggregator (see findNearbyRegionId).
+     */
     private void expandRegionAndIncrement(long id, int x, int z, SuspiciousActionType actionType) throws SQLException {
         long now = System.currentTimeMillis();
         int breakDelta = actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0;
@@ -221,6 +266,11 @@ public final class InteractionCountsRepository {
         }
     }
 
+    /**
+     * WARNING: inserts a new {@code interaction_counts} row with an activity box, it does NOT
+     * create a named region in the {@code regions} table.
+     * TODO: rename or move into its own repository / aggregator (see findNearbyRegionId).
+     */
     private void insertRegion(
             String interactorPlayer,
             String ownerPlayer,

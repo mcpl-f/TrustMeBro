@@ -19,10 +19,12 @@ public final class BlockBreakSuspicionListener implements Listener {
     public void onBreak(BlockBreakEvent event) {
         var player = event.getPlayer();
         var location = event.getBlock().getLocation();
+        // Must be read here: after the async hop the block may already be AIR.
+        var material = event.getBlock().getType();
         var plugin = context.getPlugin();
 
         Runnable task = () -> context.getServices().getSuspicionDetection()
-                .recordBlockAction(player, location, SuspiciousActionType.BREAK_BLOCK);
+                .recordBlockAction(player, location, SuspiciousActionType.BREAK_BLOCK, material);
 
         plugin.getServer()
                 .getScheduler()

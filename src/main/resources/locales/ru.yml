@@ -2,6 +2,8 @@ telegram:
   warning:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\n"
     question: "Доверяете этому игроку?"
+    materials-header: "Материалы (всего):"
+    materials-more: "... и ещё {count} материалов"
   button:
     trust: "Доверять ✅"
     report: "Пожаловаться ❌"
