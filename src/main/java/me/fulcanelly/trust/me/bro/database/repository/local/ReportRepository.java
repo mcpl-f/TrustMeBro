@@ -105,4 +105,28 @@ public final class ReportRepository {
         }
         return result;
     }
+
+    /** How many owners reported {@code interactorPlayer}. */
+    public int countReporters(String interactorPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM reports WHERE interactor_player = ?")) {
+            statement.setString(1, interactorPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
+
+    /** How many players {@code ownerPlayer} reported. */
+    public int countReportedByOwner(String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM reports WHERE owner = ?")) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
 }

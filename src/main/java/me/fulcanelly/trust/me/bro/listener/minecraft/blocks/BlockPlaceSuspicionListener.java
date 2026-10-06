@@ -19,10 +19,11 @@ public final class BlockPlaceSuspicionListener implements Listener {
     public void onPlace(BlockPlaceEvent event) {
         var player = event.getPlayer();
         var location = event.getBlock().getLocation();
+        var material = event.getBlock().getType();
         var plugin = context.getPlugin();
 
         Runnable task = () -> context.getServices().getSuspicionDetection()
-                .recordBlockAction(player, location, SuspiciousActionType.PLACE_BLOCK);
+                .recordBlockAction(player, location, SuspiciousActionType.PLACE_BLOCK, material);
 
         plugin.getServer()
                 .getScheduler()

@@ -4,6 +4,7 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
+import me.fulcanelly.trust.me.bro.listener.telegram.MyProfileCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
@@ -26,10 +27,13 @@ public final class TelegramListenerRegistrar {
         TrustCallbackHandler callbackHandler = new TrustCallbackHandler(context);
         MyTrustCommand myTrustCommand = new MyTrustCommand(context);
         TrustStatsCommand trustStatsCommand = new TrustStatsCommand(context);
+        MyProfileCommand myProfileCommand = new MyProfileCommand(context);
 
         eventBus.register(callbackHandler);
         eventBus.register(myTrustCommand);
         eventBus.register(trustStatsCommand);
-        return List.of(callbackHandler, myTrustCommand, trustStatsCommand);
+        eventBus.register(myProfileCommand);
+
+        return List.of(callbackHandler, myTrustCommand, trustStatsCommand, myProfileCommand);
     }
 }

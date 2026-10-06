@@ -63,6 +63,7 @@ Top 3 most reported:
 | --- | --- |
 | *(auto warning)* | Message + **Trust** / **Report** buttons when someone messes with linked owners’ stuff |
 | `/truststats` | Top trusted, suspicious (with regions), and most reported players |
+| `/myprofile` | Your profile: who trusts / reported you, your own trust and report counts, players still waiting for your decision (watch is a placeholder) |
 | `/mctrust` | Stub / linked account check (WIP) |
 
 Same decisions in-game: `/ttrust <player>`, `/treport <player>`. Optional join reminder in Minecraft chat (`minecraft.notify-on-join`). Staff can name places with `/new_trust_region`.

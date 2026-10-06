@@ -48,6 +48,10 @@ public final class MigrationRunner {
             applyMigration03SkipReason();
             markApplied(3);
         }
+        if (!applied.contains(4)) {
+            applyMigration04MaterialCounts();
+            markApplied(4);
+        }
     }
 
     private void applyBaseline() throws SQLException {
@@ -216,6 +220,26 @@ public final class MigrationRunner {
         execute("""
                 ALTER TABLE interaction_counts
                 ADD COLUMN skip_reason TEXT
+                """);
+    }
+
+    /**
+     * Broken/placed counts per material inside one interaction_counts row.
+     * {@code material} is a namespaced key ({@code minecraft:stone}), like CoreProtect's co_material_map.
+     * Rows created before this migration simply have no material data.
+     */
+    private void applyMigration04MaterialCounts() throws SQLException {
+        execute("""
+                CREATE TABLE IF NOT EXISTS interaction_material_counts (
+                  interaction_count_id INTEGER NOT NULL,
+                  material TEXT NOT NULL,
+
+                  break_count INTEGER NOT NULL DEFAULT 0,
+                  place_count INTEGER NOT NULL DEFAULT 0,
+
+                  UNIQUE (interaction_count_id, material),
+                  FOREIGN KEY (interaction_count_id) REFERENCES interaction_counts(id)
+                )
                 """);
     }
 

@@ -2,12 +2,30 @@ telegram:
   warning:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\n"
     question: "Доверяете этому игроку?"
+    materials-header: "Материалы (всего):"
+    materials-more: "... и ещё {count} материалов"
   button:
     trust: "Доверять ✅"
     report: "Пожаловаться ❌"
   command:
     mctrust:
       stub: "Команда TrustMeBro пока не реализована."
+    myprofile:
+      text: |-
+        👤 Ваш профиль
+
+        Репутация
+        ✅ Доверяют вам — {trusters}
+        🚩 Пожаловались на вас — {reporters}
+
+        Ваши оценки
+        ✅ Доверяете — {trusted}
+        👁 Наблюдаете — {watched}
+        🚩 Пожаловались — {reported}
+
+        ⏳ Ожидают решения — {pending}
+      not-linked: "Ваш Telegram не привязан к Minecraft. Сначала привяжите аккаунт."
+      failed: "Не удалось загрузить профиль."
     truststats:
       trusted-header: "Топ {n} самых доверенных:"
       trusted-by-count: "- {player}, доверяют {count}"

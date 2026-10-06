@@ -15,6 +15,7 @@ import me.fulcanelly.tgbridge.utils.UsefulStuff;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
 import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
 import me.fulcanelly.trust.me.bro.service.region.RegionMessageGrouper;
@@ -36,10 +37,15 @@ import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
  *
  * - Owner: 3 removed, 1 container interactions
  *
+ * Materials (summed over all owners above):
+ * - stone ×3 (-3)
+ *
  * buttons "Trust" and "Report" with callback data for Griefer.
  */
 @RequiredArgsConstructor
 public final class TelegramWarningMessageBuilder {
+
+    private static final int MAX_MATERIAL_LINES = 5;
 
     private final SignupLoginReception reception;
     private final TrustCallbackPayloadService callbackPayloads;
@@ -51,6 +57,7 @@ public final class TelegramWarningMessageBuilder {
             String interactorPlayer,
             List<InteractionCount> counts,
             int totalInteractions,
+            List<MaterialTotal> materialTotals,
             int mergeDistance //
     ) {
         StringBuilder builder = new StringBuilder();
@@ -85,8 +92,59 @@ public final class TelegramWarningMessageBuilder {
             builder.append(" ... ").append(totalInteractions - counts.size()).append(" more\n");
         }
 
+        appendMaterialSummary(builder, materialTotals);
+
         builder.append('\n').append(messages.format("telegram.warning.question")).append('\n');
         return builder.toString();
+    }
+
+    /**
+     * One summary for the whole message (not per owner), biggest materials first:
+     *
+     * Materials:
+     * - stone ×30 (-15 / +15)
+     * - diamond block ×4 (-4)
+     */
+    private void appendMaterialSummary(StringBuilder builder, List<MaterialTotal> materialTotals) {
+        if (materialTotals.isEmpty()) {
+            return;
+        }
+
+        builder.append('\n').append(messages.format("telegram.warning.materials-header")).append('\n');
+        for (MaterialTotal total : materialTotals.stream().limit(MAX_MATERIAL_LINES).collect(Collectors.toList())) {
+            builder.append(" - ")
+                    .append(escape(formatMaterialName(total.getMaterial())))
+                    .append(" ×").append(total.total())
+                    .append(" (").append(formatMaterialSplit(total)).append(")\n");
+        }
+
+        int hidden = materialTotals.size() - MAX_MATERIAL_LINES;
+        if (hidden > 0) {
+            builder.append(messages.format("telegram.warning.materials-more", "count", hidden)).append('\n');
+        }
+    }
+
+    /**
+     * {@code minecraft:oak_planks} -> {@code oak planks}; other namespaces stay
+     * visible.
+     */
+    private String formatMaterialName(String materialKey) {
+        String vanillaPrefix = "minecraft:";
+        String name = materialKey;
+        if (name.startsWith(vanillaPrefix)) {
+            name = name.substring(vanillaPrefix.length());
+        }
+        return name.toLowerCase(Locale.ROOT).replace('_', ' ');
+    }
+
+    private String formatMaterialSplit(MaterialTotal total) {
+        if (total.getPlaceCount() == 0) {
+            return "-" + total.getBreakCount();
+        }
+        if (total.getBreakCount() == 0) {
+            return "+" + total.getPlaceCount();
+        }
+        return "-" + total.getBreakCount() + " / +" + total.getPlaceCount();
     }
 
     private List<NamedRegion> loadNamedRegions() {
