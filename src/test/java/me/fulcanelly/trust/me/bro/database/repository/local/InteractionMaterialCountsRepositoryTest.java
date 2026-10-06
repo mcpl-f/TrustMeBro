@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
+import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 
@@ -70,6 +71,11 @@ public class InteractionMaterialCountsRepositoryTest {
         assertEquals(
                 List.of(new MaterialTotal("minecraft:stone", 3, 1), new MaterialTotal("minecraft:diamond_block", 1, 0)),
                 totals);
+
+        // UPDATE ... RETURNING id must still apply the increment, not only return the id.
+        InteractionCount aliceRow = counts.findPendingForOwner("Alice").get(0);
+        assertEquals(2, aliceRow.getCountBreakBlocks());
+        assertEquals(1, aliceRow.getCountPlacedBlocks());
     }
 
     /*

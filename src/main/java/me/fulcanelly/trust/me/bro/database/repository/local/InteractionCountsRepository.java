@@ -46,6 +46,7 @@ public final class InteractionCountsRepository {
                 WHERE interactor_player = ?
                   AND owner = ?
                   AND wid IS NULL
+                RETURNING id
                 """)) {
             statement.setInt(1, breakDelta);
             statement.setInt(2, placeDelta);
@@ -53,8 +54,10 @@ public final class InteractionCountsRepository {
             statement.setLong(4, now);
             statement.setString(5, interactorPlayer);
             statement.setString(6, ownerPlayer);
-            if (statement.executeUpdate() > 0) {
-                return findLegacyRowId(interactorPlayer, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    return rows.getLong("id");
+                }
             }
         }
 
@@ -69,6 +72,7 @@ public final class InteractionCountsRepository {
                   created_at,
                   updated_at
                 ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+                RETURNING id
                 """)) {
             statement.setString(1, interactorPlayer);
             statement.setString(2, ownerPlayer);
@@ -77,37 +81,10 @@ public final class InteractionCountsRepository {
             statement.setInt(5, containerDelta);
             statement.setLong(6, now);
             statement.setLong(7, now);
-            statement.executeUpdate();
-        }
-        return lastInsertRowId();
-    }
-
-    /** UPDATE does not return the row id, but material counts need it as the FK. */
-    private long findLegacyRowId(String interactorPlayer, String ownerPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                SELECT id
-                FROM interaction_counts
-                WHERE interactor_player = ?
-                  AND owner = ?
-                  AND wid IS NULL
-                """)) {
-            statement.setString(1, interactorPlayer);
-            statement.setString(2, ownerPlayer);
             try (var rows = statement.executeQuery()) {
-                if (!rows.next()) {
-                    throw new SQLException("interaction_counts row disappeared right after update");
-                }
+                rows.next();
                 return rows.getLong("id");
             }
-        }
-    }
-
-    /** Same reason for INSERT: we need the new row id for the material counts FK. */
-    private long lastInsertRowId() throws SQLException {
-        try (var statement = connection.createStatement();
-                var rows = statement.executeQuery("SELECT last_insert_rowid()")) {
-            rows.next();
-            return rows.getLong(1);
         }
     }
 
@@ -131,8 +108,7 @@ public final class InteractionCountsRepository {
             expandRegionAndIncrement(nearbyId.get(), x, z, actionType);
             return nearbyId.get();
         }
-        insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
-        return lastInsertRowId();
+        return insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
     }
 
     /*
@@ -270,8 +246,10 @@ public final class InteractionCountsRepository {
      * WARNING: inserts a new {@code interaction_counts} row with an activity box, it does NOT
      * create a named region in the {@code regions} table.
      * TODO: rename or move into its own repository / aggregator (see findNearbyRegionId).
+     *
+     * @return id of the inserted {@code interaction_counts} row
      */
-    private void insertRegion(
+    private long insertRegion(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -295,6 +273,7 @@ public final class InteractionCountsRepository {
                   created_at,
                   updated_at
                 ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)
+                RETURNING id
                 """)) {
             statement.setString(1, interactorPlayer);
             statement.setString(2, ownerPlayer);
@@ -308,7 +287,10 @@ public final class InteractionCountsRepository {
             statement.setInt(10, z);
             statement.setLong(11, now);
             statement.setLong(12, now);
-            statement.executeUpdate();
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getLong("id");
+            }
         }
     }
 
