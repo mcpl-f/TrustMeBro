@@ -48,6 +48,10 @@ public final class MigrationRunner {
             applyMigration03SkipReason();
             markApplied(3);
         }
+        if (!applied.contains(4)) {
+            applyMigration04SuggestedRegions();
+            markApplied(4);
+        }
     }
 
     private void applyBaseline() throws SQLException {
@@ -216,6 +220,55 @@ public final class MigrationRunner {
         execute("""
                 ALTER TABLE interaction_counts
                 ADD COLUMN skip_reason TEXT
+                """);
+    }
+
+    /**
+     * Review queue for uncovered activity clusters (path toward named regions).
+     * Geometry is min/max AABB only (reshape like {@code interaction_counts}).
+     */
+    private void applyMigration04SuggestedRegions() throws SQLException {
+        execute("""
+                CREATE TABLE IF NOT EXISTS suggested_regions (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                  wid INTEGER NOT NULL,
+
+                  min_x INTEGER NOT NULL,
+                  min_z INTEGER NOT NULL,
+                  max_x INTEGER NOT NULL,
+                  max_z INTEGER NOT NULL,
+
+                  status TEXT NOT NULL DEFAULT 'pending',
+
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL
+                )
+                """);
+        execute("""
+                CREATE TABLE IF NOT EXISTS suggested_region_sources (
+                  suggested_region_id INTEGER NOT NULL,
+                  interaction_count_id INTEGER NOT NULL,
+
+                  PRIMARY KEY (suggested_region_id, interaction_count_id),
+                  FOREIGN KEY (suggested_region_id) REFERENCES suggested_regions(id),
+                  FOREIGN KEY (interaction_count_id) REFERENCES interaction_counts(id)
+                )
+                """);
+        execute("""
+                CREATE TABLE IF NOT EXISTS suggested_region_declines (
+                  suggested_region_id INTEGER PRIMARY KEY,
+
+                  declined_by_mc_name TEXT NOT NULL,
+                  created_at INTEGER NOT NULL,
+
+                  FOREIGN KEY (suggested_region_id) REFERENCES suggested_regions(id)
+                )
+                """);
+        execute("""
+                ALTER TABLE regions
+                ADD COLUMN based_on_suggested_region_id INTEGER
+                  REFERENCES suggested_regions(id)
                 """);
     }
 
