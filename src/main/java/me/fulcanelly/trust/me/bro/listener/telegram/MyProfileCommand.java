@@ -9,10 +9,12 @@ import com.google.common.eventbus.Subscribe;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
+import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
+import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 
 /**
  * /myprofile — the linked player's reputation, own decisions and pending
- * interactions.
+ * interactions, with buttons handled by {@link TrustCallbackHandler}.
  */
 @RequiredArgsConstructor
 public final class MyProfileCommand {
@@ -20,6 +22,7 @@ public final class MyProfileCommand {
     private static final Pattern COMMAND = Pattern.compile("^/myprofile(@\\S+)?(\\s.*)?$");
 
     private final AppContext context;
+    private final ProfileMessageBuilder profileMessages;
 
     @Subscribe
     public void onCommand(CommandEvent event) {
@@ -40,21 +43,12 @@ public final class MyProfileCommand {
             return;
         }
 
-        String player = linkedPlayer.get();
-        var trust = context.getRepositories().getTrust();
-        var reports = context.getRepositories().getReports();
-        var interactionCounts = context.getRepositories().getInteractionCounts();
-
         try {
-            event.getMessage().reply(
-                    context.getMessages().format(
-                            "telegram.command.myprofile.text",
-                            "trusters", trust.countTrusters(player),
-                            "reporters", reports.countReporters(player),
-                            "trusted", trust.countTrusted(player),
-                            "watched", 0, // TODO: watch relation is not implemented yet
-                            "reported", reports.countReportedByOwner(player),
-                            "pending", interactionCounts.countUndecidedInteractors(player)));
+            // Plain send (not reply) so the buttons below can edit this message later.
+            context.getBridge().getBot().sendMessage(
+                    event.getMessage().getChat().getId(),
+                    profileMessages.buildText(linkedPlayer.get(), Section.MAIN),
+                    profileMessages.buildKeyboard(Section.MAIN, telegramUserId));
         } catch (SQLException e) {
             context.getLogger().warning("myprofile failed: " + e.getMessage());
             event.getMessage().reply(context.getMessages().format("telegram.command.myprofile.failed"));
