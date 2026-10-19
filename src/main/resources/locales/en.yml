@@ -17,34 +17,43 @@ telegram:
       text: |-
         👤 Your profile
 
-        Reputation
+        ⭐ Reputation
+
         ✅ Trust you — {trusters}
         🚩 Reported you — {reporters}
 
-        Your decisions
+        ⚖️ Your decisions
+
         ✅ You trust — {trusted}
         👁 You watch — {watched}
         🚩 You reported — {reported}
 
         ⏳ Waiting for your decision — {pending}
       button:
-        reputation: "My reputation"
-        ratings: "My decisions"
-        trusters: "✅ Trust you"
-        reporters: "🚩 Reported you"
-        trusted: "✅ You trust"
-        watched: "👁 You watch"
-        reported: "🚩 You reported"
-        pending: "⏳ Waiting for your decision"
+        reputation: "⭐ My reputation"
+        ratings: "⚖️ My decisions"
+
+        trusters: "✅ Trust you ({count})"
+        reporters: "🚩 Reported you ({count})"
+
+        trusted: "✅ You trust ({count})"
+        watched: "👁 You watch ({count})"
+        reported: "🚩 You reported ({count})"
+
+        pending: "⏳ Waiting for your decision ({count})"
       title:
         reputation: "Your reputation"
         ratings: "Your decisions"
+
         trusters: "Trust you"
         reporters: "Reported you"
+
         trusted: "You trust"
         watched: "You watch"
         reported: "You reported"
+        
         pending: "Waiting for your decision"
+      player-button: "👤 {player}"
       not-linked: "Your Telegram account is not linked to Minecraft. Link it first."
       failed: "Failed to load your profile."
     truststats:

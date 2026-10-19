@@ -17,34 +17,43 @@ telegram:
       text: |-
         👤 Ваш профиль
 
-        Репутация
+        ⭐ Репутация
+
         ✅ Доверяют вам — {trusters}
         🚩 Пожаловались на вас — {reporters}
 
-        Ваши оценки
+        ⚖️ Ваши решения
+
         ✅ Доверяете — {trusted}
         👁 Наблюдаете — {watched}
         🚩 Пожаловались — {reported}
 
         ⏳ Ожидают решения — {pending}
       button:
-        reputation: "Моя репутация"
-        ratings: "Мои оценки"
-        trusters: "✅ Доверяют вам"
-        reporters: "🚩 Пожаловались на вас"
-        trusted: "✅ Доверяете"
-        watched: "👁 Наблюдаете"
-        reported: "🚩 Пожаловались"
-        pending: "⏳ Ожидают решения"
+        reputation: "⭐ Моя репутация"
+        ratings: "⚖️ Мои решения"
+
+        trusters: "✅ Доверяют вам ({count})"
+        reporters: "🚩 Пожаловались на вас ({count})"
+
+        trusted: "✅ Доверяете ({count})"
+        watched: "👁 Наблюдаете ({count})"
+        reported: "🚩 Пожаловались ({count})"
+
+        pending: "⏳ Ожидают решения ({count})"
       title:
         reputation: "Ваша репутация"
-        ratings: "Ваши оценки"
+        ratings: "Ваши решения"
+
         trusters: "Доверяют вам"
         reporters: "Пожаловались на вас"
+
         trusted: "Доверяете"
         watched: "Наблюдаете"
         reported: "Пожаловались"
+        
         pending: "Ожидают решения"
+      player-button: "👤 {player}"
       not-linked: "Ваш Telegram не привязан к Minecraft. Сначала привяжите аккаунт."
       failed: "Не удалось загрузить профиль."
     truststats:

@@ -2,7 +2,9 @@ package me.fulcanelly.trust.me.bro.service.text;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
@@ -24,12 +26,22 @@ import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
- * The /myprofile keyboard. No locale files are loaded, so every button text is its own
- * message key.
+ * The /myprofile keyboard. Only the messages that carry a placeholder are defined (see
+ * MESSAGES); every other button text is its own message key.
  */
 public class ProfileMessageBuilderTest {
 
     private static final long TELEGRAM_USER = 123L;
+
+    private static final String MESSAGES = """
+            telegram:
+              command:
+                myprofile:
+                  button:
+                    trusters: "Trust you ({count})"
+                    reporters: "Reported you ({count})"
+                  player-button: "@{player}"
+            """;
 
     private final TrustCallbackPayloadService payloads = new TrustCallbackPayloadService();
 
@@ -50,7 +62,10 @@ public class ProfileMessageBuilderTest {
                     if (method.getName().equals("getConfig")) {
                         return new YamlConfiguration();
                     }
-                    return null; // getResource: no locale files
+                    if (method.getName().equals("getResource")) {
+                        return new ByteArrayInputStream(MESSAGES.getBytes(StandardCharsets.UTF_8));
+                    }
+                    return null;
                 });
         builder = new ProfileMessageBuilder(new LocalizationService(plugin), payloads, repositories);
     }
@@ -61,21 +76,28 @@ public class ProfileMessageBuilderTest {
     }
 
     /*
-     * Menus: buttons go down one level, Back goes up one level.
+     * Menus: buttons go down one level, Back goes up one level. Buttons of list
+     * sections tell how many players are behind them.
+     *
+     *   Alice: trusted by Pa, Pb; reported by Pc
      *
      *   MAIN        [reputation] [ratings]
-     *   REPUTATION  [trusters] [reporters] [back -> MAIN]
+     *   REPUTATION  [Trust you (2)] [Reported you (1)] [back -> MAIN]
      */
     @Test
     void menuButtonsOpenChildrenAndBackOpensParent() throws Exception {
+        repositories.getTrust().trust("Pa", "Alice", null);
+        repositories.getTrust().trust("Pb", "Alice", null);
+        repositories.getReports().report("Pc", null, "Alice", "Pc");
+
         assertEquals(List.of(
                 "telegram.command.myprofile.button.reputation>tmb:pr:123:0",
                 "telegram.command.myprofile.button.ratings>tmb:pm:123:0"),
                 keyboard("Alice", Section.MAIN, 0));
 
         assertEquals(List.of(
-                "telegram.command.myprofile.button.trusters>tmb:prt:123:0",
-                "telegram.command.myprofile.button.reporters>tmb:prr:123:0",
+                "Trust you (2)>tmb:prt:123:0",
+                "Reported you (1)>tmb:prr:123:0",
                 "telegram.button.back>tmb:p:123:0"),
                 keyboard("Alice", Section.REPUTATION, 0));
     }
@@ -84,9 +106,9 @@ public class ProfileMessageBuilderTest {
      * 11 players trust Alice, 5 per page. Player rows do nothing yet, the page number
      * does nothing, arrows move one page, Back goes to the section's parent.
      *
-     *   page 0:  P01..P05    [1] [>]
-     *   page 1:  P06..P10    [<] [2] [>]
-     *   page 2:  P11         [<] [3]
+     *   page 0:  P01..P05    [1 / 3] [>]
+     *   page 1:  P06..P10    [<] [2 / 3] [>]
+     *   page 2:  P11         [<] [3 / 3]
      */
     @Test
     void playersArePagedFiveAtATimeWithArrowsOnlyWhereThereIsAPage() throws Exception {
@@ -95,28 +117,30 @@ public class ProfileMessageBuilderTest {
         }
 
         assertEquals(List.of(
-                "P01", "P02", "P03", "P04", "P05",
-                "1 | telegram.button.page-next>tmb:prt:123:1",
+                "@P01", "@P02", "@P03", "@P04", "@P05",
+                "1 / 3 | telegram.button.page-next>tmb:prt:123:1",
                 "telegram.button.back>tmb:pr:123:0"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
         assertEquals(List.of(
-                "P06", "P07", "P08", "P09", "P10",
-                "telegram.button.page-previous>tmb:prt:123:0 | 2 | telegram.button.page-next>tmb:prt:123:2",
+                "@P06", "@P07", "@P08", "@P09", "@P10",
+                "telegram.button.page-previous>tmb:prt:123:0 | 2 / 3 | telegram.button.page-next>tmb:prt:123:2",
                 "telegram.button.back>tmb:pr:123:0"),
                 keyboard("Alice", Section.TRUSTERS, 1));
 
         assertEquals(List.of(
-                "P11",
-                "telegram.button.page-previous>tmb:prt:123:1 | 3",
+                "@P11",
+                "telegram.button.page-previous>tmb:prt:123:1 | 3 / 3",
                 "telegram.button.back>tmb:pr:123:0"),
                 keyboard("Alice", Section.TRUSTERS, 2));
     }
 
     /*
      * No page row when everything fits: exactly one full page, or nobody at all.
+     * A button of an older message may ask for a page that no longer exists: it shows
+     * the last one.
      *
-     *   Alice: 5 trusters  ->  P01..P05, [back]
+     *   Alice: 5 trusters  ->  P01..P05, [back]   (also when page 7 is asked for)
      *   Bob:   nobody      ->  [back]
      */
     @Test
@@ -126,9 +150,11 @@ public class ProfileMessageBuilderTest {
         }
 
         assertEquals(List.of(
-                "P01", "P02", "P03", "P04", "P05",
+                "@P01", "@P02", "@P03", "@P04", "@P05",
                 "telegram.button.back>tmb:pr:123:0"),
                 keyboard("Alice", Section.TRUSTERS, 0));
+
+        assertEquals(keyboard("Alice", Section.TRUSTERS, 0), keyboard("Alice", Section.TRUSTERS, 7));
 
         assertEquals(List.of("telegram.button.back>tmb:pr:123:0"),
                 keyboard("Bob", Section.TRUSTERS, 0));
