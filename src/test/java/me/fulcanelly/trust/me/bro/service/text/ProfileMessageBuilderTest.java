@@ -26,7 +26,7 @@ import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
- * The /myprofile keyboard. Only the messages that carry a placeholder are defined (see
+ * The /rep keyboard. Only the messages that carry a placeholder are defined (see
  * MESSAGES); every other button text is its own message key.
  */
 public class ProfileMessageBuilderTest {
@@ -37,9 +37,12 @@ public class ProfileMessageBuilderTest {
             telegram:
               command:
                 myprofile:
-                  button:
-                    trusters: "Trust you ({count})"
-                    reporters: "Reported you ({count})"
+                  text: "{player}: {trusters} trust, {reporters} reports"
+                  title:
+                    reputation: "R"
+                    trusters: "T"
+                    reporters: "Rp"
+                  button-with-count: "{title} ({count})"
                   player-button: "@{player}"
             """;
 
@@ -82,7 +85,7 @@ public class ProfileMessageBuilderTest {
      *   Alice: trusted by Pa, Pb; reported by Pc
      *
      *   MAIN        [reputation] [ratings]
-     *   REPUTATION  [Trust you (2)] [Reported you (1)] [back -> MAIN]
+     *   REPUTATION  [T (2)] [Rp (1)] [back -> MAIN]
      */
     @Test
     void menuButtonsOpenChildrenAndBackOpensParent() throws Exception {
@@ -91,15 +94,47 @@ public class ProfileMessageBuilderTest {
         repositories.getReports().report("Pc", null, "Alice", "Pc");
 
         assertEquals(List.of(
-                "telegram.command.myprofile.button.reputation>tmb:pr:123:0",
-                "telegram.command.myprofile.button.ratings>tmb:pm:123:0"),
+                "R>tmb:pr:123:0:Alice",
+                "telegram.command.myprofile.title.ratings>tmb:pm:123:0:Alice"),
                 keyboard("Alice", Section.MAIN, 0));
 
         assertEquals(List.of(
-                "Trust you (2)>tmb:prt:123:0",
-                "Reported you (1)>tmb:prr:123:0",
-                "telegram.button.back>tmb:p:123:0"),
+                "T (2)>tmb:prt:123:0:Alice",
+                "Rp (1)>tmb:prr:123:0:Alice",
+                "telegram.button.back>tmb:p:123:0:Alice"),
                 keyboard("Alice", Section.REPUTATION, 0));
+    }
+
+    /*
+     * Text: the profile of the shown player, and under it the titles from the root's
+     * child down to the section.
+     *
+     *   MAIN      ->  profile
+     *   TRUSTERS  ->  profile, blank line, "R / T:"
+     */
+    @Test
+    void sectionScreenAddsThePathOfTitlesUnderTheProfile() throws Exception {
+        repositories.getTrust().trust("Pa", "Alice", null);
+        repositories.getTrust().trust("Pb", "Alice", null);
+        repositories.getReports().report("Pc", null, "Alice", "Pc");
+
+        assertEquals("Alice: 2 trust, 1 reports", builder.buildText("Alice", Section.MAIN));
+        assertEquals("Alice: 2 trust, 1 reports\n\nR / T:", builder.buildText("Alice", Section.TRUSTERS));
+    }
+
+    /*
+     * Messages are sent in Telegram's Markdown mode, where a lone "_" fails the whole
+     * message. Names with underscores are escaped in the text, but not in callback data.
+     *
+     *   v_mute  ->  text "v\_mute: ...",  button data "...:v_mute"
+     */
+    @Test
+    void underscoreInPlayerNameIsEscapedInTextOnly() throws Exception {
+        assertEquals("v\\_mute: 0 trust, 0 reports", builder.buildText("v_mute", Section.MAIN));
+        assertEquals(List.of(
+                "R>tmb:pr:123:0:v_mute",
+                "telegram.command.myprofile.title.ratings>tmb:pm:123:0:v_mute"),
+                keyboard("v_mute", Section.MAIN, 0));
     }
 
     /*
@@ -118,20 +153,20 @@ public class ProfileMessageBuilderTest {
 
         assertEquals(List.of(
                 "@P01", "@P02", "@P03", "@P04", "@P05",
-                "1 / 3 | telegram.button.page-next>tmb:prt:123:1",
-                "telegram.button.back>tmb:pr:123:0"),
+                "1 / 3 | telegram.button.page-next>tmb:prt:123:1:Alice",
+                "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
         assertEquals(List.of(
                 "@P06", "@P07", "@P08", "@P09", "@P10",
-                "telegram.button.page-previous>tmb:prt:123:0 | 2 / 3 | telegram.button.page-next>tmb:prt:123:2",
-                "telegram.button.back>tmb:pr:123:0"),
+                "telegram.button.page-previous>tmb:prt:123:0:Alice | 2 / 3 | telegram.button.page-next>tmb:prt:123:2:Alice",
+                "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 1));
 
         assertEquals(List.of(
                 "@P11",
-                "telegram.button.page-previous>tmb:prt:123:1 | 3 / 3",
-                "telegram.button.back>tmb:pr:123:0"),
+                "telegram.button.page-previous>tmb:prt:123:1:Alice | 3 / 3",
+                "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 2));
     }
 
@@ -151,12 +186,12 @@ public class ProfileMessageBuilderTest {
 
         assertEquals(List.of(
                 "@P01", "@P02", "@P03", "@P04", "@P05",
-                "telegram.button.back>tmb:pr:123:0"),
+                "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
         assertEquals(keyboard("Alice", Section.TRUSTERS, 0), keyboard("Alice", Section.TRUSTERS, 7));
 
-        assertEquals(List.of("telegram.button.back>tmb:pr:123:0"),
+        assertEquals(List.of("telegram.button.back>tmb:pr:123:0:Bob"),
                 keyboard("Bob", Section.TRUSTERS, 0));
     }
 

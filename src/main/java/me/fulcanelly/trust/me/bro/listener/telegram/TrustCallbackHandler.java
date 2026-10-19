@@ -128,16 +128,16 @@ public final class TrustCallbackHandler {
     }
 
     /**
-     * Profile buttons re-render the /myprofile message in place: the pressed
-     * button's section (the target of Back is just another section). Only the
-     * author of the command may press them.
+     * Profile buttons re-render the /rep message in place: the pressed
+     * button's section (the target of Back is just another section) of the player
+     * the button carries. Only the author of the command may press them.
      */
     private void onProfileAction(CallbackQueryEvent event, Payload payload) {
         var messages = context.getMessages();
         long telegramUserId = event.getFrom().getId();
 
         Optional<Section> section = Section.fromCode(payload.getAction());
-        if (section.isEmpty() || payload.getPage().isEmpty()) {
+        if (section.isEmpty() || payload.getPage().isEmpty() || payload.getProfilePlayer().isEmpty()) {
             event.answer(messages.format("callback.bad-action"));
             return;
         }
@@ -148,19 +148,15 @@ public final class TrustCallbackHandler {
             return;
         }
 
-        Optional<String> linkedPlayer = context.getBridge().getReception().getPlayerByTg(telegramUserId);
-        if (linkedPlayer.isEmpty()) {
-            event.answer(messages.format("callback.link-required"));
-            return;
-        }
+        String profilePlayer = payload.getProfilePlayer().get();
 
         try { // TODO: move to top level (onCallback)
             context.getBridge().getBot().editMessage(
                     event.getMessage().getChat().getId(),
                     event.getMessage().getMsgId(),
-                    profileMessages.buildText(linkedPlayer.get(), section.get()),
+                    profileMessages.buildText(profilePlayer, section.get()),
                     profileMessages.buildKeyboard(
-                            linkedPlayer.get(), section.get(), payload.getPage().get(), telegramUserId));
+                            profilePlayer, section.get(), payload.getPage().get(), telegramUserId));
             event.answer("");
         } catch (SQLException e) {
             context.getLogger().warning("TrustMeBro profile callback failed: " + e.getMessage());

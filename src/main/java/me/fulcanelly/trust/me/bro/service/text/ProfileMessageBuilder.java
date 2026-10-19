@@ -1,5 +1,7 @@
 package me.fulcanelly.trust.me.bro.service.text;
 
+import static me.fulcanelly.trust.me.bro.service.util.TelegramMarkdown.escape;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
@@ -15,7 +17,7 @@ import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
- * Builds the /myprofile Telegram message and its buttons.
+ * Builds the /rep Telegram message and its buttons.
  *
  * Shared by the command (first message) and the callback handler (edits when a
  * button is pressed), so both always render the same thing.
@@ -61,10 +63,20 @@ public final class ProfileMessageBuilder {
         private final String code;
 
         /**
-         * Suffix of the locale keys {@code myprofile.button.*} and
-         * {@code myprofile.title.*}.
+         * Suffix of the locale key {@code myprofile.title.*}: the section's button
+         * label and its step in the "Path / To / Section:" line.
          */
         private final String key;
+
+        /** A menu opens other sections, any other section opens its players. */
+        public boolean isMenu() {
+            for (Section section : values()) {
+                if (section.parent == this) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         public static Optional<Section> fromCode(String code) {
             for (Section section : values()) {
@@ -83,6 +95,7 @@ public final class ProfileMessageBuilder {
     public String buildText(String player, Section section) throws SQLException {
         String profile = messages.format(
                 "telegram.command.myprofile.text",
+                "player", escape(player),
                 "trusters", countPlayers(player, Section.TRUSTERS),
                 "reporters", countPlayers(player, Section.REPORTERS),
                 "trusted", countPlayers(player, Section.TRUSTED),
@@ -106,10 +119,10 @@ public final class ProfileMessageBuilder {
     public String buildKeyboard(String player, Section section, int page, long allowedTelegramUserId)
             throws SQLException {
         JSONArray rows = new JSONArray();
-        addSectionButtons(rows, player, section, allowedTelegramUserId);
-        addPlayerButtons(rows, player, section, page, allowedTelegramUserId);
+        rows.addAll(sectionButtons(player, section, allowedTelegramUserId));
+        rows.addAll(playerButtons(player, section, page, allowedTelegramUserId));
         if (section != Section.MAIN) {
-            addBackButtonTo(rows, section.getParent(), allowedTelegramUserId);
+            rows.add(backButtonTo(player, section.getParent(), allowedTelegramUserId));
         }
 
         JSONObject keyboard = new JSONObject();
@@ -117,7 +130,7 @@ public final class ProfileMessageBuilder {
         return keyboard.toJSONString();
     }
 
-    /** "Your reputation / Trust you:" */
+    /** "⭐ Reputation / ✅ Trusted by:" */
     private String buildPath(Section section) {
         List<String> titles = new ArrayList<>();
         for (Section step = section; step != Section.MAIN; step = step.getParent()) {
@@ -152,34 +165,41 @@ public final class ProfileMessageBuilder {
         };
     }
 
-    @SuppressWarnings("unchecked")
-    private void addSectionButtons(JSONArray rows, String player, Section parent, long allowedTelegramUserId)
+    /** One row per child section; a list section's label says how many players are in it. */
+    private List<JSONArray> sectionButtons(String player, Section parent, long allowedTelegramUserId)
             throws SQLException {
+        List<JSONArray> rows = new ArrayList<>();
         for (Section child : Section.values()) {
-            if (child.getParent() == parent) {
-                rows.add(row(button(
-                        // {count} is only in the labels of list sections
-                        messages.format(
-                                "telegram.command.myprofile.button." + child.getKey(),
-                                "count", countPlayers(player, child)),
-                        callbackPayloads.encodeProfile(child.getCode(), allowedTelegramUserId, FIRST_PAGE))));
+            if (child.getParent() != parent) {
+                continue;
             }
+
+            String label = messages.format("telegram.command.myprofile.title." + child.getKey());
+            if (!child.isMenu()) {
+                label = messages.format(
+                        "telegram.command.myprofile.button-with-count",
+                        "title", label,
+                        "count", countPlayers(player, child));
+            }
+            rows.add(row(button(
+                    label,
+                    callbackPayloads.encodeProfile(child.getCode(), allowedTelegramUserId, FIRST_PAGE, player))));
         }
+        return rows;
     }
 
     /**
-     * The players of one page as buttons, then the page row. Menu sections add
-     * nothing.
+     * One row per player of the page, then the page row. Menu sections have no
+     * players, so no rows.
      */
-    // TODO wtf is the style to pass mutable rows - is that c++ ?
-    // why the fuck not return the rows and let the caller add them to the keyboard
     @SuppressWarnings("unchecked")
-    private void addPlayerButtons(JSONArray rows, String player, Section section, int page, long allowedTelegramUserId)
+    private List<JSONArray> playerButtons(String player, Section section, int page, long allowedTelegramUserId)
             throws SQLException {
         int totalPages = Math.max(1, (countPlayers(player, section) + PAGE_SIZE - 1) / PAGE_SIZE);
         // A button of an older message can point past the end once the list has shrunk.
         int shownPage = Math.min(page, totalPages - 1);
 
+        List<JSONArray> rows = new ArrayList<>();
         for (String listed : findPlayers(player, section, PAGE_SIZE, shownPage * PAGE_SIZE)) {
             // TODO: a button per player should open that player's own section
             rows.add(row(button(
@@ -188,29 +208,29 @@ public final class ProfileMessageBuilder {
         }
 
         if (totalPages == 1) {
-            return; // everything fits on one page: no page row
+            return rows; // everything fits on one page: no page row
         }
 
         JSONArray pageRow = new JSONArray();
         if (shownPage > FIRST_PAGE) {
             pageRow.add(button(
                     messages.format("telegram.button.page-previous"),
-                    callbackPayloads.encodeProfile(section.getCode(), allowedTelegramUserId, shownPage - 1)));
+                    callbackPayloads.encodeProfile(section.getCode(), allowedTelegramUserId, shownPage - 1, player)));
         }
         pageRow.add(button((shownPage + 1) + " / " + totalPages, callbackPayloads.encodeNoop()));
         if (shownPage < totalPages - 1) {
             pageRow.add(button(
                     messages.format("telegram.button.page-next"),
-                    callbackPayloads.encodeProfile(section.getCode(), allowedTelegramUserId, shownPage + 1)));
+                    callbackPayloads.encodeProfile(section.getCode(), allowedTelegramUserId, shownPage + 1, player)));
         }
         rows.add(pageRow);
+        return rows;
     }
 
-    @SuppressWarnings("unchecked")
-    private void addBackButtonTo(JSONArray rows, Section target, long allowedTelegramUserId) {
-        rows.add(row(button(
+    private JSONArray backButtonTo(String player, Section target, long allowedTelegramUserId) {
+        return row(button(
                 messages.format("telegram.button.back"),
-                callbackPayloads.encodeProfile(target.getCode(), allowedTelegramUserId, FIRST_PAGE))));
+                callbackPayloads.encodeProfile(target.getCode(), allowedTelegramUserId, FIRST_PAGE, player)));
     }
 
     @SuppressWarnings("unchecked")

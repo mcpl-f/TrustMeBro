@@ -15,46 +15,37 @@ telegram:
       stub: "TrustMeBro command is not implemented yet."
     myprofile:
       text: |-
-        👤 Your profile
+        Reputation profile 👤 {player}
 
         ⭐ Reputation
 
-        ✅ Trust you — {trusters}
-        🚩 Reported you — {reporters}
+        ✅ Trusted by — {trusters}
+        🚩 Reported by — {reporters}
 
-        ⚖️ Your decisions
+        ⚖️ Decisions
 
-        ✅ You trust — {trusted}
-        👁 You watch — {watched}
-        🚩 You reported — {reported}
+        ✅ Trusts — {trusted}
+        👁 Watches — {watched}
+        🚩 Reported — {reported}
 
-        ⏳ Waiting for your decision — {pending}
-      button:
-        reputation: "⭐ My reputation"
-        ratings: "⚖️ My decisions"
-
-        trusters: "✅ Trust you ({count})"
-        reporters: "🚩 Reported you ({count})"
-
-        trusted: "✅ You trust ({count})"
-        watched: "👁 You watch ({count})"
-        reported: "🚩 You reported ({count})"
-
-        pending: "⏳ Waiting for your decision ({count})"
+        ⏳ Waiting for decision — {pending}
       title:
-        reputation: "Your reputation"
-        ratings: "Your decisions"
+        reputation: "⭐ Reputation"
+        ratings: "⚖️ Decisions"
 
-        trusters: "Trust you"
-        reporters: "Reported you"
+        trusters: "✅ Trusted by"
+        reporters: "🚩 Reported by"
 
-        trusted: "You trust"
-        watched: "You watch"
-        reported: "You reported"
-        
-        pending: "Waiting for your decision"
+        trusted: "✅ Trusts"
+        watched: "👁 Watches"
+        reported: "🚩 Reported"
+
+        pending: "⏳ Waiting for decision"
+      button-with-count: "{title} ({count})"
       player-button: "👤 {player}"
-      not-linked: "Your Telegram account is not linked to Minecraft. Link it first."
+      not-linked: "Telegram account is not linked to Minecraft. Link an account or pass a nickname: /rep Steve"
+      unknown-player: "Player {player} not found."
+      bad-name: "Nickname must be 1-37 characters: latin letters, digits, underscore or dot"
       failed: "Failed to load your profile."
     truststats:
       trusted-header: "Top {n} trusted players:"
@@ -92,7 +83,7 @@ callback:
   trusted: "{owner} now trusts {interactor}"
   reported: "{owner} reported {interactor}"
   db-error: "TrustMeBro DB error"
-  not-your-profile: "This is not your profile. Run /myprofile yourself."
+  not-your-profile: "These buttons belong to someone else. Run /rep yourself."
 
 count:
   removed: "removed"

@@ -1,5 +1,7 @@
 package me.fulcanelly.trust.me.bro.service.text;
 
+import static me.fulcanelly.trust.me.bro.service.util.TelegramMarkdown.escape;
+
 import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -272,13 +274,5 @@ public final class TelegramWarningMessageBuilder {
             builder.append(", ");
         }
         builder.append(value).append(' ').append(label);
-    }
-
-    private String escape(String text) {
-        return text.replace("_", "\\_")
-                .replace("*", "\\*")
-                .replace("[", "\\[")
-                .replace("]", "\\]")
-                .replace("`", "\\`");
     }
 }

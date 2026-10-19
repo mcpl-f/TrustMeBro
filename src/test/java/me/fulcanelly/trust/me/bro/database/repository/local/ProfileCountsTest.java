@@ -14,7 +14,7 @@ import me.fulcanelly.trust.me.bro.database.MigrationRunner;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 
 /**
- * The numbers behind /myprofile.
+ * The numbers behind /rep.
  */
 public class ProfileCountsTest {
 

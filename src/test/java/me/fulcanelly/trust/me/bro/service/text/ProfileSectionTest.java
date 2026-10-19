@@ -12,7 +12,7 @@ import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
- * Wiring of the /myprofile buttons: a pressed button is found by its callback code.
+ * Wiring of the /rep buttons: a pressed button is found by its callback code.
  */
 public class ProfileSectionTest {
 
@@ -21,7 +21,7 @@ public class ProfileSectionTest {
     /*
      * button -> callback data -> handler:
      *
-     *   [Trust you]  ->  tmb:prt:123:0  ->  decoded as a profile action  ->  Section.TRUSTERS
+     *   [Trust you]  ->  tmb:prt:123:0:Steve  ->  decoded as a profile action  ->  Section.TRUSTERS
      *   [Back]       ->  code of the parent, so from TRUSTERS it opens REPUTATION
      *
      * A section with a duplicate code, or a code the payload service does not take for a
@@ -36,7 +36,7 @@ public class ProfileSectionTest {
             assertTrue(codes.add(section.getCode()), "duplicate code " + section.getCode());
             assertTrue(payloads.isProfileAction(section.getCode()), section.getCode());
 
-            var decoded = payloads.decode(payloads.encodeProfile(section.getCode(), 123L, 0)).orElseThrow();
+            var decoded = payloads.decode(payloads.encodeProfile(section.getCode(), 123L, 0, "Steve")).orElseThrow();
             assertEquals(section, Section.fromCode(decoded.getAction()).orElseThrow());
         }
     }
