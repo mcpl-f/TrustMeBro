@@ -7,6 +7,9 @@ telegram:
   button:
     trust: "Доверять ✅"
     report: "Пожаловаться ❌"
+    my-reputation: "Моя репутация"
+    my-ratings: "Мои оценки"
+    back: "⬅️ Назад"
   command:
     mctrust:
       stub: "Команда TrustMeBro пока не реализована."
@@ -24,6 +27,8 @@ telegram:
         🚩 Пожаловались — {reported}
 
         ⏳ Ожидают решения — {pending}
+      reputation-section: "Ваша репутация:"
+      ratings-section: "Ваши оценки:"
       not-linked: "Ваш Telegram не привязан к Minecraft. Сначала привяжите аккаунт."
       failed: "Не удалось загрузить профиль."
     truststats:
@@ -62,6 +67,7 @@ callback:
   trusted: "{owner} теперь доверяет {interactor}"
   reported: "{owner} пожаловался на {interactor}"
   db-error: "Ошибка базы TrustMeBro"
+  not-your-profile: "Это не ваш профиль. Вызовите /myprofile сами."
 
 count:
   removed: "сломано"

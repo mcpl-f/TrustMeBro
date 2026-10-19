@@ -7,6 +7,9 @@ telegram:
   button:
     trust: "Trust ✅"
     report: "Report ❌"
+    my-reputation: "My reputation"
+    my-ratings: "My decisions"
+    back: "⬅️ Back"
   command:
     mctrust:
       stub: "TrustMeBro command is not implemented yet."
@@ -24,6 +27,8 @@ telegram:
         🚩 You reported — {reported}
 
         ⏳ Waiting for your decision — {pending}
+      reputation-section: "Your reputation:"
+      ratings-section: "Your decisions:"
       not-linked: "Your Telegram account is not linked to Minecraft. Link it first."
       failed: "Failed to load your profile."
     truststats:
@@ -62,6 +67,7 @@ callback:
   trusted: "{owner} now trusts {interactor}"
   reported: "{owner} reported {interactor}"
   db-error: "TrustMeBro DB error"
+  not-your-profile: "This is not your profile. Run /myprofile yourself."
 
 count:
   removed: "removed"
