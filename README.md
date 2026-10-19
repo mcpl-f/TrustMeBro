@@ -1,12 +1,26 @@
 # Trust Me Bro
 <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/mcpl-f/TrustMeBro/total"> <img src="https://img.shields.io/github/stars/mcpl-f/TrustMeBro"/>
 
+Decentralized anti-grief self regulation
+
+# TODO
+- escalation strategies
+  - admin ban review
+  - restrictions (adv mode)
+  - auto ban based on x reports
+
+- message transport
+  - html/mardown outputs
+    - discord
+    - telegram
+
+
 A Minecraft plugin that asks: *do you trust this person with your stuff?*
 
 Someone digs your base, places blocks on your build, or rummages through your chests. The plugin notices (via CoreProtect), tells the people tied to that place — usually in Telegram — and lets **them** choose:
 
-- **Trust** — fine, don’t warn me about this player again  
-- **Report** — not fine, keep a note for admins  
+- **Trust** — fine, don’t warn me about this player again
+- **Report** — not fine, keep a note for admins
 
 Trust is one-way. Report does not ban anyone by itself.
 
@@ -32,6 +46,10 @@ Player Griefer interacted with blocks associated with:
       ± 50
 - Alice: 3 removed, 1 container interactions
 - Bob: 2 placed
+
+Materials (total):
+stone ×3 (-3)
+oak planks ×2 (+2)
 
 Do you trust this player?
 
@@ -63,7 +81,7 @@ Top 3 most reported:
 | --- | --- |
 | *(auto warning)* | Message + **Trust** / **Report** buttons when someone messes with linked owners’ stuff |
 | `/truststats` | Top trusted, suspicious (with regions), and most reported players |
-| `/myprofile` | Your profile: who trusts / reported you, your own trust and report counts, players still waiting for your decision (watch is a placeholder) |
+| `/myprofile` | Your profile: who trusts / reported you, your own trust and report counts, players still waiting for your decision (watch is a placeholder). Buttons *My reputation* / *My decisions* switch the message in place (stubs for now), *Back* restores it; only the author can press them |
 | `/mctrust` | Stub / linked account check (WIP) |
 
 Same decisions in-game: `/ttrust <player>`, `/treport <player>`. Optional join reminder in Minecraft chat (`minecraft.notify-on-join`). Staff can name places with `/new_trust_region`.
