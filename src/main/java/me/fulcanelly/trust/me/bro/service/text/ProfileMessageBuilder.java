@@ -13,13 +13,14 @@ import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 /**
  * Builds the /myprofile Telegram message and its buttons.
  *
- * Shared by the command (first message) and the callback handler (edits when a button
+ * Shared by the command (first message) and the callback handler (edits when a
+ * button
  * is pressed), so both always render the same thing.
  *
  * ---
- * MAIN:        profile text                     [My reputation] [My ratings]
- * REPUTATION:  profile text + "Your reputation:"                [Back]
- * RATINGS:     profile text + "Your ratings:"                   [Back]
+ * MAIN: profile text [My reputation] [My ratings]
+ * REPUTATION: profile text + "Your reputation:" [Back]
+ * RATINGS: profile text + "Your ratings:" [Back]
  * ---
  */
 @RequiredArgsConstructor
@@ -59,31 +60,43 @@ public final class ProfileMessageBuilder {
         }
     }
 
-    /** @param allowedTelegramUserId the only Telegram user whose presses are accepted */
+    /**
+     * @param allowedTelegramUserId the only Telegram user whose presses are
+     *                              accepted
+     */
     @SuppressWarnings("unchecked")
     public String buildKeyboard(Section section, long allowedTelegramUserId) {
-        JSONArray row = new JSONArray();
+        JSONArray totalRows = new JSONArray();
+        JSONArray tempTow;
+
         if (section == Section.MAIN) {
-            row.add(button(
+            // First row
+            JSONArray tempRow = new JSONArray();
+            tempRow.add(button(
                     messages.format("telegram.button.my-reputation"),
                     callbackPayloads.encodeProfile(
                             TrustCallbackPayloadService.ACTION_PROFILE_REPUTATION, allowedTelegramUserId)));
-            row.add(button(
+            totalRows.add(tempRow);
+            // Second row
+            tempRow = new JSONArray();
+            tempRow.add(button(
                     messages.format("telegram.button.my-ratings"),
                     callbackPayloads.encodeProfile(
                             TrustCallbackPayloadService.ACTION_PROFILE_RATINGS, allowedTelegramUserId)));
+            totalRows.add(tempRow);
+
         } else {
-            row.add(button(
+            tempTow = new JSONArray();
+            tempTow.add(button(
                     messages.format("telegram.button.back"),
                     callbackPayloads.encodeProfile(
                             TrustCallbackPayloadService.ACTION_PROFILE_BACK, allowedTelegramUserId)));
+            totalRows.add(tempTow);
         }
 
-        JSONArray rows = new JSONArray();
-        rows.add(row);
 
         JSONObject keyboard = new JSONObject();
-        keyboard.put("inline_keyboard", rows);
+        keyboard.put("inline_keyboard", totalRows);
         return keyboard.toJSONString();
     }
 
