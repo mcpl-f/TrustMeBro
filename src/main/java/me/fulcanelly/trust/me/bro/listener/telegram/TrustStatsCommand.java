@@ -67,7 +67,8 @@ public final class TrustStatsCommand {
         for (PeopleAggregateStat row : trust.findTopTrusted(topSize)) {
             List<String> names = trust.findTrusters(
                     row.getPlayer(),
-                    TrustStatsMessageBuilder.NAMES_THRESHOLD);
+                    TrustStatsMessageBuilder.NAMES_THRESHOLD,
+                    0); // /truststats has no paging: always the first rows
             lines.add(new PeopleLine(row.getPlayer(), row.getPeopleCount(), names));
         }
         return lines;
@@ -92,7 +93,8 @@ public final class TrustStatsCommand {
         for (PeopleAggregateStat row : reports.findTopReported(topSize)) {
             List<String> names = reports.findReporters(
                     row.getPlayer(),
-                    TrustStatsMessageBuilder.NAMES_THRESHOLD);
+                    TrustStatsMessageBuilder.NAMES_THRESHOLD,
+                    0); // /truststats has no paging: always the first rows
             lines.add(new PeopleLine(row.getPlayer(), row.getPeopleCount(), names));
         }
         return lines;

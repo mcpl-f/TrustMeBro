@@ -16,10 +16,10 @@ public class TrustCallbackPayloadServiceTest {
 
     /*
      * Trust/report buttons carry the interactor, profile buttons carry the only
-     * Telegram user allowed to press them.
+     * Telegram user allowed to press them and the list page.
      *
-     *   tmb:t:Alex_123    -> action t,  interactor Alex_123
-     *   tmb:pr:123456789  -> action pr, allowed user 123456789 (no interactor)
+     *   tmb:t:Alex_123      -> action t,  interactor Alex_123
+     *   tmb:pr:123456789:2  -> action pr, allowed user 123456789, page 2 (no interactor)
      */
     @Test
     void decodesInteractorForDecisionsAndAllowedUserForProfile() {
@@ -27,31 +27,36 @@ public class TrustCallbackPayloadServiceTest {
                 .orElseThrow();
         assertEquals(Optional.of("Alex_123"), trust.getInteractorPlayer());
         assertEquals(Optional.empty(), trust.getAllowedTelegramUserId());
+        assertEquals(Optional.empty(), trust.getPage());
 
-        Payload profile = payloads.decode(
-                payloads.encodeProfile(TrustCallbackPayloadService.ACTION_PROFILE_REPUTATION, 123456789L))
-                .orElseThrow();
-        assertEquals(TrustCallbackPayloadService.ACTION_PROFILE_REPUTATION, profile.getAction());
+        Payload profile = payloads.decode(payloads.encodeProfile("pr", 123456789L, 2)).orElseThrow();
+        assertEquals("pr", profile.getAction());
         assertEquals(Optional.of(123456789L), profile.getAllowedTelegramUserId());
+        assertEquals(Optional.of(2), profile.getPage());
         assertEquals(Optional.empty(), profile.getInteractorPlayer());
     }
 
     /*
      * Broken or foreign data must never reach the handlers as a valid payload.
      *
-     *   tmb:pr:abc   -> profile action, id is not a number -> rejected
-     *   tmb:pr       -> no argument at all                 -> rejected
+     *   tmb:pr:abc:0   -> profile action, id is not a number -> rejected
+     *   tmb:pr:123     -> no page                            -> rejected
+     *   tmb:pr:123:-1  -> page before the first one          -> rejected
+     *   tmb:pr         -> no argument at all                 -> rejected
      *   other:t:Steve -> not ours                          -> not a TrustMeBro callback
      *   tmb:x:Steve  -> valid shape, unknown action        -> decodes (handler rejects it)
      */
     @Test
     void rejectsBrokenProfileDataAndKeepsUnknownActionsForTheHandler() {
-        assertTrue(payloads.decode("tmb:pr:abc").isEmpty());
+        assertTrue(payloads.decode("tmb:pr:abc:0").isEmpty());
+        assertTrue(payloads.decode("tmb:pr:123").isEmpty());
+        assertTrue(payloads.decode("tmb:pr:123:-1").isEmpty());
         assertTrue(payloads.decode("tmb:pr").isEmpty());
 
         assertFalse(payloads.isTrustCallback("other:t:Steve"));
         assertTrue(payloads.decode("other:t:Steve").isEmpty());
 
         assertEquals("x", payloads.decode("tmb:x:Steve").orElseThrow().getAction());
+        assertEquals(TrustCallbackPayloadService.ACTION_NOOP, payloads.decode(payloads.encodeNoop()).orElseThrow().getAction());
     }
 }

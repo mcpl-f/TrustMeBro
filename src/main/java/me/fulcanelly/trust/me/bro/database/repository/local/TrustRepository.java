@@ -81,24 +81,47 @@ public final class TrustRepository {
     }
 
     /**
-     * Owners who trust {@code trustedPlayer} (trusters), capped by {@code limit}.
+     * Owners who trust {@code trustedPlayer} (trusters), a page of {@code limit} rows after {@code offset}.
      *
      * <p>Not "trustees" — a trustee is the person being trusted; a truster grants trust.
      */
-    public List<String> findTrusters(String trustedPlayer, int limit) throws SQLException {
+    public List<String> findTrusters(String trustedPlayer, int limit, int offset) throws SQLException {
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement("""
                 SELECT owner_mc_name
                 FROM trust_edges
                 WHERE trusted_mc_name = ?
                 ORDER BY created_at ASC, owner_mc_name ASC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, trustedPlayer);
             statement.setInt(2, limit);
+            statement.setInt(3, offset);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     result.add(rows.getString("owner_mc_name"));
+                }
+            }
+        }
+        return result;
+    }
+
+    /** Players {@code ownerPlayer} trusts, oldest decision first, a page of {@code limit} rows after {@code offset}. */
+    public List<String> findTrusted(String ownerPlayer, int limit, int offset) throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement("""
+                SELECT trusted_mc_name
+                FROM trust_edges
+                WHERE owner_mc_name = ?
+                ORDER BY created_at ASC, trusted_mc_name ASC
+                LIMIT ? OFFSET ?
+                """)) {
+            statement.setString(1, ownerPlayer);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString("trusted_mc_name"));
                 }
             }
         }

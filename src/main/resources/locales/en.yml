@@ -7,9 +7,9 @@ telegram:
   button:
     trust: "Trust ✅"
     report: "Report ❌"
-    my-reputation: "My reputation"
-    my-ratings: "My decisions"
     back: "⬅️ Back"
+    page-previous: "◀️"
+    page-next: "▶️"
   command:
     mctrust:
       stub: "TrustMeBro command is not implemented yet."
@@ -27,8 +27,24 @@ telegram:
         🚩 You reported — {reported}
 
         ⏳ Waiting for your decision — {pending}
-      reputation-section: "Your reputation:"
-      ratings-section: "Your decisions:"
+      button:
+        reputation: "My reputation"
+        ratings: "My decisions"
+        trusters: "✅ Trust you"
+        reporters: "🚩 Reported you"
+        trusted: "✅ You trust"
+        watched: "👁 You watch"
+        reported: "🚩 You reported"
+        pending: "⏳ Waiting for your decision"
+      title:
+        reputation: "Your reputation"
+        ratings: "Your decisions"
+        trusters: "Trust you"
+        reporters: "Reported you"
+        trusted: "You trust"
+        watched: "You watch"
+        reported: "You reported"
+        pending: "Waiting for your decision"
       not-linked: "Your Telegram account is not linked to Minecraft. Link it first."
       failed: "Failed to load your profile."
     truststats:

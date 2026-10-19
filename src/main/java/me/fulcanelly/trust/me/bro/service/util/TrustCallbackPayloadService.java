@@ -6,7 +6,8 @@ import lombok.Value;
 
 /**
  * Encodes the callback action plus one argument: the suspicious interactor for
- * trust/report buttons, or the Telegram user allowed to press for /myprofile buttons.
+ * trust/report buttons, or the Telegram user allowed to press plus the list page
+ * for /myprofile buttons.
  *
  * The owner is intentionally not part of callback data: Telegram user id from the
  * callback is resolved through tg-bridge registration, so a button click can only
@@ -18,8 +19,11 @@ import lombok.Value;
  * - tmb:t:Steve -> trust Steve for the linked owner
  * - tmb:r:Steve -> report Steve for the linked owner
  * - tmb:t:Alex_123 -> trust Alex_123 for the linked owner
- * - tmb:pr:123456789 -> profile "reputation" section, only for Telegram user 123456789
- * - tmb:pr:abc -> invalid profile argument, rejected as a bad action
+ * - tmb:pr:123456789:0 -> profile "reputation" section, first page, only for Telegram user 123456789
+ * - tmb:prt:123456789:2 -> profile "trusters" section, third page (pages count from 0)
+ * - tmb:n:- -> button that does nothing (page number, player rows for now)
+ * - tmb:pr:abc:0 -> invalid profile argument, rejected as a bad action
+ * - tmb:pr:123456789 -> profile argument without a page, rejected as a bad action
  * - tmb:x:Steve -> valid shape, rejected later as an unknown action
  * - other:t:Steve -> ignored, not a TrustMeBro callback
  */
@@ -28,9 +32,14 @@ public final class TrustCallbackPayloadService {
     public static final String ACTION_TRUST = "t";
     public static final String ACTION_REPORT = "r";
 
-    public static final String ACTION_PROFILE_REPUTATION = "pr";
-    public static final String ACTION_PROFILE_RATINGS = "pm";
-    public static final String ACTION_PROFILE_BACK = "pb";
+    /** Buttons that only show something: answered with nothing. */
+    public static final String ACTION_NOOP = "n";
+
+    /**
+     * Every /myprofile section code (see ProfileMessageBuilder.Section) starts with this,
+     * so the section list can grow without being repeated here.
+     */
+    private static final String PROFILE_ACTION_PREFIX = "p";
 
     private static final String PREFIX = "tmb:";
     private static final int EXPECTED_PARTS = 3;
@@ -45,17 +54,20 @@ public final class TrustCallbackPayloadService {
     }
 
     public boolean isProfileAction(String action) {
-        return ACTION_PROFILE_REPUTATION.equals(action)
-                || ACTION_PROFILE_RATINGS.equals(action)
-                || ACTION_PROFILE_BACK.equals(action);
+        return action.startsWith(PROFILE_ACTION_PREFIX);
     }
 
     public String encode(String action, String interactorPlayer) {
         return PREFIX + action + ":" + interactorPlayer;
     }
 
-    public String encodeProfile(String action, long allowedTelegramUserId) {
-        return PREFIX + action + ":" + allowedTelegramUserId;
+    public String encodeProfile(String sectionCode, long allowedTelegramUserId, int page) {
+        return PREFIX + sectionCode + ":" + allowedTelegramUserId + ":" + page;
+    }
+
+    public String encodeNoop() {
+        // decode wants three parts; the last one is ignored
+        return PREFIX + ACTION_NOOP + ":-";
     }
 
     public Optional<Payload> decode(String data) {
@@ -70,11 +82,22 @@ public final class TrustCallbackPayloadService {
 
         String action = parts[1];
         if (!isProfileAction(action)) {
-            return Optional.of(new Payload(action, Optional.of(parts[2]), Optional.empty()));
+            return Optional.of(new Payload(action, Optional.of(parts[2]), Optional.empty(), Optional.empty()));
+        }
+
+        String[] profileArgs = parts[2].split(":");
+        if (profileArgs.length != 2) {
+            return Optional.empty();
         }
 
         try {
-            return Optional.of(new Payload(action, Optional.empty(), Optional.of(Long.parseLong(parts[2]))));
+            long allowedTelegramUserId = Long.parseLong(profileArgs[0]);
+            int page = Integer.parseInt(profileArgs[1]);
+            if (page < 0) {
+                return Optional.empty();
+            }
+            return Optional.of(new Payload(
+                    action, Optional.empty(), Optional.of(allowedTelegramUserId), Optional.of(page)));
         } catch (NumberFormatException e) {
             return Optional.empty();
         }
@@ -90,5 +113,8 @@ public final class TrustCallbackPayloadService {
 
         /** Present for profile actions: the only Telegram user who may press the button. */
         Optional<Long> allowedTelegramUserId;
+
+        /** Present for profile actions: zero-based page of the section's player list. */
+        Optional<Integer> page;
     }
 }

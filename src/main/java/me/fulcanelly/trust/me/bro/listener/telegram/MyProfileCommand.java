@@ -48,7 +48,8 @@ public final class MyProfileCommand {
             context.getBridge().getBot().sendMessage(
                     event.getMessage().getChat().getId(),
                     profileMessages.buildText(linkedPlayer.get(), Section.MAIN),
-                    profileMessages.buildKeyboard(Section.MAIN, telegramUserId));
+                    profileMessages.buildKeyboard(
+                            linkedPlayer.get(), Section.MAIN, ProfileMessageBuilder.FIRST_PAGE, telegramUserId));
         } catch (SQLException e) {
             context.getLogger().warning("myprofile failed: " + e.getMessage());
             event.getMessage().reply(context.getMessages().format("telegram.command.myprofile.failed"));

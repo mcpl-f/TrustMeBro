@@ -34,6 +34,8 @@ public final class TrustCallbackHandler {
             onProfileAction(event, payload.get());
         } else if (callbackPayloads.isDecisionAction(action)) {
             onDecisionAction(event, payload.get());
+        } else if (TrustCallbackPayloadService.ACTION_NOOP.equals(action)) {
+            event.answer(""); // only closes the button's loading spinner
         } else {
             event.answer(context.getMessages().format("callback.unknown-action"));
         }
@@ -126,15 +128,19 @@ public final class TrustCallbackHandler {
     }
 
     /**
-     * Profile buttons re-render the /myprofile message in place: a section button
-     * adds
-     * its header line, back restores the plain profile. Only the author of the
-     * command
-     * may press them.
+     * Profile buttons re-render the /myprofile message in place: the pressed
+     * button's section (the target of Back is just another section). Only the
+     * author of the command may press them.
      */
     private void onProfileAction(CallbackQueryEvent event, Payload payload) {
         var messages = context.getMessages();
         long telegramUserId = event.getFrom().getId();
+
+        Optional<Section> section = Section.fromCode(payload.getAction());
+        if (section.isEmpty() || payload.getPage().isEmpty()) {
+            event.answer(messages.format("callback.bad-action"));
+            return;
+        }
 
         Optional<Long> allowedUser = payload.getAllowedTelegramUserId();
         if (allowedUser.isEmpty() || allowedUser.get() != telegramUserId) {
@@ -148,19 +154,13 @@ public final class TrustCallbackHandler {
             return;
         }
 
-        Section section = Section.MAIN;
-        if (TrustCallbackPayloadService.ACTION_PROFILE_REPUTATION.equals(payload.getAction())) {
-            section = Section.REPUTATION;
-        } else if (TrustCallbackPayloadService.ACTION_PROFILE_RATINGS.equals(payload.getAction())) {
-            section = Section.RATINGS;
-        }
-
         try { // TODO: move to top level (onCallback)
             context.getBridge().getBot().editMessage(
                     event.getMessage().getChat().getId(),
                     event.getMessage().getMsgId(),
-                    profileMessages.buildText(linkedPlayer.get(), section),
-                    profileMessages.buildKeyboard(section, telegramUserId));
+                    profileMessages.buildText(linkedPlayer.get(), section.get()),
+                    profileMessages.buildKeyboard(
+                            linkedPlayer.get(), section.get(), payload.getPage().get(), telegramUserId));
             event.answer("");
         } catch (SQLException e) {
             context.getLogger().warning("TrustMeBro profile callback failed: " + e.getMessage());

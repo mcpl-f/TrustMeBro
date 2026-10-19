@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,5 +71,42 @@ public class ProfileCountsTest {
         assertEquals(2, interactionCounts.countUndecidedInteractors("Alice"));
 
         assertEquals(0, interactionCounts.countUndecidedInteractors("Bob"));
+    }
+
+    /*
+     * The lists behind the profile buttons, for Alice.
+     *
+     *   Alice trusts:     Carol, Dan        -> "You trust"
+     *   Alice reported:   Dave              -> "You reported"
+     *   trust Alice:      Frank             -> "Trust you"
+     *   reported Alice:   Gina, Hank        -> "Reported you"
+     *   touched her stuff, undecided: Bob (twice), Eve, and Carol/Dave who she already decided on
+     *
+     *   => waiting for her decision: Bob, Eve (alphabetical, Bob once)
+     *   => a limit cuts the list, an offset skips rows of it, neither reorders it
+     */
+    @Test
+    void listsPlayersBehindEachProfileCounter() throws Exception {
+        interactionCounts.increment("Bob", "Alice", SuspiciousActionType.BREAK_BLOCK);
+        interactionCounts.incrementInRegion("Bob", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
+        interactionCounts.increment("Eve", "Alice", SuspiciousActionType.BREAK_BLOCK);
+        interactionCounts.increment("Carol", "Alice", SuspiciousActionType.BREAK_BLOCK);
+        interactionCounts.increment("Dave", "Alice", SuspiciousActionType.BREAK_BLOCK);
+
+        trust.trust("Alice", "Carol", null);
+        trust.trust("Alice", "Dan", null);
+        reports.report("Alice", null, "Dave", "Alice");
+        trust.trust("Frank", "Alice", null);
+        reports.report("Gina", null, "Alice", "Gina");
+        reports.report("Hank", null, "Alice", "Hank");
+
+        assertEquals(List.of("Carol", "Dan"), trust.findTrusted("Alice", 10, 0));
+        assertEquals(List.of("Dave"), reports.findReportedByOwner("Alice", 10, 0));
+        assertEquals(List.of("Frank"), trust.findTrusters("Alice", 10, 0));
+        assertEquals(List.of("Gina", "Hank"), reports.findReporters("Alice", 10, 0));
+        assertEquals(List.of("Bob", "Eve"), interactionCounts.findUndecidedInteractors("Alice", 10, 0));
+
+        assertEquals(List.of("Bob"), interactionCounts.findUndecidedInteractors("Alice", 1, 0));
+        assertEquals(List.of("Eve"), interactionCounts.findUndecidedInteractors("Alice", 1, 1));
     }
 }

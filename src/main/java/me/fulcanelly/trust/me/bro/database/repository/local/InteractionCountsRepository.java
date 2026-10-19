@@ -27,6 +27,22 @@ public final class InteractionCountsRepository {
             FROM interaction_counts
             """;
 
+    /** Binds the owner as the only parameter. */
+    private static final String UNDECIDED_INTERACTORS_FILTER = """
+            FROM interaction_counts
+
+            LEFT JOIN trust_edges
+                ON interaction_counts.owner = trust_edges.owner_mc_name
+                AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
+            LEFT JOIN reports
+                ON interaction_counts.owner = reports.owner
+                AND interaction_counts.interactor_player = reports.interactor_player
+
+            WHERE interaction_counts.owner = ?
+              AND trust_edges.owner_mc_name IS NULL
+              AND reports.owner IS NULL
+            """;
+
     private final Connection connection;
 
     /**
@@ -425,27 +441,41 @@ public final class InteractionCountsRepository {
      * matters.
      */
     public synchronized int countUndecidedInteractors(String ownerPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                SELECT COUNT(DISTINCT interaction_counts.interactor_player)
-                FROM interaction_counts
-                
-                LEFT JOIN trust_edges
-                    ON interaction_counts.owner = trust_edges.owner_mc_name
-                    AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
-                LEFT JOIN reports
-                    ON interaction_counts.owner = reports.owner
-                    AND interaction_counts.interactor_player = reports.interactor_player
-
-                WHERE interaction_counts.owner = ?
-                  AND trust_edges.owner_mc_name IS NULL
-                  AND reports.owner IS NULL
-                """)) {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(DISTINCT interaction_counts.interactor_player) "
+                        + UNDECIDED_INTERACTORS_FILTER)) {
             statement.setString(1, ownerPlayer);
             try (var rows = statement.executeQuery()) {
                 rows.next();
                 return rows.getInt(1);
             }
         }
+    }
+
+    /**
+     * Same players as {@link #countUndecidedInteractors}, alphabetical, a page of
+     * {@code limit} rows after {@code offset}.
+     */
+    public synchronized List<String> findUndecidedInteractors(String ownerPlayer, int limit, int offset)
+            throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement(
+                "SELECT DISTINCT interaction_counts.interactor_player "
+                        + UNDECIDED_INTERACTORS_FILTER
+                        + """
+                                ORDER BY interaction_counts.interactor_player ASC
+                                LIMIT ? OFFSET ?
+                                    """)) {
+            statement.setString(1, ownerPlayer);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString(1));
+                }
+            }
+        }
+        return result;
     }
 
     public synchronized List<InteractionCount> findPendingForOwner(String ownerPlayer) throws SQLException {
