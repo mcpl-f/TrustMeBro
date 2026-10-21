@@ -1,6 +1,6 @@
 telegram:
   warning:
-    header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\n"
+    header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\\n"
     question: "Доверяете этому игроку?"
     materials-header: "Материалы (всего):"
     materials-more: "... и ещё {count} материалов"
@@ -84,6 +84,10 @@ callback:
   reported: "{owner} пожаловался на {interactor}"
   db-error: "Ошибка базы TrustMeBro"
   not-your-profile: "Эти кнопки принадлежат другому. Вызовите /rep сами."
+
+feedback:
+  trusted: "✅ {owner} теперь доверяет вам."
+  reported: "🚩 {owner} пожаловался на вас."
 
 count:
   removed: "сломано"
