@@ -99,7 +99,7 @@ command:
     players-only: "Players only."
     bad-radius: "Radius must be a non-negative integer."
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
-    created: "Region #{id} \\"{name}\\" created at {world} {x}, {z} ± {radius}."
+    created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
   trust:
     players-only: "Players only."
