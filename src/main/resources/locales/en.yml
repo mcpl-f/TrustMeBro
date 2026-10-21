@@ -1,6 +1,6 @@
 telegram:
   warning:
-    header: "Player {interactor} interacted with blocks associated with:\n"
+    header: "Player {interactor} interacted with blocks associated with:\\n"
     question: "Do you trust this player?"
     materials-header: "Materials (total):"
     materials-more: "... and {count} more materials"
@@ -85,6 +85,10 @@ callback:
   db-error: "TrustMeBro DB error"
   not-your-profile: "These buttons belong to someone else. Run /rep yourself."
 
+feedback:
+  trusted: "✅ {owner} now trusts you."
+  reported: "🚩 {owner} reported you."
+
 count:
   removed: "removed"
   placed: "placed"
@@ -95,7 +99,7 @@ command:
     players-only: "Players only."
     bad-radius: "Radius must be a non-negative integer."
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
-    created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
+    created: "Region #{id} \\"{name}\\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
   trust:
     players-only: "Players only."
