@@ -1,5 +1,7 @@
 package me.fulcanelly.trust.me.bro.service.text;
 
+import static me.fulcanelly.trust.me.bro.service.util.TelegramMarkdown.escape;
+
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
@@ -134,14 +136,6 @@ public final class TrustStatsMessageBuilder {
             }
             builder.append('\n');
         }
-    }
-
-    private String escape(String text) {
-        return text.replace("_", "\\_")
-                .replace("*", "\\*")
-                .replace("[", "\\[")
-                .replace("]", "\\]")
-                .replace("`", "\\`");
     }
 
     @Value

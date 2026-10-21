@@ -2,12 +2,51 @@ telegram:
   warning:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с:\n"
     question: "Доверяете этому игроку?"
+    materials-header: "Материалы (всего):"
+    materials-more: "... и ещё {count} материалов"
   button:
     trust: "Доверять ✅"
     report: "Пожаловаться ❌"
+    back: "⬅️ Назад"
+    page-previous: "◀️"
+    page-next: "▶️"
   command:
     mctrust:
       stub: "Команда TrustMeBro пока не реализована."
+    myprofile:
+      text: |-
+        Профиль репутации 👤 {player}
+
+        ⭐ Репутация
+
+        ✅ Доверяют — {trusters}
+        🚩 Пожаловались — {reporters}
+
+        ⚖️ Решения
+
+        ✅ Доверяет — {trusted}
+        👁 Наблюдает — {watched}
+        🚩 Жалоб подано — {reported}
+
+        ⏳ Ожидают решения — {pending}
+      title:
+        reputation: "⭐ Репутация"
+        ratings: "⚖️ Решения"
+
+        trusters: "✅ Доверяют"
+        reporters: "🚩 Пожаловались"
+
+        trusted: "✅ Доверяет"
+        watched: "👁 Наблюдает"
+        reported: "🚩 Жалоб подано"
+
+        pending: "⏳ Ожидают решения"
+      button-with-count: "{title} ({count})"
+      player-button: "👤 {player}"
+      not-linked: "Telegram не привязан к Minecraft. Привяжите аккаунт или укажите ник: /rep Steve"
+      unknown-player: "Игрок {player} не найден."
+      bad-name: "Ник должен быть от 1 до 37 символов: латиница, цифры, подчёркивание или точка"
+      failed: "Не удалось загрузить профиль."
     truststats:
       trusted-header: "Топ {n} самых доверенных:"
       trusted-by-count: "- {player}, доверяют {count}"
@@ -44,6 +83,7 @@ callback:
   trusted: "{owner} теперь доверяет {interactor}"
   reported: "{owner} пожаловался на {interactor}"
   db-error: "Ошибка базы TrustMeBro"
+  not-your-profile: "Эти кнопки принадлежат другому. Вызовите /rep сами."
 
 count:
   removed: "сломано"

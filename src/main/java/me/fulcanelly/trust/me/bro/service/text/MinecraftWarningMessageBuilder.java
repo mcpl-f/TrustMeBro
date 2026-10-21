@@ -79,6 +79,7 @@ public final class MinecraftWarningMessageBuilder {
                             mergeDistance));
         }
 
+        // TODO: material breakdown for this row (InteractionMaterialCountsRepository.sumByInteractionCountIds)
         // - 3 сломано
         // - 1 поставлено
         // - 2 действий с контейнерами

@@ -85,18 +85,19 @@ public final class ReportRepository {
         return result;
     }
 
-    /** Owners who reported {@code interactorPlayer}, capped by {@code limit}. */
-    public List<String> findReporters(String interactorPlayer, int limit) throws SQLException {
+    /** Owners who reported {@code interactorPlayer}, a page of {@code limit} rows after {@code offset}. */
+    public List<String> findReporters(String interactorPlayer, int limit, int offset) throws SQLException {
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement("""
                 SELECT owner
                 FROM reports
                 WHERE interactor_player = ?
                 ORDER BY created_at ASC, owner ASC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, interactorPlayer);
             statement.setInt(2, limit);
+            statement.setInt(3, offset);
             try (var rows = statement.executeQuery()) {
                 while (rows.next()) {
                     result.add(rows.getString("owner"));
@@ -104,5 +105,51 @@ public final class ReportRepository {
             }
         }
         return result;
+    }
+
+    /** Players {@code ownerPlayer} reported, oldest report first, a page of {@code limit} rows after {@code offset}. */
+    public List<String> findReportedByOwner(String ownerPlayer, int limit, int offset) throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement("""
+                SELECT interactor_player
+                FROM reports
+                WHERE owner = ?
+                ORDER BY created_at ASC, interactor_player ASC
+                LIMIT ? OFFSET ?
+                """)) {
+            statement.setString(1, ownerPlayer);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString("interactor_player"));
+                }
+            }
+        }
+        return result;
+    }
+
+    /** How many owners reported {@code interactorPlayer}. */
+    public int countReporters(String interactorPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM reports WHERE interactor_player = ?")) {
+            statement.setString(1, interactorPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
+
+    /** How many players {@code ownerPlayer} reported. */
+    public int countReportedByOwner(String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(*) FROM reports WHERE owner = ?")) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
     }
 }

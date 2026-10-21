@@ -27,9 +27,28 @@ public final class InteractionCountsRepository {
             FROM interaction_counts
             """;
 
+    /** Binds the owner as the only parameter. */
+    private static final String UNDECIDED_INTERACTORS_FILTER = """
+            FROM interaction_counts
+
+            LEFT JOIN trust_edges
+                ON interaction_counts.owner = trust_edges.owner_mc_name
+                AND interaction_counts.interactor_player = trust_edges.trusted_mc_name
+            LEFT JOIN reports
+                ON interaction_counts.owner = reports.owner
+                AND interaction_counts.interactor_player = reports.interactor_player
+
+            WHERE interaction_counts.owner = ?
+              AND trust_edges.owner_mc_name IS NULL
+              AND reports.owner IS NULL
+            """;
+
     private final Connection connection;
 
-    public synchronized void increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
+    /**
+     * @return id of the (legacy, region-less) row that was incremented or created
+     */
+    public synchronized long increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
             throws SQLException {
         long now = System.currentTimeMillis();
         int breakDelta = actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0;
@@ -45,6 +64,7 @@ public final class InteractionCountsRepository {
                 WHERE interactor_player = ?
                   AND owner = ?
                   AND wid IS NULL
+                RETURNING id
                 """)) {
             statement.setInt(1, breakDelta);
             statement.setInt(2, placeDelta);
@@ -52,8 +72,10 @@ public final class InteractionCountsRepository {
             statement.setLong(4, now);
             statement.setString(5, interactorPlayer);
             statement.setString(6, ownerPlayer);
-            if (statement.executeUpdate() > 0) {
-                return;
+            try (var rows = statement.executeQuery()) {
+                if (rows.next()) {
+                    return rows.getLong("id");
+                }
             }
         }
 
@@ -68,6 +90,7 @@ public final class InteractionCountsRepository {
                   created_at,
                   updated_at
                 ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+                RETURNING id
                 """)) {
             statement.setString(1, interactorPlayer);
             statement.setString(2, ownerPlayer);
@@ -76,7 +99,10 @@ public final class InteractionCountsRepository {
             statement.setInt(5, containerDelta);
             statement.setLong(6, now);
             statement.setLong(7, now);
-            statement.executeUpdate();
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getLong("id");
+            }
         }
     }
 
@@ -84,8 +110,10 @@ public final class InteractionCountsRepository {
      * Region-aware record: merge into a nearby region (pending or already notified)
      * or insert a new one. Distance is axis-aligned (no sqrt): point within
      * mergeDistance of the region AABB.
+     *
+     * @return id of the region row that was incremented or created
      */
-    public synchronized void incrementInRegion(
+    public synchronized long incrementInRegion(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -96,9 +124,9 @@ public final class InteractionCountsRepository {
         Optional<Long> nearbyId = findNearbyRegionId(interactorPlayer, ownerPlayer, wid, x, z, mergeDistance);
         if (nearbyId.isPresent()) {
             expandRegionAndIncrement(nearbyId.get(), x, z, actionType);
-        } else {
-            insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
+            return nearbyId.get();
         }
+        return insertRegion(interactorPlayer, ownerPlayer, wid, x, z, actionType);
     }
 
     /*
@@ -109,6 +137,15 @@ public final class InteractionCountsRepository {
      *
      * Merge includes already-notified rows so nearby follow-up grief does not
      * spawn a new pending region / Telegram spam. Prefer a still-pending match.
+     *
+     * WARNING: "region" here is NOT the {@code regions} table (NamedRegion). It is
+     * an
+     * activity box stored on an {@code interaction_counts} row, and the returned id
+     * is
+     * {@code interaction_counts.id}.
+     * TODO: rename (e.g. activity box / interaction area) or move the region-row
+     * logic
+     * into its own repository / aggregator, the name is misleading.
      */
     private Optional<Long> findNearbyRegionId(
             String interactorPlayer,
@@ -153,6 +190,13 @@ public final class InteractionCountsRepository {
         return Optional.empty();
     }
 
+    /**
+     * WARNING: {@code id} is {@code interaction_counts.id}, and "region" is the
+     * activity box on
+     * that row, not the {@code regions} table.
+     * TODO: rename or move into its own repository / aggregator (see
+     * findNearbyRegionId).
+     */
     private void expandRegionAndIncrement(long id, int x, int z, SuspiciousActionType actionType) throws SQLException {
         long now = System.currentTimeMillis();
         int breakDelta = actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0;
@@ -221,7 +265,16 @@ public final class InteractionCountsRepository {
         }
     }
 
-    private void insertRegion(
+    /**
+     * WARNING: inserts a new {@code interaction_counts} row with an activity box,
+     * it does NOT
+     * create a named region in the {@code regions} table.
+     * TODO: rename or move into its own repository / aggregator (see
+     * findNearbyRegionId).
+     *
+     * @return id of the inserted {@code interaction_counts} row
+     */
+    private long insertRegion(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -245,6 +298,7 @@ public final class InteractionCountsRepository {
                   created_at,
                   updated_at
                 ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)
+                RETURNING id
                 """)) {
             statement.setString(1, interactorPlayer);
             statement.setString(2, ownerPlayer);
@@ -258,7 +312,10 @@ public final class InteractionCountsRepository {
             statement.setInt(10, z);
             statement.setLong(11, now);
             statement.setLong(12, now);
-            statement.executeUpdate();
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getLong("id");
+            }
         }
     }
 
@@ -269,7 +326,8 @@ public final class InteractionCountsRepository {
         long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
         var result = new ArrayList<String>();
 
-        // Optional OR-thresholds stay in the WHERE so sub-min rows keep waiting (not skipped).
+        // Optional OR-thresholds stay in the WHERE so sub-min rows keep waiting (not
+        // skipped).
         String minInteractionsSql = minInteractionsSql("interaction_counts.", minInteractions);
 
         try (var statement = connection.prepareStatement("""
@@ -374,6 +432,52 @@ public final class InteractionCountsRepository {
         }
     }
 
+    /**
+     * Players who interacted with {@code ownerPlayer}'s stuff while the owner has
+     * neither
+     * trusted nor reported them. Counts players, not rows. Ignores notification
+     * state,
+     * skip reasons and min-interaction thresholds: "no decision yet" is all that
+     * matters.
+     */
+    public synchronized int countUndecidedInteractors(String ownerPlayer) throws SQLException {
+        try (var statement = connection.prepareStatement(
+                "SELECT COUNT(DISTINCT interaction_counts.interactor_player) "
+                        + UNDECIDED_INTERACTORS_FILTER)) {
+            statement.setString(1, ownerPlayer);
+            try (var rows = statement.executeQuery()) {
+                rows.next();
+                return rows.getInt(1);
+            }
+        }
+    }
+
+    /**
+     * Same players as {@link #countUndecidedInteractors}, alphabetical, a page of
+     * {@code limit} rows after {@code offset}.
+     */
+    public synchronized List<String> findUndecidedInteractors(String ownerPlayer, int limit, int offset)
+            throws SQLException {
+        var result = new ArrayList<String>();
+        try (var statement = connection.prepareStatement(
+                "SELECT DISTINCT interaction_counts.interactor_player "
+                        + UNDECIDED_INTERACTORS_FILTER
+                        + """
+                                ORDER BY interaction_counts.interactor_player ASC
+                                LIMIT ? OFFSET ?
+                                    """)) {
+            statement.setString(1, ownerPlayer);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
+            try (var rows = statement.executeQuery()) {
+                while (rows.next()) {
+                    result.add(rows.getString(1));
+                }
+            }
+        }
+        return result;
+    }
+
     public synchronized List<InteractionCount> findPendingForOwner(String ownerPlayer) throws SQLException {
         var result = new ArrayList<InteractionCount>();
         try (var statement = connection.prepareStatement(PENDING_SELECT + """
@@ -395,10 +499,12 @@ public final class InteractionCountsRepository {
     /**
      * One pending row for join notification, chosen by strategy.
      *
-     * <p>{@code recent} — newest {@code updated_at}; {@code biggest} — highest
+     * <p>
+     * {@code recent} — newest {@code updated_at}; {@code biggest} — highest
      * break+place+container sum (ties broken by newest).
      *
-     * TODO: bad idea to dispatch strategy at repository level, it should be done in the service layer
+     * TODO: bad idea to dispatch strategy at repository level, it should be done in
+     * the service layer
      */
     public synchronized Optional<InteractionCount> findTopPendingInteractionForOwner(
             String ownerPlayer,
@@ -417,7 +523,8 @@ public final class InteractionCountsRepository {
                         interaction_counts.updated_at DESC,
                         interaction_counts.id DESC
                         """;
-        // Exclude already trusted / reported so /ttrust|/treport can advance to the next warning.
+        // Exclude already trusted / reported so /ttrust|/treport can advance to the
+        // next warning.
         try (var statement = connection.prepareStatement("""
                 SELECT interaction_counts.id, interaction_counts.interactor_player, interaction_counts.owner,
                        interaction_counts.count_break_blocks, interaction_counts.count_placed_blocks,
@@ -548,7 +655,9 @@ public final class InteractionCountsRepository {
      * Named admin regions this interactor touched (AABB + mergeDistance), without
      * loading every interaction row into Java.
      *
-     * <p>{@code nameLimit} caps returned names; {@link NamedRegionHits#getTotalCount()}
+     * <p>
+     * {@code nameLimit} caps returned names;
+     * {@link NamedRegionHits#getTotalCount()}
      * is the full distinct count for “and N others”.
      */
     public synchronized NamedRegionHits findNamedRegionsTouchedByInteractor(
@@ -592,7 +701,7 @@ public final class InteractionCountsRepository {
 
                     AND MIN(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z) - ?
                         <= regions.center_z + regions.radius
-                        
+
                     AND regions.center_z - regions.radius - ?
                         <= MAX(interaction_counts.region_corner_a_z, interaction_counts.region_corner_b_z)
 

@@ -10,6 +10,7 @@ import me.fulcanelly.tgbridge.tapi.Message;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.config.MinInteractionThresholds;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
+import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.service.NotificationSkipReason;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
@@ -108,15 +109,26 @@ public final class NotificationService implements Runnable {
         int mergeDistance = Math.max(
                 0,
                 plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
-        Message message = context.getBridge().getBot().sendMessage(
-                chatId,
-                messageBuilder.build(interactor, counts, totalInteractions, mergeDistance),
-                messageBuilder.buildKeyboard(interactor));
+
+        List<Long> interCountIds = counts.stream()
+                .map(InteractionCount::getId)
+                .collect(Collectors.toList());
+
+        List<MaterialTotal> materialTotals = context.getRepositories()
+                .getInteractionMaterials()
+                .sumByInteractionCountIds(interCountIds);
+
+        var messageText = messageBuilder.build(interactor,
+                counts, totalInteractions, materialTotals, mergeDistance);
+
+        Message message = context.getBridge()
+                .getBot().sendMessage(
+                        chatId,
+                        messageText,
+                        messageBuilder.buildKeyboard(interactor));
 
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
-        interactionCounts.attachNotificationByIds(
-                counts.stream().map(InteractionCount::getId).collect(Collectors.toList()),
-                notificationId);
+        interactionCounts.attachNotificationByIds(interCountIds, notificationId);
         return Optional.empty();
     }
 
