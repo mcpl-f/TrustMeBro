@@ -453,17 +453,19 @@ public final class InteractionCountsRepository {
     }
 
     /**
-     * Same players as {@link #countUndecidedInteractors}, alphabetical, a page of
-     * {@code limit} rows after {@code offset}.
+     * Same players as {@link #countUndecidedInteractors}, newest interaction row
+     * first, a page of {@code limit} players after {@code offset}.
      */
     public synchronized List<String> findUndecidedInteractors(String ownerPlayer, int limit, int offset)
             throws SQLException {
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement(
-                "SELECT DISTINCT interaction_counts.interactor_player "
+                "SELECT interaction_counts.interactor_player "
                         + UNDECIDED_INTERACTORS_FILTER
                         + """
-                                ORDER BY interaction_counts.interactor_player ASC
+                                GROUP BY interaction_counts.interactor_player
+                                ORDER BY MAX(interaction_counts.created_at) DESC,
+                                         interaction_counts.interactor_player ASC
                                 LIMIT ? OFFSET ?
                                     """)) {
             statement.setString(1, ownerPlayer);

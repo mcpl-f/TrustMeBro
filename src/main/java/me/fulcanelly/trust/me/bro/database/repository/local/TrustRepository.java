@@ -91,7 +91,7 @@ public final class TrustRepository {
                 SELECT owner_mc_name
                 FROM trust_edges
                 WHERE trusted_mc_name = ?
-                ORDER BY created_at ASC, owner_mc_name ASC
+                ORDER BY created_at DESC, owner_mc_name ASC
                 LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, trustedPlayer);
@@ -106,14 +106,14 @@ public final class TrustRepository {
         return result;
     }
 
-    /** Players {@code ownerPlayer} trusts, oldest decision first, a page of {@code limit} rows after {@code offset}. */
+    /** Players {@code ownerPlayer} trusts, newest decision first, a page of {@code limit} rows after {@code offset}. */
     public List<String> findTrusted(String ownerPlayer, int limit, int offset) throws SQLException {
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement("""
                 SELECT trusted_mc_name
                 FROM trust_edges
                 WHERE owner_mc_name = ?
-                ORDER BY created_at ASC, trusted_mc_name ASC
+                ORDER BY created_at DESC, trusted_mc_name ASC
                 LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, ownerPlayer);

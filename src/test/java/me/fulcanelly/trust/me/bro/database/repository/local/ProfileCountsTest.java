@@ -109,4 +109,52 @@ public class ProfileCountsTest {
         assertEquals(List.of("Bob"), interactionCounts.findUndecidedInteractors("Alice", 1, 0));
         assertEquals(List.of("Eve"), interactionCounts.findUndecidedInteractors("Alice", 1, 1));
     }
+
+    /*
+     * Each profile list orders by when its row was added.
+     *
+     *   Old (created_at=1), New (created_at=2)  ->  New, Old
+     */
+    @Test
+    void profileListsShowNewestRowsFirst() throws Exception {
+        trust.trust("Alice", "OldTrusted", null);
+        trust.trust("Alice", "NewTrusted", null);
+        trust.trust("OldTruster", "Alice", null);
+        trust.trust("NewTruster", "Alice", null);
+        reports.report("Alice", null, "OldReported", "Alice");
+        reports.report("Alice", null, "NewReported", "Alice");
+        reports.report("OldReporter", null, "Alice", "OldReporter");
+        reports.report("NewReporter", null, "Alice", "NewReporter");
+        interactionCounts.increment("OldPending", "Alice", SuspiciousActionType.BREAK_BLOCK);
+        interactionCounts.increment("NewPending", "Alice", SuspiciousActionType.BREAK_BLOCK);
+
+        try (var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    UPDATE trust_edges
+                    SET created_at = CASE
+                        WHEN owner_mc_name = 'Alice' THEN
+                            CASE trusted_mc_name WHEN 'OldTrusted' THEN 1 ELSE 2 END
+                        ELSE CASE owner_mc_name WHEN 'OldTruster' THEN 1 ELSE 2 END
+                    END
+                    """);
+            statement.executeUpdate("""
+                    UPDATE reports
+                    SET created_at = CASE
+                        WHEN owner = 'Alice' THEN
+                            CASE interactor_player WHEN 'OldReported' THEN 1 ELSE 2 END
+                        ELSE CASE owner WHEN 'OldReporter' THEN 1 ELSE 2 END
+                    END
+                    """);
+            statement.executeUpdate("""
+                    UPDATE interaction_counts
+                    SET created_at = CASE interactor_player WHEN 'OldPending' THEN 1 ELSE 2 END
+                    """);
+        }
+
+        assertEquals(List.of("NewTrusted", "OldTrusted"), trust.findTrusted("Alice", 10, 0));
+        assertEquals(List.of("NewTruster", "OldTruster"), trust.findTrusters("Alice", 10, 0));
+        assertEquals(List.of("NewReported", "OldReported"), reports.findReportedByOwner("Alice", 10, 0));
+        assertEquals(List.of("NewReporter", "OldReporter"), reports.findReporters("Alice", 10, 0));
+        assertEquals(List.of("NewPending", "OldPending"), interactionCounts.findUndecidedInteractors("Alice", 10, 0));
+    }
 }

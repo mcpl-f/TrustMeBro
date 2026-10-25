@@ -92,7 +92,7 @@ public final class ReportRepository {
                 SELECT owner
                 FROM reports
                 WHERE interactor_player = ?
-                ORDER BY created_at ASC, owner ASC
+                ORDER BY created_at DESC, owner ASC
                 LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, interactorPlayer);
@@ -107,14 +107,14 @@ public final class ReportRepository {
         return result;
     }
 
-    /** Players {@code ownerPlayer} reported, oldest report first, a page of {@code limit} rows after {@code offset}. */
+    /** Players {@code ownerPlayer} reported, newest report first, a page of {@code limit} rows after {@code offset}. */
     public List<String> findReportedByOwner(String ownerPlayer, int limit, int offset) throws SQLException {
         var result = new ArrayList<String>();
         try (var statement = connection.prepareStatement("""
                 SELECT interactor_player
                 FROM reports
                 WHERE owner = ?
-                ORDER BY created_at ASC, interactor_player ASC
+                ORDER BY created_at DESC, interactor_player ASC
                 LIMIT ? OFFSET ?
                 """)) {
             statement.setString(1, ownerPlayer);
