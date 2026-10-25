@@ -11,6 +11,9 @@ import java.util.function.Supplier;
 import org.bukkit.Location;
 import org.sqlite.SQLiteConfig;
 
+import me.fulcanelly.trust.me.bro.database.SqlResources;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+
 public final class CoreProtectReadRepository {
 
     private final File databaseFile;
@@ -26,45 +29,32 @@ public final class CoreProtectReadRepository {
     }
 
     public Set<String> findBlockOwners(Location location) throws SQLException {
-        return findOwners(location, "co_block", "action IN (0, 1)");
+        return findOwners(location, "coreprotect/find-block-owners");
     }
 
     public Set<String> findContainerOwners(Location location) throws SQLException {
-        return findOwners(location, "co_container", "action IN (0, 1)");
+        return findOwners(location, "coreprotect/find-container-owners");
     }
 
-    private Set<String> findOwners(Location location, String tableName, String actionFilter) throws SQLException {
+    private Set<String> findOwners(Location location, String sqlResource) throws SQLException {
         var result = new LinkedHashSet<String>();
         Integer worldId = findWorldId(location.getWorld().getName());
         if (worldId == null) {
             return result;
         }
 
-        String sql = """
-                SELECT DISTINCT u.user
-                FROM %s h
-                JOIN co_user u ON u.id = h.user
-                WHERE h.wid = ?
-                  AND h.x = ?
-                  AND h.y = ?
-                  AND h.z = ?
-                  AND h.%s
-                  AND u.user IS NOT NULL
-                  AND u.user NOT LIKE '#%%'
-                """.formatted(tableName, actionFilter);
-
-        try (var connection = openReadOnlyConnection();
-                var statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, worldId);
-            statement.setInt(2, location.getBlockX());
-            statement.setInt(3, location.getBlockY());
-            statement.setInt(4, location.getBlockZ());
-            try (var rows = statement.executeQuery()) {
-                while (rows.next()) {
-                    String user = rows.getString("user");
-                    if (user != null && !user.isBlank() && !isBanned(user)) {
-                        result.add(user);
-                    }
+        try (var connection = openReadOnlyConnection()) {
+            var users = new SqliteJdbi(connection).withHandle(handle -> handle
+                    .createQuery(SqlResources.load(sqlResource))
+                    .bind("worldId", worldId)
+                    .bind("x", location.getBlockX())
+                    .bind("y", location.getBlockY())
+                    .bind("z", location.getBlockZ())
+                    .mapTo(String.class)
+                    .list());
+            for (String user : users) {
+                if (!user.isBlank() && !isBanned(user)) {
+                    result.add(user);
                 }
             }
         }
@@ -79,32 +69,28 @@ public final class CoreProtectReadRepository {
         if (!isAvailable()) {
             return null;
         }
-        try (var connection = openReadOnlyConnection();
-                var statement = connection.prepareStatement("SELECT id FROM co_world WHERE world = ?")) {
-            statement.setString(1, worldName);
-            try (var rows = statement.executeQuery()) {
-                if (rows.next()) {
-                    return rows.getInt("id");
-                }
-            }
+        try (var connection = openReadOnlyConnection()) {
+            return new SqliteJdbi(connection).withHandle(handle -> handle
+                    .createQuery("SELECT id FROM co_world WHERE world = :world")
+                    .bind("world", worldName)
+                    .mapTo(Integer.class)
+                    .findOne()
+                    .orElse(null));
         }
-        return null;
     }
 
     public String findWorldName(int wid) throws SQLException {
         if (!isAvailable()) {
             return null;
         }
-        try (var connection = openReadOnlyConnection();
-                var statement = connection.prepareStatement("SELECT world FROM co_world WHERE id = ?")) {
-            statement.setInt(1, wid);
-            try (var rows = statement.executeQuery()) {
-                if (rows.next()) {
-                    return rows.getString("world");
-                }
-            }
+        try (var connection = openReadOnlyConnection()) {
+            return new SqliteJdbi(connection).withHandle(handle -> handle
+                    .createQuery("SELECT world FROM co_world WHERE id = :worldId")
+                    .bind("worldId", wid)
+                    .mapTo(String.class)
+                    .findOne()
+                    .orElse(null));
         }
-        return null;
     }
 
     private Connection openReadOnlyConnection() throws SQLException {

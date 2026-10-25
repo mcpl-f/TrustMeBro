@@ -67,7 +67,7 @@ public final class SuspicionDetectionService {
     ) throws SQLException {
         var plugin = context.getPlugin();
         var coreProtect = context.getCoreProtect();
-        var interactionCounts = context.getRepositories().getInteractionCounts();
+        var interactionCounts = context.getRepositories().getInteractionWrites();
         var interactionMaterials = context.getRepositories().getInteractionMaterials();
 
         // TODO: consider to cache these values

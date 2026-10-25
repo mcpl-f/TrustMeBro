@@ -86,7 +86,7 @@ public final class TrustCallbackHandler {
         String ownerPlayer = linkedPlayer.get();
 
         try { // TODO move to top level (onCallback)
-            if (!context.getRepositories().getInteractionCounts().exists(interactorPlayer, ownerPlayer)) {
+            if (!context.getRepositories().getInteractionWrites().exists(interactorPlayer, ownerPlayer)) {
                 event.answer(messages.format("callback.interaction-gone"));
                 return;
             }

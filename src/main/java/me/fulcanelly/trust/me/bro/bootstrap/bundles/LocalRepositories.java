@@ -3,9 +3,12 @@ package me.fulcanelly.trust.me.bro.bootstrap.bundles;
 import java.sql.Connection;
 
 import lombok.Value;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.local.InteractionStatsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.InteractionWriteRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.InteractionMaterialCountsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.PendingInteractionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
@@ -21,19 +24,24 @@ import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
 public class LocalRepositories {
 
     TrustRepository trust;
-    InteractionCountsRepository interactionCounts;
+    InteractionWriteRepository interactionWrites;
+    PendingInteractionsRepository pendingInteractions;
+    InteractionStatsRepository interactionStats;
     InteractionMaterialCountsRepository interactionMaterials;
     NotificationRepository notifications;
     ReportRepository reports;
     RegionsRepository regions;
 
     public static LocalRepositories buildFromConnection(Connection connection) {
+        SqliteJdbi database = new SqliteJdbi(connection);
         return new LocalRepositories(
-                new TrustRepository(connection),
-                new InteractionCountsRepository(connection),
-                new InteractionMaterialCountsRepository(connection),
-                new NotificationRepository(connection),
-                new ReportRepository(connection),
-                new RegionsRepository(connection));
+                new TrustRepository(database),
+                new InteractionWriteRepository(database),
+                new PendingInteractionsRepository(database),
+                new InteractionStatsRepository(database),
+                new InteractionMaterialCountsRepository(database),
+                new NotificationRepository(database),
+                new ReportRepository(database),
+                new RegionsRepository(database));
     }
 }

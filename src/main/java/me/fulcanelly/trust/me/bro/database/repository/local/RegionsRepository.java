@@ -1,20 +1,21 @@
 package me.fulcanelly.trust.me.bro.database.repository.local;
 
-import lombok.RequiredArgsConstructor;
-import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor
+import me.fulcanelly.trust.me.bro.database.SqlResources;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
+
 public final class RegionsRepository {
 
-    private final Connection connection;
+    private final SqliteJdbi database;
 
-    public synchronized long insert(
+    public RegionsRepository(SqliteJdbi database) {
+        this.database = database;
+    }
+
+    public long insert(
             String name,
             boolean mutable,
             String createdByMcName,
@@ -22,79 +23,31 @@ public final class RegionsRepository {
             int centerX,
             int centerZ,
             int radius) throws SQLException {
-        long now = System.currentTimeMillis();
-        try (var statement = connection.prepareStatement("""
-                INSERT INTO regions(
-                  name,
-
-                  mutable,
-
-                  created_by_mc_name,
-                  created_at,
-
-                  wid,
-                  center_x,
-                  center_z,
-                  radius
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, java.sql.Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, name);
-            statement.setInt(2, mutable ? 1 : 0);
-            statement.setString(3, createdByMcName);
-            statement.setLong(4, now);
-            statement.setInt(5, wid);
-            statement.setInt(6, centerX);
-            statement.setInt(7, centerZ);
-            statement.setInt(8, radius);
-            statement.executeUpdate();
-
-            try (var keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    return keys.getLong(1);
-                }
-            }
-        }
-        throw new SQLException("regions id was not generated");
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("regions/insert"))
+                .bind("name", name)
+                .bind("mutable", mutable ? 1 : 0)
+                .bind("createdBy", createdByMcName)
+                .bind("createdAt", System.currentTimeMillis())
+                .bind("wid", wid)
+                .bind("centerX", centerX)
+                .bind("centerZ", centerZ)
+                .bind("radius", radius)
+                .mapTo(Long.class)
+                .one());
     }
 
-    public synchronized List<NamedRegion> findAll() throws SQLException {
-        var result = new ArrayList<NamedRegion>();
-        try (var statement = connection.prepareStatement("""
-                SELECT
-                  id,
-
-                  name,
-
-                  mutable,
-
-                  created_by_mc_name,
-                  created_at,
-
-                  wid,
-                  center_x,
-                  center_z,
-                  radius
-                FROM regions
-                ORDER BY id ASC
-                """);
-                var rows = statement.executeQuery()) {
-            while (rows.next()) {
-                result.add(mapRow(rows));
-            }
-        }
-        return result;
-    }
-
-    private NamedRegion mapRow(ResultSet rows) throws SQLException {
-        return new NamedRegion(
-                rows.getLong("id"),
-                rows.getString("name"),
-                rows.getInt("mutable") != 0,
-                rows.getString("created_by_mc_name"),
-                rows.getLong("created_at"),
-                rows.getInt("wid"),
-                rows.getInt("center_x"),
-                rows.getInt("center_z"),
-                rows.getInt("radius"));
+    public List<NamedRegion> findAll() throws SQLException {
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("regions/find-all"))
+                .map((row, context) -> new NamedRegion(
+                        row.getLong("id"),
+                        row.getString("name"),
+                        row.getInt("mutable") != 0,
+                        row.getString("created_by_mc_name"),
+                        row.getLong("created_at"),
+                        row.getInt("wid"),
+                        row.getInt("center_x"),
+                        row.getInt("center_z"),
+                        row.getInt("radius")))
+                .list());
     }
 }

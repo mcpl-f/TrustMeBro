@@ -60,7 +60,7 @@ public final class MinecraftOwnerNotificationService {
 
         try {
             Optional<InteractionCount> pending = context.getRepositories()
-                    .getInteractionCounts()
+                    .getPendingInteractions()
                     .findTopPendingInteractionForOwner(player.getName(), strategy);
             if (pending.isEmpty()) {
                 context.getLogger().info("No pending interaction found for owner: " + player.getName());

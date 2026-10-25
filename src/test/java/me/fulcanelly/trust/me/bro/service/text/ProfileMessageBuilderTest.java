@@ -138,33 +138,40 @@ public class ProfileMessageBuilderTest {
     }
 
     /*
-     * 11 players trust Alice, 5 per page. Player rows do nothing yet, the page number
-     * does nothing, arrows move one page, Back goes to the section's parent.
+     * 11 players trust Alice, 5 per page, newest trust first. Player rows do nothing yet,
+     * the page number does nothing, arrows move one page, Back goes to the section's parent.
      *
-     *   page 0:  P01..P05    [1 / 3] [>]
-     *   page 1:  P06..P10    [<] [2 / 3] [>]
-     *   page 2:  P11         [<] [3 / 3]
+     *   page 0:  P11..P07    [1 / 3] [>]
+     *   page 1:  P06..P02    [<] [2 / 3] [>]
+     *   page 2:  P01         [<] [3 / 3]
      */
     @Test
     void playersArePagedFiveAtATimeWithArrowsOnlyWhereThereIsAPage() throws Exception {
         for (int i = 1; i <= 11; i++) {
             repositories.getTrust().trust(String.format("P%02d", i), "Alice", null);
         }
+        try (var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    UPDATE trust_edges
+                    SET created_at = CAST(substr(owner_mc_name, 2) AS INTEGER)
+                    WHERE trusted_mc_name = 'Alice'
+                    """);
+        }
 
         assertEquals(List.of(
-                "@P01", "@P02", "@P03", "@P04", "@P05",
+                "@P11", "@P10", "@P09", "@P08", "@P07",
                 "1 / 3 | telegram.button.page-next>tmb:prt:123:1:Alice",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
         assertEquals(List.of(
-                "@P06", "@P07", "@P08", "@P09", "@P10",
+                "@P06", "@P05", "@P04", "@P03", "@P02",
                 "telegram.button.page-previous>tmb:prt:123:0:Alice | 2 / 3 | telegram.button.page-next>tmb:prt:123:2:Alice",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 1));
 
         assertEquals(List.of(
-                "@P11",
+                "@P01",
                 "telegram.button.page-previous>tmb:prt:123:1:Alice | 3 / 3",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 2));
@@ -175,7 +182,7 @@ public class ProfileMessageBuilderTest {
      * A button of an older message may ask for a page that no longer exists: it shows
      * the last one.
      *
-     *   Alice: 5 trusters  ->  P01..P05, [back]   (also when page 7 is asked for)
+     *   Alice: 5 trusters  ->  P05..P01, [back]   (also when page 7 is asked for)
      *   Bob:   nobody      ->  [back]
      */
     @Test
@@ -183,9 +190,16 @@ public class ProfileMessageBuilderTest {
         for (int i = 1; i <= 5; i++) {
             repositories.getTrust().trust(String.format("P%02d", i), "Alice", null);
         }
+        try (var statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    UPDATE trust_edges
+                    SET created_at = CAST(substr(owner_mc_name, 2) AS INTEGER)
+                    WHERE trusted_mc_name = 'Alice'
+                    """);
+        }
 
         assertEquals(List.of(
-                "@P01", "@P02", "@P03", "@P04", "@P05",
+                "@P05", "@P04", "@P03", "@P02", "@P01",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 

@@ -1,155 +1,91 @@
 package me.fulcanelly.trust.me.bro.database.repository.local;
 
-import lombok.RequiredArgsConstructor;
-
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
+import me.fulcanelly.trust.me.bro.database.SqlResources;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.PeopleAggregateStat;
 
-@RequiredArgsConstructor
 public final class ReportRepository {
 
-    private final Connection connection;
+    private final SqliteJdbi database;
+
+    public ReportRepository(SqliteJdbi database) {
+        this.database = database;
+    }
 
     public boolean exists(String interactorPlayer, String ownerPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                SELECT 1
-                FROM reports
-                WHERE interactor_player = ?
-                  AND owner = ?
-                """)) {
-            statement.setString(1, interactorPlayer);
-            statement.setString(2, ownerPlayer);
-            try (var rows = statement.executeQuery()) {
-                return rows.next();
-            }
-        }
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("reports/exists"))
+                .bind("interactor", interactorPlayer)
+                .bind("owner", ownerPlayer)
+                .mapTo(Integer.class)
+                .findOne()
+                .isPresent());
     }
 
     public void report(String reporterPlayer, Long reporterTelegramUserId, String interactorPlayer, String ownerPlayer)
             throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                INSERT INTO reports(reported_by_mc_name, reported_by_telegram_user_id, interactor_player, owner, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                """)) {
-            statement.setString(1, reporterPlayer);
-            if (reporterTelegramUserId == null) {
-                statement.setObject(2, null);
-            } else {
-                statement.setLong(2, reporterTelegramUserId);
-            }
-            statement.setString(3, interactorPlayer);
-            statement.setString(4, ownerPlayer);
-            statement.setLong(5, System.currentTimeMillis());
-            statement.executeUpdate();
-        }
+        database.withHandle(handle -> handle.createUpdate(SqlResources.load("reports/insert"))
+                .bind("reporter", reporterPlayer)
+                .bind("telegramUserId", reporterTelegramUserId)
+                .bind("interactor", interactorPlayer)
+                .bind("owner", ownerPlayer)
+                .bind("createdAt", System.currentTimeMillis())
+                .execute());
     }
 
     public void delete(String interactorPlayer, String ownerPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement("""
-                DELETE FROM reports
-                WHERE interactor_player = ?
-                  AND owner = ?
-                """)) {
-            statement.setString(1, interactorPlayer);
-            statement.setString(2, ownerPlayer);
-            statement.executeUpdate();
-        }
+        database.withHandle(handle -> handle.createUpdate(SqlResources.load("reports/delete"))
+                .bind("interactor", interactorPlayer)
+                .bind("owner", ownerPlayer)
+                .execute());
     }
 
     /** Players with the most reports. Counts only — no name concat. */
     public List<PeopleAggregateStat> findTopReported(int limit) throws SQLException {
-        var result = new ArrayList<PeopleAggregateStat>();
-        try (var statement = connection.prepareStatement("""
-                SELECT interactor_player,
-
-                       COUNT(*) AS people_count
-
-                FROM reports
-                GROUP BY interactor_player
-                ORDER BY people_count DESC, interactor_player ASC
-                LIMIT ?
-                """)) {
-            statement.setInt(1, limit);
-            try (var rows = statement.executeQuery()) {
-                while (rows.next()) {
-                    result.add(new PeopleAggregateStat(
-                            rows.getString("interactor_player"),
-                            rows.getInt("people_count")));
-                }
-            }
-        }
-        return result;
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("reports/find-top-reported"))
+                .bind("limit", limit)
+                .map((row, context) -> new PeopleAggregateStat(
+                        row.getString("interactor_player"),
+                        row.getInt("people_count")))
+                .list());
     }
 
-    /** Owners who reported {@code interactorPlayer}, a page of {@code limit} rows after {@code offset}. */
+    /** Owners who reported {@code interactorPlayer}, newest reports first. */
     public List<String> findReporters(String interactorPlayer, int limit, int offset) throws SQLException {
-        var result = new ArrayList<String>();
-        try (var statement = connection.prepareStatement("""
-                SELECT owner
-                FROM reports
-                WHERE interactor_player = ?
-                ORDER BY created_at DESC, owner ASC
-                LIMIT ? OFFSET ?
-                """)) {
-            statement.setString(1, interactorPlayer);
-            statement.setInt(2, limit);
-            statement.setInt(3, offset);
-            try (var rows = statement.executeQuery()) {
-                while (rows.next()) {
-                    result.add(rows.getString("owner"));
-                }
-            }
-        }
-        return result;
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("reports/find-reporters"))
+                .bind("interactor", interactorPlayer)
+                .bind("limit", limit)
+                .bind("offset", offset)
+                .mapTo(String.class)
+                .list());
     }
 
-    /** Players {@code ownerPlayer} reported, newest report first, a page of {@code limit} rows after {@code offset}. */
+    /** Players {@code ownerPlayer} reported, newest report first. */
     public List<String> findReportedByOwner(String ownerPlayer, int limit, int offset) throws SQLException {
-        var result = new ArrayList<String>();
-        try (var statement = connection.prepareStatement("""
-                SELECT interactor_player
-                FROM reports
-                WHERE owner = ?
-                ORDER BY created_at DESC, interactor_player ASC
-                LIMIT ? OFFSET ?
-                """)) {
-            statement.setString(1, ownerPlayer);
-            statement.setInt(2, limit);
-            statement.setInt(3, offset);
-            try (var rows = statement.executeQuery()) {
-                while (rows.next()) {
-                    result.add(rows.getString("interactor_player"));
-                }
-            }
-        }
-        return result;
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("reports/find-reported-by-owner"))
+                .bind("owner", ownerPlayer)
+                .bind("limit", limit)
+                .bind("offset", offset)
+                .mapTo(String.class)
+                .list());
     }
 
     /** How many owners reported {@code interactorPlayer}. */
     public int countReporters(String interactorPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement(
-                "SELECT COUNT(*) FROM reports WHERE interactor_player = ?")) {
-            statement.setString(1, interactorPlayer);
-            try (var rows = statement.executeQuery()) {
-                rows.next();
-                return rows.getInt(1);
-            }
-        }
+        return database.withHandle(handle -> handle.createQuery(
+                        "SELECT COUNT(*) FROM reports WHERE interactor_player = :interactor")
+                .bind("interactor", interactorPlayer)
+                .mapTo(Integer.class)
+                .one());
     }
 
     /** How many players {@code ownerPlayer} reported. */
     public int countReportedByOwner(String ownerPlayer) throws SQLException {
-        try (var statement = connection.prepareStatement(
-                "SELECT COUNT(*) FROM reports WHERE owner = ?")) {
-            statement.setString(1, ownerPlayer);
-            try (var rows = statement.executeQuery()) {
-                rows.next();
-                return rows.getInt(1);
-            }
-        }
+        return database.withHandle(handle -> handle.createQuery("SELECT COUNT(*) FROM reports WHERE owner = :owner")
+                .bind("owner", ownerPlayer)
+                .mapTo(Integer.class)
+                .one());
     }
 }

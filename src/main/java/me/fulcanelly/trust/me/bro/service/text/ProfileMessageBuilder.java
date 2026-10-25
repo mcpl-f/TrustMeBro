@@ -147,7 +147,7 @@ public final class ProfileMessageBuilder {
             case REPORTERS -> repositories.getReports().countReporters(player);
             case TRUSTED -> repositories.getTrust().countTrusted(player);
             case REPORTED -> repositories.getReports().countReportedByOwner(player);
-            case PENDING -> repositories.getInteractionCounts().countUndecidedInteractors(player);
+            case PENDING -> repositories.getInteractionStats().countUndecidedInteractors(player);
             case WATCHED -> 0; // TODO: watch relation is not implemented yet
             default -> 0; // MAIN, REPUTATION and RATINGS are menus, they list no players
         };
@@ -159,7 +159,7 @@ public final class ProfileMessageBuilder {
             case REPORTERS -> repositories.getReports().findReporters(player, limit, offset);
             case TRUSTED -> repositories.getTrust().findTrusted(player, limit, offset);
             case REPORTED -> repositories.getReports().findReportedByOwner(player, limit, offset);
-            case PENDING -> repositories.getInteractionCounts().findUndecidedInteractors(player, limit, offset);
+            case PENDING -> repositories.getInteractionStats().findUndecidedInteractors(player, limit, offset);
             case WATCHED -> List.of(); // TODO: watch relation is not implemented yet
             default -> List.of(); // MAIN, REPUTATION and RATINGS are menus, they list no players
         };

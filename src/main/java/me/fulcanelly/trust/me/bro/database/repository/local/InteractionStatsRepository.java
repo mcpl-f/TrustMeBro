@@ -1,0 +1,70 @@
+package me.fulcanelly.trust.me.bro.database.repository.local;
+
+import java.sql.SQLException;
+import java.util.List;
+
+import me.fulcanelly.trust.me.bro.database.SqlResources;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
+import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
+
+public final class InteractionStatsRepository {
+
+    private final SqliteJdbi database;
+
+    public InteractionStatsRepository(SqliteJdbi database) {
+        this.database = database;
+    }
+
+    public int countUndecidedInteractors(String ownerPlayer) throws SQLException {
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("interactions/stats/count-undecided"))
+                .bind("owner", ownerPlayer)
+                .mapTo(Integer.class)
+                .one());
+    }
+
+    public List<String> findUndecidedInteractors(String ownerPlayer, int limit, int offset) throws SQLException {
+        return database.withHandle(handle -> handle.createQuery(SqlResources.load("interactions/stats/find-undecided"))
+                .bind("owner", ownerPlayer)
+                .bind("limit", limit)
+                .bind("offset", offset)
+                .mapTo(String.class)
+                .list());
+    }
+
+    public List<SuspiciousPlayerStat> findTopSuspicious(int limit) throws SQLException {
+        return database.withHandle(handle -> handle.createQuery(
+                SqlResources.load("interactions/stats/find-top-suspicious"))
+                .bind("limit", limit)
+                .map((row, context) -> new SuspiciousPlayerStat(
+                        row.getString("interactor_player"),
+                        row.getLong("interactions_sum"),
+                        row.getInt("owners_count")))
+                .list());
+    }
+
+    public NamedRegionHits findNamedRegionsTouchedByInteractor(
+            String interactorPlayer,
+            int mergeDistance,
+            int nameLimit) throws SQLException {
+        int pad = Math.max(0, mergeDistance);
+        int total = database.withHandle(handle -> handle.createQuery(
+                        SqlResources.load("regions/count-named-regions-touched"))
+                .bind("interactor", interactorPlayer)
+                .bind("pad", pad)
+                .mapTo(Integer.class)
+                .one());
+        if (total == 0 || nameLimit <= 0) {
+            return new NamedRegionHits(List.of(), total);
+        }
+
+        List<String> names = database.withHandle(handle -> handle.createQuery(
+                        SqlResources.load("regions/find-named-regions-touched"))
+                .bind("interactor", interactorPlayer)
+                .bind("pad", pad)
+                .bind("limit", nameLimit)
+                .map((row, context) -> row.getString("region_name"))
+                .list());
+        return new NamedRegionHits(names, total);
+    }
+}
