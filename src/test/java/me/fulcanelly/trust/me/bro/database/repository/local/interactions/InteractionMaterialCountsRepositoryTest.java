@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,6 +121,55 @@ public class InteractionMaterialCountsRepositoryTest {
 
         assertEquals(first, nearby);
         assertNotEquals(first, far);
+    }
+
+    /*
+     * Concurrent events for the same nearby area must share its row.
+     *
+     *   concurrent calls -> one area row -> every call returns its id
+     */
+    @Test
+    void concurrentRegionIncrementsReuseOneActivityRow() throws Exception {
+        int callers = 8;
+        var executor = Executors.newFixedThreadPool(callers);
+        var ready = new CountDownLatch(callers);
+        var start = new CountDownLatch(1);
+        var results = new ArrayList<java.util.concurrent.Future<Long>>();
+
+        try {
+            for (int i = 0; i < callers; i++) {
+                results.add(executor.submit(() -> {
+                    ready.countDown();
+                    if (!start.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Timed out waiting to start region increments");
+                    }
+                    return writes.incrementInRegion(
+                            "Griefer", "Alice", WORLD, 10, 10, MERGE, SuspiciousActionType.BREAK_BLOCK);
+                }));
+            }
+
+            assertTrue(ready.await(5, TimeUnit.SECONDS));
+            start.countDown();
+            long rowId = results.get(0).get(5, TimeUnit.SECONDS);
+            for (var result : results) {
+                assertEquals(rowId, result.get(5, TimeUnit.SECONDS));
+            }
+
+            try (var statement = connection.prepareStatement("""
+                    SELECT COUNT(*)
+                    FROM interaction_counts
+                    WHERE interactor_player = 'Griefer'
+                      AND owner = 'Alice'
+                      AND wid = 1
+                    """);
+                    var rows = statement.executeQuery()) {
+                rows.next();
+                assertEquals(1, rows.getInt(1));
+            }
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
     }
 
     /*

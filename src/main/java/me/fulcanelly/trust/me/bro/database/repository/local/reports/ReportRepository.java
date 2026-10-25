@@ -16,7 +16,8 @@ public final class ReportRepository {
     }
 
     public boolean exists(String interactorPlayer, String ownerPlayer) throws SQLException {
-        return database.withHandle(handle -> handle.createQuery(SqlResources.load("reports/exists"))
+        return database.withHandle(handle -> handle.createQuery(
+                        "SELECT 1 FROM reports WHERE interactor_player = :interactor AND owner = :owner")
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .mapTo(Integer.class)
@@ -36,7 +37,8 @@ public final class ReportRepository {
     }
 
     public void delete(String interactorPlayer, String ownerPlayer) throws SQLException {
-        database.withHandle(handle -> handle.createUpdate(SqlResources.load("reports/delete"))
+        database.withHandle(handle -> handle.createUpdate(
+                        "DELETE FROM reports WHERE interactor_player = :interactor AND owner = :owner")
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .execute());

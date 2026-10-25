@@ -35,7 +35,8 @@ public final class TrustRepository {
     }
 
     public void untrust(String ownerPlayer, String trustedPlayer) throws SQLException {
-        database.withHandle(handle -> handle.createUpdate(SqlResources.load("trust/delete"))
+        database.withHandle(handle -> handle.createUpdate(
+                        "DELETE FROM trust_edges WHERE owner_mc_name = :owner AND trusted_mc_name = :trusted")
                 .bind("owner", ownerPlayer)
                 .bind("trusted", trustedPlayer)
                 .execute());
