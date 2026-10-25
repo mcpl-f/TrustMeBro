@@ -1,19 +1,17 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.regions;
 
 import java.sql.SQLException;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
 
+@RequiredArgsConstructor
 public final class RegionsRepository {
 
     private final SqliteJdbi database;
-
-    public RegionsRepository(SqliteJdbi database) {
-        this.database = database;
-    }
 
     public long insert(
             String name,

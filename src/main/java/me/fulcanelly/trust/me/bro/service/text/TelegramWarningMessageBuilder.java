@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import me.fulcanelly.tgbridge.tools.twofactor.register.SignupLoginReception;
 import me.fulcanelly.tgbridge.utils.UsefulStuff;
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;

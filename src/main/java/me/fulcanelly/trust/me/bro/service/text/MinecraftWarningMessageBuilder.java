@@ -16,7 +16,7 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 
 import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectReadRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
 import me.fulcanelly.trust.me.bro.service.region.MessageRegion;

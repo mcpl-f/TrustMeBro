@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

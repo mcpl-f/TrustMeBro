@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.local.notifications.NotificationRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;

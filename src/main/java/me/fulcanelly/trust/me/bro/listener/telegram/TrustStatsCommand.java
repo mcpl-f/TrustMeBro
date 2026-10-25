@@ -63,8 +63,9 @@ public final class TrustStatsCommand {
 
     private List<PeopleLine> loadTrustedLines(int topSize) throws SQLException {
         var trust = context.getRepositories().getTrust();
+        var trustStats = context.getRepositories().getTrustStats();
         List<PeopleLine> lines = new ArrayList<>();
-        for (PeopleAggregateStat row : trust.findTopTrusted(topSize)) {
+        for (PeopleAggregateStat row : trustStats.findTopTrusted(topSize)) {
             List<String> names = trust.findTrusters(
                     row.getPlayer(),
                     TrustStatsMessageBuilder.NAMES_THRESHOLD,
@@ -89,8 +90,9 @@ public final class TrustStatsCommand {
 
     private List<PeopleLine> loadReportedLines(int topSize) throws SQLException {
         var reports = context.getRepositories().getReports();
+        var reportStats = context.getRepositories().getReportStats();
         List<PeopleLine> lines = new ArrayList<>();
-        for (PeopleAggregateStat row : reports.findTopReported(topSize)) {
+        for (PeopleAggregateStat row : reportStats.findTopReported(topSize)) {
             List<String> names = reports.findReporters(
                     row.getPlayer(),
                     TrustStatsMessageBuilder.NAMES_THRESHOLD,

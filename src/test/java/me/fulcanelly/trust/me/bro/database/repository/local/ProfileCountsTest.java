@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionStatsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionWriteRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.reports.ReportRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.trust.TrustRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 
 /**

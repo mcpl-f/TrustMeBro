@@ -1,8 +1,9 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import java.sql.SQLException;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
@@ -12,13 +13,10 @@ import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType
  * Which materials were broken/placed inside each {@code interaction_counts} row.
  * Containers are not tracked here: the container count on the row is enough.
  */
+@RequiredArgsConstructor
 public final class InteractionMaterialCountsRepository {
 
     private final SqliteJdbi database;
-
-    public InteractionMaterialCountsRepository(SqliteJdbi database) {
-        this.database = database;
-    }
 
     /** No-op for {@link SuspiciousActionType#INTERACT_CONTAINER}. */
     public synchronized void increment(

@@ -1,21 +1,19 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import java.sql.SQLException;
 import java.util.Optional;
 
 import org.jdbi.v3.core.Handle;
 
+import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 
+@RequiredArgsConstructor
 public final class InteractionWriteRepository {
 
     private final SqliteJdbi database;
-
-    public InteractionWriteRepository(SqliteJdbi database) {
-        this.database = database;
-    }
 
     public long increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
             throws SQLException {

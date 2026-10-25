@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -7,20 +7,18 @@ import java.util.Optional;
 
 import org.jdbi.v3.core.statement.Query;
 
+import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.config.MinInteractionThresholds;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 
+@RequiredArgsConstructor
 public final class PendingInteractionsRepository {
 
     private static final InteractionCountMapper INTERACTION_COUNT_MAPPER = new InteractionCountMapper();
 
     private final SqliteJdbi database;
-
-    public PendingInteractionsRepository(SqliteJdbi database) {
-        this.database = database;
-    }
 
     public List<String> findInteractorsReadyForNotification(
             long olderThanMillis,

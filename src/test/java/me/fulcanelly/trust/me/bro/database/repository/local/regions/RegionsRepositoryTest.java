@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.regions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

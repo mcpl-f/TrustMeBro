@@ -1,20 +1,18 @@
-package me.fulcanelly.trust.me.bro.database.repository.local;
+package me.fulcanelly.trust.me.bro.database.repository.local.interactions;
 
 import java.sql.SQLException;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousPlayerStat;
 
+@RequiredArgsConstructor
 public final class InteractionStatsRepository {
 
     private final SqliteJdbi database;
-
-    public InteractionStatsRepository(SqliteJdbi database) {
-        this.database = database;
-    }
 
     public int countUndecidedInteractors(String ownerPlayer) throws SQLException {
         return database.withHandle(handle -> handle.createQuery(SqlResources.load("interactions/stats/count-undecided"))
