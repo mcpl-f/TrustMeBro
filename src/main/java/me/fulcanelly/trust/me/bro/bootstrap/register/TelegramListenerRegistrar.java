@@ -4,10 +4,10 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
-import me.fulcanelly.trust.me.bro.listener.telegram.MyProfileCommand;
-import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
-import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
-import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackHandler;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.MyProfileCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.MyTrustCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.TrustStatsCommand;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 
 /**

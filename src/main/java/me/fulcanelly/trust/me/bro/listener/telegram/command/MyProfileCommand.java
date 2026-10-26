@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.listener.telegram;
+package me.fulcanelly.trust.me.bro.listener.telegram.command;
 
 import static me.fulcanelly.trust.me.bro.service.util.TelegramMarkdown.escape;
 
@@ -12,6 +12,7 @@ import com.google.common.eventbus.Subscribe;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 import me.fulcanelly.trust.me.bro.service.util.MinecraftPlayers;

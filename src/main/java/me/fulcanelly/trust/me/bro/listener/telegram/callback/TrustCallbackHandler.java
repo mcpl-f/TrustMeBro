@@ -1,6 +1,5 @@
-package me.fulcanelly.trust.me.bro.listener.telegram;
+package me.fulcanelly.trust.me.bro.listener.telegram.callback;
 
-import java.sql.SQLException;
 import java.util.Optional;
 
 import com.google.common.eventbus.Subscribe;
