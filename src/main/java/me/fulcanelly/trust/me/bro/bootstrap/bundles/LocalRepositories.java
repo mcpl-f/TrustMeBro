@@ -3,12 +3,17 @@ package me.fulcanelly.trust.me.bro.bootstrap.bundles;
 import java.sql.Connection;
 
 import lombok.Value;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionCountsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.InteractionMaterialCountsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.NotificationRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.RegionsRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.ReportRepository;
-import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
+import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionMaterialCountsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionStatsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionWriteRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.interactions.PendingInteractionsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.notifications.NotificationRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.reports.ReportRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.reports.ReportStatsRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.trust.TrustRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.trust.TrustStatsRepository;
 
 /**
  * Groups repositories that share the local TrustMeBro SQLite connection.
@@ -21,19 +26,28 @@ import me.fulcanelly.trust.me.bro.database.repository.local.TrustRepository;
 public class LocalRepositories {
 
     TrustRepository trust;
-    InteractionCountsRepository interactionCounts;
+    TrustStatsRepository trustStats;
+    InteractionWriteRepository interactionWrites;
+    PendingInteractionsRepository pendingInteractions;
+    InteractionStatsRepository interactionStats;
     InteractionMaterialCountsRepository interactionMaterials;
     NotificationRepository notifications;
     ReportRepository reports;
+    ReportStatsRepository reportStats;
     RegionsRepository regions;
 
     public static LocalRepositories buildFromConnection(Connection connection) {
+        SqliteJdbi database = new SqliteJdbi(connection);
         return new LocalRepositories(
-                new TrustRepository(connection),
-                new InteractionCountsRepository(connection),
-                new InteractionMaterialCountsRepository(connection),
-                new NotificationRepository(connection),
-                new ReportRepository(connection),
-                new RegionsRepository(connection));
+                new TrustRepository(database),
+                new TrustStatsRepository(database),
+                new InteractionWriteRepository(database),
+                new PendingInteractionsRepository(database),
+                new InteractionStatsRepository(database),
+                new InteractionMaterialCountsRepository(database),
+                new NotificationRepository(database),
+                new ReportRepository(database),
+                new ReportStatsRepository(database),
+                new RegionsRepository(database));
     }
 }

@@ -1,18 +1,20 @@
-package me.fulcanelly.trust.me.bro.service.region;
+package me.fulcanelly.trust.me.bro.service.activitybox;
 
 import lombok.Value;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 
 /**
- * Bounding box of one interaction area on the XZ plane (Minecraft horizontal).
+ * Bounding box on the XZ plane (Minecraft horizontal). Used for both an
+ * interaction's activity box and the square around a {@code NamedRegion}, so
+ * that the two can be compared with {@link #isWithinMergeDistanceOf}.
  *
- * Corners come from interaction_counts region_corner_a / region_corner_b.
- * Used only when building the Telegram text — never written back to the DB.
+ * Activity box corners come from interaction_counts region_corner_a / region_corner_b.
+ * Used only when building message text — never written back to the DB.
  */
 @Value
-public class MessageRegion {
+public class MessageBox {
 
-    /** CoreProtect world id — regions from different worlds must not merge. */
+    /** CoreProtect world id — boxes from different worlds must not merge. */
     int worldId;
 
     int minX;
@@ -21,17 +23,17 @@ public class MessageRegion {
     int maxZ;
 
     /** Normalize a/b corners into min/max so later math does not need MIN/MAX. */
-    public static MessageRegion fromInteraction(InteractionCount interaction) {
-        int minX = Math.min(interaction.getRegionCornerAX(), interaction.getRegionCornerBX());
-        int maxX = Math.max(interaction.getRegionCornerAX(), interaction.getRegionCornerBX());
-        int minZ = Math.min(interaction.getRegionCornerAZ(), interaction.getRegionCornerBZ());
-        int maxZ = Math.max(interaction.getRegionCornerAZ(), interaction.getRegionCornerBZ());
-        return new MessageRegion(interaction.getWid(), minX, minZ, maxX, maxZ);
+    public static MessageBox fromInteraction(InteractionCount interaction) {
+        int minX = Math.min(interaction.getActivityBoxCornerAX(), interaction.getActivityBoxCornerBX());
+        int maxX = Math.max(interaction.getActivityBoxCornerAX(), interaction.getActivityBoxCornerBX());
+        int minZ = Math.min(interaction.getActivityBoxCornerAZ(), interaction.getActivityBoxCornerBZ());
+        int maxZ = Math.max(interaction.getActivityBoxCornerAZ(), interaction.getActivityBoxCornerBZ());
+        return new MessageBox(interaction.getWid(), minX, minZ, maxX, maxZ);
     }
 
     /** Expand this box so it covers {@code other} as well (same world). */
-    public MessageRegion expandToCover(MessageRegion other) {
-        return new MessageRegion(
+    public MessageBox expandToCover(MessageBox other) {
+        return new MessageBox(
                 worldId,
                 Math.min(minX, other.minX),
                 Math.min(minZ, other.minZ),
@@ -47,7 +49,7 @@ public class MessageRegion {
         return (minZ + maxZ) / 2;
     }
 
-    /** Half of the longer XZ side — same display idea as InteractionCount.regionRadius(). */
+    /** Half of the longer XZ side — same display idea as InteractionCount.activityBoxRadius(). */
     public int displayRadius() {
         int sizeX = Math.abs(maxX - minX);
         int sizeZ = Math.abs(maxZ - minZ);
@@ -60,7 +62,7 @@ public class MessageRegion {
      * Same rule as DB merge: pad each box by {@code mergeDistance} blocks on X and Z
      * and check overlap. No sqrt — axis-aligned only. Different worlds never match.
      */
-    public boolean isWithinMergeDistanceOf(MessageRegion other, int mergeDistance) {
+    public boolean isWithinMergeDistanceOf(MessageBox other, int mergeDistance) {
         if (worldId != other.worldId) {
             return false;
         }

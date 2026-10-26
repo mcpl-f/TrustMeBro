@@ -50,7 +50,7 @@ public final class NotificationService implements Runnable {
         long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
         MinInteractionThresholds minInteractions = MinInteractionThresholds.from(plugin.getConfig());
         try {
-            var interactors = context.getRepositories().getInteractionCounts()
+            var interactors = context.getRepositories().getPendingInteractions()
                     .findInteractorsReadyForNotification(debounceMillis, minInteractions);
 
             context.getLogger().info("Found " + interactors.size() + " interactors ready for notification");
@@ -81,11 +81,11 @@ public final class NotificationService implements Runnable {
             String interactor,
             MinInteractionThresholds minInteractions //
     ) throws SQLException {
-        var interactionCounts = context.getRepositories().getInteractionCounts();
+        var pendingInteractions = context.getRepositories().getPendingInteractions();
         var notifications = context.getRepositories().getNotifications();
         var plugin = context.getPlugin();
 
-        List<InteractionCount> pending = interactionCounts.findPendingByInteractor(
+        List<InteractionCount> pending = pendingInteractions.findPendingByInteractor(
                 interactor,
                 minInteractions);
         if (pending.isEmpty()) {
@@ -128,12 +128,12 @@ public final class NotificationService implements Runnable {
                         messageBuilder.buildKeyboard(interactor));
 
         long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
-        interactionCounts.attachNotificationByIds(interCountIds, notificationId);
+        pendingInteractions.attachNotificationByIds(interCountIds, notificationId);
         return Optional.empty();
     }
 
     private void markSkipped(List<InteractionCount> rows, String reason) throws SQLException {
-        context.getRepositories().getInteractionCounts().markSkippedByIds(
+        context.getRepositories().getPendingInteractions().markSkippedByIds(
                 rows.stream().map(InteractionCount::getId).collect(Collectors.toList()),
                 reason);
     }

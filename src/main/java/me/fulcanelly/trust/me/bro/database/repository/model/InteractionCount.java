@@ -14,31 +14,31 @@ public class InteractionCount {
     int countInteractContainers;
 
     Integer wid;
-    Integer regionCornerAX;
-    Integer regionCornerAZ;
-    Integer regionCornerBX;
-    Integer regionCornerBZ;
+    Integer activityBoxCornerAX;
+    Integer activityBoxCornerAZ;
+    Integer activityBoxCornerBX;
+    Integer activityBoxCornerBZ;
 
-    public boolean hasRegion() {
+    public boolean hasActivityBox() {
         return wid != null
-                && regionCornerAX != null
-                && regionCornerAZ != null
-                && regionCornerBX != null
-                && regionCornerBZ != null;
+                && activityBoxCornerAX != null
+                && activityBoxCornerAZ != null
+                && activityBoxCornerBX != null
+                && activityBoxCornerBZ != null;
     }
 
-    public int regionCenterX() {
-        return (regionCornerAX + regionCornerBX) / 2;
+    public int activityBoxCenterX() {
+        return (activityBoxCornerAX + activityBoxCornerBX) / 2;
     }
 
-    public int regionCenterZ() {
-        return (regionCornerAZ + regionCornerBZ) / 2;
+    public int activityBoxCenterZ() {
+        return (activityBoxCornerAZ + activityBoxCornerBZ) / 2;
     }
 
     /** Half of the larger XZ side of the AABB (no sqrt). */
-    public int regionRadius() {
-        int sizeX = Math.abs(regionCornerBX - regionCornerAX);
-        int sizeZ = Math.abs(regionCornerBZ - regionCornerAZ);
+    public int activityBoxRadius() {
+        int sizeX = Math.abs(activityBoxCornerBX - activityBoxCornerAX);
+        int sizeZ = Math.abs(activityBoxCornerBZ - activityBoxCornerAZ);
         return Math.max(sizeX, sizeZ) / 2;
     }
 }

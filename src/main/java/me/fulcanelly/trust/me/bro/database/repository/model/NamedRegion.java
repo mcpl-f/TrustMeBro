@@ -1,7 +1,7 @@
 package me.fulcanelly.trust.me.bro.database.repository.model;
 
 import lombok.Value;
-import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
+import me.fulcanelly.trust.me.bro.service.activitybox.MessageBox;
 
 /**
  * Admin-created named area from the {@code regions} table (center + radius).
@@ -24,9 +24,9 @@ public class NamedRegion {
     int radius;
 
     /** Approximate the circle as an XZ AABB for merge-distance checks. */
-    public MessageRegion toMessageRegion() {
+    public MessageBox toMessageBox() {
         int r = Math.max(0, radius);
-        return new MessageRegion(
+        return new MessageBox(
                 wid,
                 centerX - r,
                 centerZ - r,

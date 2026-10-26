@@ -63,8 +63,9 @@ public final class TrustStatsCommand {
 
     private List<PeopleLine> loadTrustedLines(int topSize) throws SQLException {
         var trust = context.getRepositories().getTrust();
+        var trustStats = context.getRepositories().getTrustStats();
         List<PeopleLine> lines = new ArrayList<>();
-        for (PeopleAggregateStat row : trust.findTopTrusted(topSize)) {
+        for (PeopleAggregateStat row : trustStats.findTopTrusted(topSize)) {
             List<String> names = trust.findTrusters(
                     row.getPlayer(),
                     TrustStatsMessageBuilder.NAMES_THRESHOLD,
@@ -75,10 +76,12 @@ public final class TrustStatsCommand {
     }
 
     private List<SuspiciousLine> loadSuspiciousLines(int topSize, int mergeDistance) throws SQLException {
-        var interactionCounts = context.getRepositories().getInteractionCounts();
+        var interactionStats = context.getRepositories().getInteractionStats();
+        var namedRegions = context.getRepositories().getRegions();
+
         List<SuspiciousLine> lines = new ArrayList<>();
-        for (SuspiciousPlayerStat row : interactionCounts.findTopSuspicious(topSize)) {
-            NamedRegionHits regions = interactionCounts.findNamedRegionsTouchedByInteractor(
+        for (SuspiciousPlayerStat row : interactionStats.findTopSuspicious(topSize)) {
+            NamedRegionHits regions = namedRegions.findNamedRegionsTouchedByInteractor(
                     row.getPlayer(),
                     mergeDistance,
                     TrustStatsMessageBuilder.REGIONS_DISPLAY_LIMIT);
@@ -89,8 +92,9 @@ public final class TrustStatsCommand {
 
     private List<PeopleLine> loadReportedLines(int topSize) throws SQLException {
         var reports = context.getRepositories().getReports();
+        var reportStats = context.getRepositories().getReportStats();
         List<PeopleLine> lines = new ArrayList<>();
-        for (PeopleAggregateStat row : reports.findTopReported(topSize)) {
+        for (PeopleAggregateStat row : reportStats.findTopReported(topSize)) {
             List<String> names = reports.findReporters(
                     row.getPlayer(),
                     TrustStatsMessageBuilder.NAMES_THRESHOLD,

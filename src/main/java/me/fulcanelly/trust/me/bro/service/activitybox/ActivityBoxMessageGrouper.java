@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service.region;
+package me.fulcanelly.trust.me.bro.service.activitybox;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 
@@ -8,41 +8,41 @@ import java.util.List;
 /**
  * Groups interaction rows for the Telegram warning text.
  *
- * Why this exists: the DB may store one row per owner-region, so the same place
+ * Why this exists: the DB may store one row per owner activity box, so the same place
  * shows up many times (one line per owner). For the message we merge nearby
  * boxes using {@code merge-distance} and list those owners under one header.
  *
  * This does not update SQLite — display only.
  */
-public final class RegionMessageGrouper {
+public final class ActivityBoxMessageGrouper {
 
-    private RegionMessageGrouper() {
+    private ActivityBoxMessageGrouper() {
     }
 
     /**
      * @param interactions  rows already chosen for this Telegram message
      * @param mergeDistance from config
      *                      {@code detection.split-by-regions.merge-distance}
-     * @return groups in a stable-ish order: no-region rows first (as-is), then
+     * @return groups in a stable-ish order: no-box rows first (as-is), then
      *         clusters
      */
-    public static List<RegionOwnerGroup> uniteAndGroupByRegion(
+    public static List<ActivityBoxOwnerGroup> uniteAndGroupByBox(
             List<InteractionCount> interactions,
             int mergeDistance //
     ) {
-        List<RegionOwnerGroup> groups = new ArrayList<>();
-        List<InteractionCount> interactionsWithRegion = new ArrayList<>();
+        List<ActivityBoxOwnerGroup> groups = new ArrayList<>();
+        List<InteractionCount> interactionsWithBox = new ArrayList<>();
 
         // Split: no coordinates → keep as its own line, never unite with others.
         for (InteractionCount interaction : interactions) {
-            if (interaction.hasRegion()) {
-                interactionsWithRegion.add(interaction);
+            if (interaction.hasActivityBox()) {
+                interactionsWithBox.add(interaction);
             } else {
-                groups.add(new RegionOwnerGroup(null, List.of(interaction)));
+                groups.add(new ActivityBoxOwnerGroup(null, List.of(interaction)));
             }
         }
 
-        if (interactionsWithRegion.isEmpty()) {
+        if (interactionsWithBox.isEmpty()) {
             return groups;
         }
 
@@ -50,12 +50,12 @@ public final class RegionMessageGrouper {
         // ones.
         List<OpenCluster> openClusters = new ArrayList<>();
 
-        for (InteractionCount interaction : interactionsWithRegion) {
-            MessageRegion box = MessageRegion.fromInteraction(interaction);
+        for (InteractionCount interaction : interactionsWithBox) {
+            MessageBox box = MessageBox.fromInteraction(interaction);
             List<OpenCluster> nearbyClusters = findNearbyClusters(openClusters, box, mergeDistance);
 
             if (nearbyClusters.isEmpty()) {
-                // Nothing close — new Telegram region block.
+                // Nothing close — new Telegram block.
                 openClusters.add(OpenCluster.startWith(interaction, box));
                 continue;
             }
@@ -82,7 +82,7 @@ public final class RegionMessageGrouper {
 
     private static List<OpenCluster> findNearbyClusters(
             List<OpenCluster> openClusters,
-            MessageRegion box,
+            MessageBox box,
             int mergeDistance //
     ) {
         List<OpenCluster> nearby = new ArrayList<>();
@@ -95,22 +95,22 @@ public final class RegionMessageGrouper {
     }
 
     /**
-     * Mutable cluster while we walk the list. Converted to RegionOwnerGroup at the
+     * Mutable cluster while we walk the list. Converted to ActivityBoxOwnerGroup at the
      * end.
      */
     private static final class OpenCluster {
 
-        private MessageRegion bounds;
+        private MessageBox bounds;
         private final List<InteractionCount> members = new ArrayList<>();
 
-        private static OpenCluster startWith(InteractionCount interaction, MessageRegion box) {
+        private static OpenCluster startWith(InteractionCount interaction, MessageBox box) {
             OpenCluster cluster = new OpenCluster();
             cluster.bounds = box;
             cluster.members.add(interaction);
             return cluster;
         }
 
-        private void add(InteractionCount interaction, MessageRegion box) {
+        private void add(InteractionCount interaction, MessageBox box) {
             members.add(interaction);
             bounds = bounds.expandToCover(box);
         }
@@ -120,8 +120,8 @@ public final class RegionMessageGrouper {
             bounds = bounds.expandToCover(other.bounds);
         }
 
-        private RegionOwnerGroup toGroup() {
-            return new RegionOwnerGroup(bounds, List.copyOf(members));
+        private ActivityBoxOwnerGroup toGroup() {
+            return new ActivityBoxOwnerGroup(bounds, List.copyOf(members));
         }
     }
 }

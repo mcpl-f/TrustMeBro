@@ -90,13 +90,13 @@ public final class MyProfileCommand {
     private boolean hasProfileData(String player) throws SQLException {
         var trust = context.getRepositories().getTrust();
         var reports = context.getRepositories().getReports();
-        var interactionCounts = context.getRepositories().getInteractionCounts();
+        var interactionStats = context.getRepositories().getInteractionStats();
 
         return trust.countTrusters(player) > 0
                 || trust.countTrusted(player) > 0
                 || reports.countReporters(player) > 0
                 || reports.countReportedByOwner(player) > 0
-                || interactionCounts.countUndecidedInteractors(player) > 0;
+                || interactionStats.countUndecidedInteractors(player) > 0;
     }
 
     /** Asked only when the database has nothing: it may block on the server's name cache. */
