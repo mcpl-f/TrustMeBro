@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
+import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
@@ -44,6 +45,7 @@ public class ProfileMessageBuilderTest {
                     reporters: "Rp"
                   button-with-count: "{title} ({count})"
                   player-button: "@{player}"
+                  player-view: "{player} | {path} | {towardsPlayer} to {player}, {towardsOther} to {other}"
             """;
 
     private final TrustCallbackPayloadService payloads = new TrustCallbackPayloadService();
@@ -138,8 +140,9 @@ public class ProfileMessageBuilderTest {
     }
 
     /*
-     * 11 players trust Alice, 5 per page, newest trust first. Player rows do nothing yet,
-     * the page number does nothing, arrows move one page, Back goes to the section's parent.
+     * 11 players trust Alice, 5 per page, newest trust first. Player rows open that player
+     * from the page they are on, the page number does nothing, arrows move one page, Back
+     * goes to the section's parent.
      *
      *   page 0:  P11..P07    [1 / 3] [>]
      *   page 1:  P06..P02    [<] [2 / 3] [>]
@@ -159,19 +162,21 @@ public class ProfileMessageBuilderTest {
         }
 
         assertEquals(List.of(
-                "@P11", "@P10", "@P09", "@P08", "@P07",
+                "@P11>tmb:prt:123:0:Alice:P11", "@P10>tmb:prt:123:0:Alice:P10", "@P09>tmb:prt:123:0:Alice:P09",
+                "@P08>tmb:prt:123:0:Alice:P08", "@P07>tmb:prt:123:0:Alice:P07",
                 "1 / 3 | telegram.button.page-next>tmb:prt:123:1:Alice",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
         assertEquals(List.of(
-                "@P06", "@P05", "@P04", "@P03", "@P02",
+                "@P06>tmb:prt:123:1:Alice:P06", "@P05>tmb:prt:123:1:Alice:P05", "@P04>tmb:prt:123:1:Alice:P04",
+                "@P03>tmb:prt:123:1:Alice:P03", "@P02>tmb:prt:123:1:Alice:P02",
                 "telegram.button.page-previous>tmb:prt:123:0:Alice | 2 / 3 | telegram.button.page-next>tmb:prt:123:2:Alice",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 1));
 
         assertEquals(List.of(
-                "@P01",
+                "@P01>tmb:prt:123:2:Alice:P01",
                 "telegram.button.page-previous>tmb:prt:123:1:Alice | 3 / 3",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 2));
@@ -199,7 +204,8 @@ public class ProfileMessageBuilderTest {
         }
 
         assertEquals(List.of(
-                "@P05", "@P04", "@P03", "@P02", "@P01",
+                "@P05>tmb:prt:123:0:Alice:P05", "@P04>tmb:prt:123:0:Alice:P04", "@P03>tmb:prt:123:0:Alice:P03",
+                "@P02>tmb:prt:123:0:Alice:P02", "@P01>tmb:prt:123:0:Alice:P01",
                 "telegram.button.back>tmb:pr:123:0:Alice"),
                 keyboard("Alice", Section.TRUSTERS, 0));
 
@@ -209,9 +215,68 @@ public class ProfileMessageBuilderTest {
                 keyboard("Bob", Section.TRUSTERS, 0));
     }
 
+    /*
+     * Picking a player from a list opens a screen of its own: the path of the list with
+     * the player at the end, how many interaction rows each of the two has towards the
+     * other, and a single Back to the same page of the list.
+     *
+     *   Alice's trusters: P_a
+     *   P_a -> Alice: 2 rows (a legacy one and an activity box)
+     *   Alice -> P_a: 1 row, however many times she acted
+     *
+     *   list button   ->  tmb:prt:123:0:Alice:P_a
+     *   text          ->  "Alice | R / T / @P\_a: | 2 to Alice, 1 to P\_a"
+     *   keyboard      ->  [back -> tmb:prt:123:1:Alice]   (opened from page 1)
+     */
+    @Test
+    void playerScreenShowsInteractionsBetweenTheTwoAndBackToTheSamePage() throws Exception {
+        repositories.getTrust().trust("P_a", "Alice", null);
+        var writes = repositories.getInteractionWrites();
+        writes.increment("P_a", "Alice", SuspiciousActionType.BREAK_BLOCK);
+        writes.incrementInActivityBox("P_a", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
+        writes.increment("Alice", "P_a", SuspiciousActionType.BREAK_BLOCK);
+        writes.increment("Alice", "P_a", SuspiciousActionType.PLACE_BLOCK);
+        writes.increment("Alice", "P_a", SuspiciousActionType.PLACE_BLOCK);
+
+        assertEquals("@P_a>tmb:prt:123:0:Alice:P_a", keyboard("Alice", Section.TRUSTERS, 0).get(0));
+        assertEquals("Alice | R / T / @P\\_a: | 2 to Alice, 1 to P\\_a",
+                builder.buildPlayerText("Alice", Section.TRUSTERS, "P_a"));
+        assertEquals(List.of("telegram.button.back>tmb:prt:123:1:Alice"),
+                lines(builder.buildPlayerKeyboard("Alice", Section.TRUSTERS, 1, TELEGRAM_USER)));
+    }
+
+    /*
+     * Telegram refuses the whole keyboard when one button's callback data is over 64
+     * bytes. Two names that no longer fit make that one button inert; the rest stay.
+     *
+     *   profile of a 37-letter name, trusted by "Short" and by a 16-letter name
+     *
+     *   Short        ->  opens
+     *   16 letters   ->  text only, no callback
+     */
+    @Test
+    void playerButtonWhoseCallbackDataIsTooLongDoesNothing() throws Exception {
+        String longProfile = "A".repeat(37);
+        String longListed = "L".repeat(16);
+        repositories.getTrust().trust("Short", longProfile, null);
+        repositories.getTrust().trust(longListed, longProfile, null);
+        try (var statement = connection.createStatement()) {
+            statement.executeUpdate("UPDATE trust_edges SET created_at = 1");
+        }
+
+        assertEquals(List.of(
+                "@" + longListed,
+                "@Short>tmb:prt:123:0:" + longProfile + ":Short",
+                "telegram.button.back>tmb:pr:123:0:" + longProfile),
+                keyboard(longProfile, Section.TRUSTERS, 0));
+    }
+
     /** One line per keyboard row, buttons of a row joined by " | ". */
     private List<String> keyboard(String player, Section section, int page) throws Exception {
-        String json = builder.buildKeyboard(player, section, page, TELEGRAM_USER);
+        return lines(builder.buildKeyboard(player, section, page, TELEGRAM_USER));
+    }
+
+    private List<String> lines(String json) throws Exception {
         JSONArray rows = (JSONArray) ((JSONObject) new JSONParser().parse(json)).get("inline_keyboard");
 
         List<String> lines = new ArrayList<>();

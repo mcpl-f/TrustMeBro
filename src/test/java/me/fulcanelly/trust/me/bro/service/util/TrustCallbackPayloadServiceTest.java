@@ -40,6 +40,27 @@ public class TrustCallbackPayloadServiceTest {
     }
 
     /*
+     * A profile button that opens one player of a list also carries that player.
+     *
+     *   tmb:prt:123:2:Steve:Alex  -> page 2 of Steve's trusters, Alex opened
+     *   tmb:prt:123:2:Steve       -> the list itself, nobody opened
+     *   tmb:prt:123:2:Steve:      -> opened player is empty -> rejected
+     */
+    @Test
+    void profileButtonMayCarryTheOpenedPlayer() {
+        Payload opened = payloads.decode(payloads.encodeProfile("prt", 123L, 2, "Steve", "Alex")).orElseThrow();
+        assertEquals("tmb:prt:123:2:Steve:Alex", payloads.encodeProfile("prt", 123L, 2, "Steve", "Alex"));
+        assertEquals(Optional.of("Steve"), opened.getProfilePlayer());
+        assertEquals(Optional.of("Alex"), opened.getListedPlayer());
+        assertEquals(Optional.of(2), opened.getPage());
+
+        Payload list = payloads.decode(payloads.encodeProfile("prt", 123L, 2, "Steve")).orElseThrow();
+        assertEquals(Optional.empty(), list.getListedPlayer());
+
+        assertTrue(payloads.decode("tmb:prt:123:2:Steve:").isEmpty());
+    }
+
+    /*
      * Broken or foreign data must never reach the handlers as a valid payload.
      *
      *   tmb:pr:abc:0:Steve  -> profile action, id is not a number -> rejected

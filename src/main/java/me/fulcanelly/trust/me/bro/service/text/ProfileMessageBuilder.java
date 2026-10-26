@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,10 @@ import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
  * |- REPUTATION: TRUSTERS, REPORTERS
  * `- RATINGS: TRUSTED, WATCHED, REPORTED, PENDING
  * ---
+ *
+ * A player button of a list opens that player's own screen, "Path / To / Section /
+ * Player:" with the interactions between the two and a Back to the same page of the
+ * list. It is not a Section: which list it hangs under is only known from the press.
  */
 @RequiredArgsConstructor
 public final class ProfileMessageBuilder {
@@ -38,6 +43,9 @@ public final class ProfileMessageBuilder {
     public static final int FIRST_PAGE = 0;
 
     private static final int PAGE_SIZE = 5;
+
+    /** Telegram refuses the whole keyboard when one button's callback data is longer. */
+    private static final int CALLBACK_DATA_LIMIT_BYTES = 64;
 
     @Getter
     @RequiredArgsConstructor
@@ -110,6 +118,37 @@ public final class ProfileMessageBuilder {
     }
 
     /**
+     * The screen of one player picked from a section's list: how many
+     * {@code interaction_counts} rows each of the two has towards the other.
+     */
+    public String buildPlayerText(String player, Section section, String listedPlayer) throws SQLException {
+        var interactionStats = repositories.getInteractionStats();
+
+        List<String> titles = pathTitles(section);
+        titles.add(messages.format("telegram.command.myprofile.player-button", "player", escape(listedPlayer)));
+
+        return messages.format(
+                "telegram.command.myprofile.player-view",
+                "player", escape(player),
+                "other", escape(listedPlayer),
+                "path", String.join(" / ", titles) + ":",
+                "towardsPlayer", interactionStats.countInteractions(listedPlayer, player),
+                "towardsOther", interactionStats.countInteractions(player, listedPlayer));
+    }
+
+    /**
+     * Only Back, to the page of the list the player was opened from.
+     *
+     * @param page zero-based page of the section's list that was showing
+     */
+    @SuppressWarnings("unchecked")
+    public String buildPlayerKeyboard(String player, Section section, int page, long allowedTelegramUserId) {
+        JSONArray rows = new JSONArray();
+        rows.add(backButtonTo(player, section, page, allowedTelegramUserId));
+        return toKeyboardJson(rows);
+    }
+
+    /**
      * @param page                  zero-based page of the section's player list,
      *                              ignored by menu sections
      * @param allowedTelegramUserId the only Telegram user whose presses are
@@ -122,9 +161,13 @@ public final class ProfileMessageBuilder {
         rows.addAll(sectionButtons(player, section, allowedTelegramUserId));
         rows.addAll(playerButtons(player, section, page, allowedTelegramUserId));
         if (section != Section.MAIN) {
-            rows.add(backButtonTo(player, section.getParent(), allowedTelegramUserId));
+            rows.add(backButtonTo(player, section.getParent(), FIRST_PAGE, allowedTelegramUserId));
         }
+        return toKeyboardJson(rows);
+    }
 
+    @SuppressWarnings("unchecked")
+    private String toKeyboardJson(JSONArray rows) {
         JSONObject keyboard = new JSONObject();
         keyboard.put("inline_keyboard", rows);
         return keyboard.toJSONString();
@@ -132,11 +175,16 @@ public final class ProfileMessageBuilder {
 
     /** "⭐ Reputation / ✅ Trusted by:" */
     private String buildPath(Section section) {
+        return String.join(" / ", pathTitles(section)) + ":";
+    }
+
+    /** Titles from the root's child down to the section. */
+    private List<String> pathTitles(Section section) {
         List<String> titles = new ArrayList<>();
         for (Section step = section; step != Section.MAIN; step = step.getParent()) {
             titles.add(0, messages.format("telegram.command.myprofile.title." + step.getKey()));
         }
-        return String.join(" / ", titles) + ":";
+        return titles;
     }
 
     // TODO wtf this is string / json service why the fuck it interacts with the db
@@ -201,10 +249,16 @@ public final class ProfileMessageBuilder {
 
         List<JSONArray> rows = new ArrayList<>();
         for (String listed : findPlayers(player, section, PAGE_SIZE, shownPage * PAGE_SIZE)) {
-            // TODO: a button per player should open that player's own section
+            String open = callbackPayloads.encodeProfile(
+                    section.getCode(), allowedTelegramUserId, shownPage, player, listed);
+            if (open.getBytes(StandardCharsets.UTF_8).length > CALLBACK_DATA_LIMIT_BYTES) {
+                // Two long names do not fit: the button stays but does nothing, instead of
+                // Telegram refusing the whole keyboard. Real nicknames are far shorter.
+                open = callbackPayloads.encodeNoop();
+            }
             rows.add(row(button(
                     messages.format("telegram.command.myprofile.player-button", "player", listed),
-                    callbackPayloads.encodeNoop())));
+                    open)));
         }
 
         if (totalPages == 1) {
@@ -227,10 +281,10 @@ public final class ProfileMessageBuilder {
         return rows;
     }
 
-    private JSONArray backButtonTo(String player, Section target, long allowedTelegramUserId) {
+    private JSONArray backButtonTo(String player, Section target, int page, long allowedTelegramUserId) {
         return row(button(
                 messages.format("telegram.button.back"),
-                callbackPayloads.encodeProfile(target.getCode(), allowedTelegramUserId, FIRST_PAGE, player)));
+                callbackPayloads.encodeProfile(target.getCode(), allowedTelegramUserId, page, player)));
     }
 
     @SuppressWarnings("unchecked")

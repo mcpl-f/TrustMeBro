@@ -43,6 +43,13 @@ telegram:
         pending: "⏳ Waiting for decision"
       button-with-count: "{title} ({count})"
       player-button: "👤 {player}"
+      player-view: |-
+        Reputation profile 👤 {player}
+
+        {path}
+
+        Interactions towards {player}: {towardsPlayer}
+        Interactions towards {other}: {towardsOther}
       not-linked: "Telegram account is not linked to Minecraft. Link an account or pass a nickname: /rep Steve"
       unknown-player: "Player {player} not found."
       bad-name: "Nickname must be 1-37 characters: latin letters, digits, underscore or dot"

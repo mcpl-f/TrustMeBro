@@ -130,7 +130,9 @@ public final class TrustCallbackHandler {
     /**
      * Profile buttons re-render the /rep message in place: the pressed
      * button's section (the target of Back is just another section) of the player
-     * the button carries. Only the author of the command may press them.
+     * the button carries, or the screen of one listed player when the button
+     * carries
+     * one. Only the author of the command may press them.
      */
     private void onProfileAction(CallbackQueryEvent event, Payload payload) {
         var messages = context.getMessages();
@@ -149,14 +151,27 @@ public final class TrustCallbackHandler {
         }
 
         String profilePlayer = payload.getProfilePlayer().get();
+        Optional<String> listedPlayer = payload.getListedPlayer();
 
         try { // TODO: move to top level (onCallback)
+            String text;
+            String keyboard;
+
+            if (listedPlayer.isPresent()) {
+                text = profileMessages.buildPlayerText(profilePlayer, section.get(), listedPlayer.get());
+                keyboard = profileMessages.buildPlayerKeyboard(
+                        profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
+            } else {
+                text = profileMessages.buildText(profilePlayer, section.get());
+                keyboard = profileMessages.buildKeyboard(
+                        profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
+            }
+
             context.getBridge().getBot().editMessage(
                     event.getMessage().getChat().getId(),
                     event.getMessage().getMsgId(),
-                    profileMessages.buildText(profilePlayer, section.get()),
-                    profileMessages.buildKeyboard(
-                            profilePlayer, section.get(), payload.getPage().get(), telegramUserId));
+                    text,
+                    keyboard);
             event.answer("");
         } catch (SQLException e) {
             context.getLogger().warning("TrustMeBro profile callback failed: " + e.getMessage());
