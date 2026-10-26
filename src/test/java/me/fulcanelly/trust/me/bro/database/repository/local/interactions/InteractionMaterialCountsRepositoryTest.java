@@ -105,7 +105,7 @@ public class InteractionMaterialCountsRepositoryTest {
     }
 
     /*
-     * Region path must hand back the id of the row it merged into, otherwise
+     * Activity box path must hand back the id of the row it merged into, otherwise
      * materials would land on the wrong row.
      *
      *   (0,0) Alice   -> row A
@@ -113,11 +113,11 @@ public class InteractionMaterialCountsRepositoryTest {
      *   (5000,0) Alice -> new row B          (too far)
      */
     @Test
-    void regionIncrementReturnsIdOfMergedOrNewRow() throws Exception {
-        long first = writes.incrementInRegion("Griefer", "Alice", WORLD, 0, 0, MERGE, SuspiciousActionType.BREAK_BLOCK);
-        long nearby = writes.incrementInRegion("Griefer", "Alice", WORLD, 10, 10, MERGE,
+    void activityBoxIncrementReturnsIdOfMergedOrNewRow() throws Exception {
+        long first = writes.incrementInActivityBox("Griefer", "Alice", WORLD, 0, 0, MERGE, SuspiciousActionType.BREAK_BLOCK);
+        long nearby = writes.incrementInActivityBox("Griefer", "Alice", WORLD, 10, 10, MERGE,
                 SuspiciousActionType.BREAK_BLOCK);
-        long far = writes.incrementInRegion("Griefer", "Alice", WORLD, 5000, 0, MERGE,
+        long far = writes.incrementInActivityBox("Griefer", "Alice", WORLD, 5000, 0, MERGE,
                 SuspiciousActionType.BREAK_BLOCK);
 
         assertEquals(first, nearby);
@@ -130,7 +130,7 @@ public class InteractionMaterialCountsRepositoryTest {
      *   concurrent calls -> one area row -> every call returns its id
      */
     @Test
-    void concurrentRegionIncrementsReuseOneActivityRow() throws Exception {
+    void concurrentActivityBoxIncrementsReuseOneRow() throws Exception {
         int callers = 8;
         var executor = Executors.newFixedThreadPool(callers);
         var ready = new CountDownLatch(callers);
@@ -142,9 +142,9 @@ public class InteractionMaterialCountsRepositoryTest {
                 results.add(executor.submit(() -> {
                     ready.countDown();
                     if (!start.await(5, TimeUnit.SECONDS)) {
-                        throw new IllegalStateException("Timed out waiting to start region increments");
+                        throw new IllegalStateException("Timed out waiting to start activity box increments");
                     }
-                    return writes.incrementInRegion(
+                    return writes.incrementInActivityBox(
                             "Griefer", "Alice", WORLD, 10, 10, MERGE, SuspiciousActionType.BREAK_BLOCK);
                 }));
             }

@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service.region;
+package me.fulcanelly.trust.me.bro.service.activitybox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 
-public class RegionMessageGrouperTest {
+public class ActivityBoxMessageGrouperTest {
 
     private static final int WORLD = 1;
     private static final int OTHER_WORLD = 2;
@@ -30,7 +30,7 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void samePointSameWorldMergesIntoOneGroup() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("Alice", WORLD, 0, 0),
                         at("Bob", WORLD, 0, 0)),
@@ -38,8 +38,8 @@ public class RegionMessageGrouperTest {
 
         assertEquals(1, groups.size());
         assertEquals(List.of("Alice", "Bob"), owners(groups.get(0)));
-        assertEquals(0, groups.get(0).getRegion().getMinX());
-        assertEquals(0, groups.get(0).getRegion().getMaxX());
+        assertEquals(0, groups.get(0).getActivityBox().getMinX());
+        assertEquals(0, groups.get(0).getActivityBox().getMaxX());
     }
 
     /*
@@ -54,18 +54,18 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void nearbyBoxesWithinMergeDistanceUniteAndExpandBounds() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("A", WORLD, 0, 0),
                         at("B", WORLD, 100, 50)),
                 MERGE);
 
         assertEquals(1, groups.size());
-        MessageRegion region = groups.get(0).getRegion();
-        assertEquals(0, region.getMinX());
-        assertEquals(0, region.getMinZ());
-        assertEquals(100, region.getMaxX());
-        assertEquals(50, region.getMaxZ());
+        MessageBox box = groups.get(0).getActivityBox();
+        assertEquals(0, box.getMinX());
+        assertEquals(0, box.getMinZ());
+        assertEquals(100, box.getMaxX());
+        assertEquals(50, box.getMaxZ());
         assertEquals(List.of("A", "B"), owners(groups.get(0)));
     }
 
@@ -81,7 +81,7 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void farBoxesStaySeparateGroups() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("A", WORLD, 0, 0),
                         at("B", WORLD, 2000, 2000)),
@@ -107,7 +107,7 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void transitiveNearbyChainGluesIntoOneGroup() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("A", WORLD, 0, 0),
                         at("B", WORLD, 400, 0),
@@ -116,8 +116,8 @@ public class RegionMessageGrouperTest {
 
         assertEquals(1, groups.size());
         assertEquals(List.of("A", "B", "C"), owners(groups.get(0)));
-        assertEquals(0, groups.get(0).getRegion().getMinX());
-        assertEquals(800, groups.get(0).getRegion().getMaxX());
+        assertEquals(0, groups.get(0).getActivityBox().getMinX());
+        assertEquals(800, groups.get(0).getActivityBox().getMaxX());
     }
 
     /*
@@ -130,69 +130,69 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void sameCoordsDifferentWorldStaySeparate() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("Alice", WORLD, 0, 0),
                         at("Bob", OTHER_WORLD, 0, 0)),
                 MERGE);
 
         assertEquals(2, groups.size());
-        assertEquals(WORLD, groups.get(0).getRegion().getWorldId());
-        assertEquals(OTHER_WORLD, groups.get(1).getRegion().getWorldId());
+        assertEquals(WORLD, groups.get(0).getActivityBox().getWorldId());
+        assertEquals(OTHER_WORLD, groups.get(1).getActivityBox().getWorldId());
     }
 
     /*
-     * No region columns — never united, even if "close" conceptually.
+     * No activity box columns — never united, even if "close" conceptually.
      *
      *   Alice  (no box)
      *   Bob    (no box)
      *
-     *   => two singleton groups, region == null
+     *   => two singleton groups, activityBox == null
      */
     @Test
-    void interactionsWithoutRegionNeverMerge() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+    void interactionsWithoutBoxNeverMerge() {
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
-                        noRegion("Alice"),
-                        noRegion("Bob")),
+                        noBox("Alice"),
+                        noBox("Bob")),
                 MERGE);
 
         assertEquals(2, groups.size());
-        assertFalse(groups.get(0).hasRegion());
-        assertFalse(groups.get(1).hasRegion());
-        assertNull(groups.get(0).getRegion());
+        assertFalse(groups.get(0).hasActivityBox());
+        assertFalse(groups.get(1).hasActivityBox());
+        assertNull(groups.get(0).getActivityBox());
         assertEquals(List.of("Alice"), owners(groups.get(0)));
         assertEquals(List.of("Bob"), owners(groups.get(1)));
     }
 
     /*
-     * Mix: legacy rows first as singletons, then a merged region cluster.
+     * Mix: legacy rows first as singletons, then a merged box cluster.
      *
      *   Legacy1 (no box)
      *   Legacy2 (no box)
-     *   NearA (0,0) + NearB (10,10)  -> one region group
+     *   NearA (0,0) + NearB (10,10)  -> one box group
      *
      *   => [Legacy1] [Legacy2] [NearA+NearB]
      */
     @Test
-    void mixedLegacyAndRegionPutsLegacySingletonsBeforeClusters() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+    void mixedLegacyAndBoxedPutsLegacySingletonsBeforeClusters() {
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
-                        noRegion("Legacy1"),
+                        noBox("Legacy1"),
                         at("NearA", WORLD, 0, 0),
-                        noRegion("Legacy2"),
+                        noBox("Legacy2"),
                         at("NearB", WORLD, 10, 10)),
                 MERGE);
 
         assertEquals(3, groups.size());
 
         assertEquals(List.of("Legacy1"), owners(groups.get(0)));
-        assertTrue(!groups.get(0).hasRegion());
+        assertTrue(!groups.get(0).hasActivityBox());
 
         assertEquals(List.of("Legacy2"), owners(groups.get(1)));
-        assertTrue(!groups.get(1).hasRegion());
+        assertTrue(!groups.get(1).hasActivityBox());
 
-        assertTrue(groups.get(2).hasRegion());
+        assertTrue(groups.get(2).hasActivityBox());
         assertEquals(List.of("NearA", "NearB"), owners(groups.get(2)));
     }
 
@@ -204,7 +204,7 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void zeroMergeDistanceDoesNotPullApartPointsTogether() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("A", WORLD, 0, 0),
                         at("B", WORLD, 1, 0)),
@@ -214,7 +214,7 @@ public class RegionMessageGrouperTest {
     }
 
     /*
-     * Two separate neighborhoods — two Telegram region headers.
+     * Two separate neighborhoods — two Telegram box headers.
      *
      *   Cluster west:  (0,0) (50,0)
      *   Cluster east:  (5000,0) (5050,0)
@@ -227,7 +227,7 @@ public class RegionMessageGrouperTest {
      */
     @Test
     void twoDistantNeighborhoodsBecomeTwoGroups() {
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(
                 List.of(
                         at("W1", WORLD, 0, 0),
                         at("E1", WORLD, 5000, 0),
@@ -255,7 +255,7 @@ public class RegionMessageGrouperTest {
                 z);
     }
 
-    private static InteractionCount noRegion(String owner) {
+    private static InteractionCount noBox(String owner) {
         return new InteractionCount(
                 1L,
                 "Griefer",
@@ -270,7 +270,7 @@ public class RegionMessageGrouperTest {
                 null);
     }
 
-    private static List<String> owners(RegionOwnerGroup group) {
+    private static List<String> owners(ActivityBoxOwnerGroup group) {
         return group.getInteractions().stream()
                 .map(InteractionCount::getOwnerPlayer)
                 .collect(Collectors.toList());

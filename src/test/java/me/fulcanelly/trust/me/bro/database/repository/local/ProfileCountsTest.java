@@ -48,7 +48,7 @@ public class ProfileCountsTest {
     /*
      * Alice looks at her own profile.
      *
-     *   touched Alice's stuff:  Bob (2 rows: no region + region), Carol, Dave, Eve
+     *   touched Alice's stuff:  Bob (2 rows: no activity box + activity box), Carol, Dave, Eve
      *   Alice decided:          trusts Carol, reported Dave
      *   others decided:         Frank trusts Alice, Gina and Hank reported Alice
      *
@@ -61,7 +61,7 @@ public class ProfileCountsTest {
     @Test
     void countsDecisionsReputationAndPlayersStillWaiting() throws Exception {
         interactionWrites.increment("Bob", "Alice", SuspiciousActionType.BREAK_BLOCK);
-        interactionWrites.incrementInRegion("Bob", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
+        interactionWrites.incrementInActivityBox("Bob", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Carol", "Alice", SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Dave", "Alice", SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Eve", "Alice", SuspiciousActionType.BREAK_BLOCK);
@@ -96,7 +96,7 @@ public class ProfileCountsTest {
     @Test
     void listsPlayersBehindEachProfileCounter() throws Exception {
         interactionWrites.increment("Bob", "Alice", SuspiciousActionType.BREAK_BLOCK);
-        interactionWrites.incrementInRegion("Bob", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
+        interactionWrites.incrementInActivityBox("Bob", "Alice", 1, 0, 0, 500, SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Eve", "Alice", SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Carol", "Alice", SuspiciousActionType.BREAK_BLOCK);
         interactionWrites.increment("Dave", "Alice", SuspiciousActionType.BREAK_BLOCK);

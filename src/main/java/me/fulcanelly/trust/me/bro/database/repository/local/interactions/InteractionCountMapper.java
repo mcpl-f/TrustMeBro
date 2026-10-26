@@ -20,6 +20,7 @@ final class InteractionCountMapper implements RowMapper<InteractionCount> {
                 row.getInt("count_placed_blocks"),
                 row.getInt("count_interact_containers"),
                 nullableInt(row, "wid"),
+                // Columns keep the legacy region_corner_* names; they hold the activity box, not a named region.
                 nullableInt(row, "region_corner_a_x"),
                 nullableInt(row, "region_corner_a_z"),
                 nullableInt(row, "region_corner_b_x"),

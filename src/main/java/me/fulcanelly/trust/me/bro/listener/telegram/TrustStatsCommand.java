@@ -77,9 +77,11 @@ public final class TrustStatsCommand {
 
     private List<SuspiciousLine> loadSuspiciousLines(int topSize, int mergeDistance) throws SQLException {
         var interactionStats = context.getRepositories().getInteractionStats();
+        var namedRegions = context.getRepositories().getRegions();
+
         List<SuspiciousLine> lines = new ArrayList<>();
         for (SuspiciousPlayerStat row : interactionStats.findTopSuspicious(topSize)) {
-            NamedRegionHits regions = interactionStats.findNamedRegionsTouchedByInteractor(
+            NamedRegionHits regions = namedRegions.findNamedRegionsTouchedByInteractor(
                     row.getPlayer(),
                     mergeDistance,
                     TrustStatsMessageBuilder.REGIONS_DISPLAY_LIMIT);

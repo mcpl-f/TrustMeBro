@@ -19,9 +19,9 @@ import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepos
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
-import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
-import me.fulcanelly.trust.me.bro.service.region.RegionMessageGrouper;
-import me.fulcanelly.trust.me.bro.service.region.RegionOwnerGroup;
+import me.fulcanelly.trust.me.bro.service.activitybox.MessageBox;
+import me.fulcanelly.trust.me.bro.service.activitybox.ActivityBoxMessageGrouper;
+import me.fulcanelly.trust.me.bro.service.activitybox.ActivityBoxOwnerGroup;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
@@ -65,24 +65,24 @@ public final class TelegramWarningMessageBuilder {
         StringBuilder builder = new StringBuilder();
         builder.append(messages.format("telegram.warning.header", "interactor", escape(interactorPlayer))).append('\n');
 
-        // Nearby owner-regions become one header + several "- owner: counts" lines.
-        List<RegionOwnerGroup> groups = RegionMessageGrouper.uniteAndGroupByRegion(counts, mergeDistance);
+        // Nearby activity boxes become one header + several "- owner: counts" lines.
+        List<ActivityBoxOwnerGroup> groups = ActivityBoxMessageGrouper.uniteAndGroupByBox(counts, mergeDistance);
 
         // Named admin regions (optional label next to coords when within
         // merge-distance).
         List<NamedRegion> namedRegions = loadNamedRegions();
 
-        for (RegionOwnerGroup group : groups) {
-            if (group.hasRegion()) {
+        for (ActivityBoxOwnerGroup group : groups) {
+            if (group.hasActivityBox()) {
                 // Shared place first, then every owner touched there.
-                builder.append(formatRegion(group.getRegion(), namedRegions, mergeDistance)).append('\n');
+                builder.append(formatBox(group.getActivityBox(), namedRegions, mergeDistance)).append('\n');
                 for (InteractionCount count : group.getInteractions()) {
                     builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
                     builder.append(formatCounts(count)).append('\n');
                 }
                 builder.append('\n');
             } else {
-                // Legacy / no coordinates: one owner line, no region header, no merging.
+                // Legacy / no coordinates: one owner line, no box header, no merging.
                 for (InteractionCount count : group.getInteractions()) {
                     builder.append("- ").append(formatOwner(count.getOwnerPlayer())).append(": ");
                     builder.append(formatCounts(count)).append("\n\n");
@@ -195,29 +195,29 @@ public final class TelegramWarningMessageBuilder {
         return builder.length() == 0 ? "0" : builder.toString();
     }
 
-    private String formatRegion(
-            MessageRegion region,
+    private String formatBox(
+            MessageBox box,
             List<NamedRegion> namedRegions,
             int mergeDistance //
     ) {
-        String world = formatWorld(region.getWorldId());
-        String matchingNames = matchingNamedRegionLabels(region, namedRegions, mergeDistance);
+        String world = formatWorld(box.getWorldId());
+        String matchingNames = matchingNamedRegionLabels(box, namedRegions, mergeDistance);
 
         if (matchingNames.isEmpty()) {
             return messages.format(
                     "region.at",
                     "world", world,
-                    "x", region.centerX(),
-                    "z", region.centerZ(),
-                    "radius", region.displayRadius());
+                    "x", box.centerX(),
+                    "z", box.centerZ(),
+                    "radius", box.displayRadius());
         } else {
             return messages.format(
                     "region.at-named",
                     "name", escape(matchingNames),
                     "world", world,
-                    "x", region.centerX(),
-                    "z", region.centerZ(),
-                    "radius", region.displayRadius());
+                    "x", box.centerX(),
+                    "z", box.centerZ(),
+                    "radius", box.displayRadius());
         }
     }
 
@@ -226,13 +226,13 @@ public final class TelegramWarningMessageBuilder {
      * box.
      */
     private String matchingNamedRegionLabels(
-            MessageRegion interactionArea,
+            MessageBox interactionArea,
             List<NamedRegion> namedRegions,
             int mergeDistance //
     ) {
         return namedRegions.stream()
                 .filter(named -> interactionArea.isWithinMergeDistanceOf(
-                        named.toMessageRegion(), mergeDistance))
+                        named.toMessageBox(), mergeDistance))
                 .map(NamedRegion::getName)
                 .collect(Collectors.joining(" / "));
     }

@@ -19,7 +19,7 @@ import me.fulcanelly.trust.me.bro.database.repository.coreprotect.CoreProtectRea
 import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
-import me.fulcanelly.trust.me.bro.service.region.MessageRegion;
+import me.fulcanelly.trust.me.bro.service.activitybox.MessageBox;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 /**
@@ -69,12 +69,12 @@ public final class MinecraftWarningMessageBuilder {
         //     в Обычный мир x: 100, z: -20
         //       ± 50
         // (or region.at without name)
-        if (count.hasRegion()) {
+        if (count.hasActivityBox()) {
             appendPlainLines(
                     parts,
                     ChatColor.WHITE,
-                    formatRegion(
-                            MessageRegion.fromInteraction(count),
+                    formatBox(
+                            MessageBox.fromInteraction(count),
                             loadNamedRegions(),
                             mergeDistance));
         }
@@ -178,40 +178,40 @@ public final class MinecraftWarningMessageBuilder {
     }
 
     // TODO extract into common text formatter service
-    private String formatRegion(
-            MessageRegion region,
+    private String formatBox(
+            MessageBox box,
             List<NamedRegion> namedRegions,
             int mergeDistance //
     ) {
-        String world = formatWorld(region.getWorldId());
-        String matchingNames = matchingNamedRegionLabels(region, namedRegions, mergeDistance);
+        String world = formatWorld(box.getWorldId());
+        String matchingNames = matchingNamedRegionLabels(box, namedRegions, mergeDistance);
 
         if (matchingNames.isEmpty()) {
             return messages.format(
                     "region.at",
                     "world", world,
-                    "x", region.centerX(),
-                    "z", region.centerZ(),
-                    "radius", region.displayRadius());
+                    "x", box.centerX(),
+                    "z", box.centerZ(),
+                    "radius", box.displayRadius());
         }
         return messages.format(
                 "region.at-named",
                 "name", matchingNames,
                 "world", world,
-                "x", region.centerX(),
-                "z", region.centerZ(),
-                "radius", region.displayRadius());
+                "x", box.centerX(),
+                "z", box.centerZ(),
+                "radius", box.displayRadius());
     }
 
     // TODO extract into common text formatter service
     private String matchingNamedRegionLabels(
-            MessageRegion interactionArea,
+            MessageBox interactionArea,
             List<NamedRegion> namedRegions,
             int mergeDistance //
     ) {
         return namedRegions.stream()
                 .filter(named -> interactionArea.isWithinMergeDistanceOf(
-                        named.toMessageRegion(), mergeDistance))
+                        named.toMessageBox(), mergeDistance))
                 .map(NamedRegion::getName)
                 .collect(Collectors.joining(" / "));
     }

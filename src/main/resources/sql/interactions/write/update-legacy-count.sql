@@ -1,4 +1,6 @@
--- Reuse the region-less row for this player pair so repeated events keep one pending record.
+-- Reuse the row without an activity box
+-- for this player pair so repeated events keep
+-- one pending record.
 UPDATE interaction_counts
 SET count_break_blocks = count_break_blocks + :breakDelta,
     count_placed_blocks = count_placed_blocks + :placeDelta,

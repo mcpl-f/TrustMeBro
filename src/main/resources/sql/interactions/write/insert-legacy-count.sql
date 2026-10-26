@@ -1,4 +1,5 @@
--- Create the region-less interaction row when no existing row can be reused.
+-- Create the interaction row without
+-- an activity box when no existing row can be reused.
 INSERT INTO interaction_counts(
   interactor_player,
   owner,

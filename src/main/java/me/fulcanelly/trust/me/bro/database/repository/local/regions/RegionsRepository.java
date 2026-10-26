@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.database.SqlResources;
 import me.fulcanelly.trust.me.bro.database.SqliteJdbi;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
+import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegionHits;
 
 @RequiredArgsConstructor
 public final class RegionsRepository {
@@ -47,5 +48,30 @@ public final class RegionsRepository {
                         row.getInt("center_z"),
                         row.getInt("radius")))
                 .list());
+    }
+
+    public NamedRegionHits findNamedRegionsTouchedByInteractor(
+            String interactorPlayer,
+            int mergeDistance,
+            int nameLimit) throws SQLException {
+        int pad = Math.max(0, mergeDistance);
+        int total = database.withHandle(handle -> handle.createQuery(
+                        SqlResources.load("regions/count-named-regions-touched"))
+                .bind("interactor", interactorPlayer)
+                .bind("pad", pad)
+                .mapTo(Integer.class)
+                .one());
+        if (total == 0 || nameLimit <= 0) {
+            return new NamedRegionHits(List.of(), total);
+        }
+
+        List<String> names = database.withHandle(handle -> handle.createQuery(
+                        SqlResources.load("regions/find-named-regions-touched"))
+                .bind("interactor", interactorPlayer)
+                .bind("pad", pad)
+                .bind("limit", nameLimit)
+                .map((row, context) -> row.getString("region_name"))
+                .list());
+        return new NamedRegionHits(names, total);
     }
 }

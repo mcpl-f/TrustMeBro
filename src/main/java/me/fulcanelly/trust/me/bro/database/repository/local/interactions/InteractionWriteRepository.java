@@ -15,6 +15,9 @@ public final class InteractionWriteRepository {
 
     private final SqliteJdbi database;
 
+    /**
+     * @return id of the (legacy) row without an activity box that was incremented or created
+     */
     public long increment(String interactorPlayer, String ownerPlayer, SuspiciousActionType actionType)
             throws SQLException {
         long now = System.currentTimeMillis();
@@ -48,7 +51,14 @@ public final class InteractionWriteRepository {
         });
     }
 
-    public long incrementInRegion(
+    /**
+     * Activity-box-aware record: merge into a nearby activity box (pending or
+     * already notified) or insert a new one. Distance is axis-aligned (no sqrt):
+     * point within mergeDistance of the box AABB.
+     *
+     * @return id of the {@code interaction_counts} row that was incremented or created
+     */
+    public long incrementInActivityBox(
             String interactorPlayer,
             String ownerPlayer,
             int wid,
@@ -57,13 +67,13 @@ public final class InteractionWriteRepository {
             int mergeDistance,
             SuspiciousActionType actionType) throws SQLException {
         return database.withHandle(handle -> {
-            Optional<Long> nearbyId = findNearbyRegionId(
+            Optional<Long> nearbyId = findNearbyActivityBoxId(
                     handle, interactorPlayer, ownerPlayer, wid, x, z, mergeDistance);
             if (nearbyId.isPresent()) {
-                expandRegionAndIncrement(handle, nearbyId.get(), x, z, actionType);
+                expandActivityBoxAndIncrement(handle, nearbyId.get(), x, z, actionType);
                 return nearbyId.get();
             }
-            return insertRegion(handle, interactorPlayer, ownerPlayer, wid, x, z, actionType);
+            return insertActivityBox(handle, interactorPlayer, ownerPlayer, wid, x, z, actionType);
         });
     }
 
@@ -77,7 +87,16 @@ public final class InteractionWriteRepository {
                 .isPresent());
     }
 
-    private Optional<Long> findNearbyRegionId(
+    /*
+     * Merge includes already-notified rows so nearby follow-up grief does not
+     * spawn a new pending row / Telegram spam. Prefer a still-pending match.
+     *
+     * WARNING: an activity box is NOT a named region ({@code regions} table,
+     * NamedRegion). It is a bounding box stored on an {@code interaction_counts}
+     * row, and the returned id is {@code interaction_counts.id}. Its columns are
+     * still called {@code region_corner_*}.
+     */
+    private Optional<Long> findNearbyActivityBoxId(
             Handle handle,
             String interactorPlayer,
             String ownerPlayer,
@@ -85,7 +104,7 @@ public final class InteractionWriteRepository {
             int x,
             int z,
             int mergeDistance) {
-        return handle.createQuery(SqlResources.load("interactions/write/find-nearby-region"))
+        return handle.createQuery(SqlResources.load("interactions/write/find-nearby-activity-box"))
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .bind("wid", wid)
@@ -96,12 +115,16 @@ public final class InteractionWriteRepository {
                 .findOne();
     }
 
-    private void expandRegionAndIncrement(Handle handle, long id, int x, int z, SuspiciousActionType actionType) {
+    /**
+     * WARNING: {@code id} is {@code interaction_counts.id}, and the box being
+     * expanded is the activity box on that row, not the {@code regions} table.
+     */
+    private void expandActivityBoxAndIncrement(Handle handle, long id, int x, int z, SuspiciousActionType actionType) {
         int breakDelta = actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0;
         int placeDelta = actionType == SuspiciousActionType.PLACE_BLOCK ? 1 : 0;
         int containerDelta = actionType == SuspiciousActionType.INTERACT_CONTAINER ? 1 : 0;
 
-        var bounds = handle.createQuery(SqlResources.load("interactions/write/find-region-bounds"))
+        var bounds = handle.createQuery(SqlResources.load("interactions/write/find-activity-box-bounds"))
                 .bind("id", id)
                 .map((row, context) -> new int[] {
                         row.getInt("region_corner_a_x"),
@@ -114,22 +137,28 @@ public final class InteractionWriteRepository {
             return;
         }
 
-        int[] region = bounds.get();
+        int[] box = bounds.get();
         long updatedAt = System.currentTimeMillis();
-        handle.createUpdate(SqlResources.load("interactions/write/expand-region"))
+        handle.createUpdate(SqlResources.load("interactions/write/expand-activity-box"))
                 .bind("breakDelta", breakDelta)
                 .bind("placeDelta", placeDelta)
                 .bind("containerDelta", containerDelta)
-                .bind("minX", Math.min(Math.min(region[0], region[2]), x))
-                .bind("minZ", Math.min(Math.min(region[1], region[3]), z))
-                .bind("maxX", Math.max(Math.max(region[0], region[2]), x))
-                .bind("maxZ", Math.max(Math.max(region[1], region[3]), z))
+                .bind("minX", Math.min(Math.min(box[0], box[2]), x))
+                .bind("minZ", Math.min(Math.min(box[1], box[3]), z))
+                .bind("maxX", Math.max(Math.max(box[0], box[2]), x))
+                .bind("maxZ", Math.max(Math.max(box[1], box[3]), z))
                 .bind("now", updatedAt)
                 .bind("id", id)
                 .execute();
     }
 
-    private long insertRegion(
+    /**
+     * WARNING: inserts a new {@code interaction_counts} row with an activity box,
+     * it does NOT create a named region in the {@code regions} table.
+     *
+     * @return id of the inserted {@code interaction_counts} row
+     */
+    private long insertActivityBox(
             Handle handle,
             String interactorPlayer,
             String ownerPlayer,
@@ -138,7 +167,7 @@ public final class InteractionWriteRepository {
             int z,
             SuspiciousActionType actionType) {
         long now = System.currentTimeMillis();
-        return handle.createQuery(SqlResources.load("interactions/write/insert-region"))
+        return handle.createQuery(SqlResources.load("interactions/write/insert-activity-box"))
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .bind("breakDelta", actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0)

@@ -86,7 +86,7 @@ public final class SuspicionDetectionService {
             long interactionCountId;
 
             if (splitByRegions && wid != null) {
-                interactionCountId = interactionCounts.incrementInRegion(
+                interactionCountId = interactionCounts.incrementInActivityBox(
                         interactorPlayer,
                         owner,
                         wid,
