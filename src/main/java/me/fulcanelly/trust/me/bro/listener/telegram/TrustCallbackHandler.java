@@ -7,6 +7,7 @@ import com.google.common.eventbus.Subscribe;
 
 import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
@@ -29,15 +30,21 @@ public final class TrustCallbackHandler {
 
         var callbackPayloads = context.getCallbackPayloads();
         String action = payload.get().getAction();
+        var messages = context.getMessages();
 
-        if (callbackPayloads.isProfileAction(action)) {
-            onProfileAction(event, payload.get());
-        } else if (callbackPayloads.isDecisionAction(action)) {
-            onDecisionAction(event, payload.get());
-        } else if (TrustCallbackPayloadService.ACTION_NOOP.equals(action)) {
-            event.answer(""); // only closes the button's loading spinner
-        } else {
-            event.answer(context.getMessages().format("callback.unknown-action"));
+        try {
+            if (callbackPayloads.isProfileAction(action)) {
+                onProfileAction(event, payload.get());
+            } else if (callbackPayloads.isDecisionAction(action)) {
+                onDecisionAction(event, payload.get());
+            } else if (TrustCallbackPayloadService.ACTION_NOOP.equals(action)) {
+                event.answer(""); // only closes the button's loading spinner
+            } else {
+                event.answer(context.getMessages().format("callback.unknown-action"));
+            }
+        } catch (Exception e) {
+            context.getLogger().warning("TrustMeBro callback failed: " + e.getMessage());
+            event.answer(messages.format("callback.db-error"));
         }
     }
 
@@ -66,6 +73,7 @@ public final class TrustCallbackHandler {
      * Trust / report buttons of a warning: the owner is the linked account of
      * whoever clicked.
      */
+    @SneakyThrows
     private void onDecisionAction(CallbackQueryEvent event, Payload payload) {
         var messages = context.getMessages();
 
@@ -85,46 +93,42 @@ public final class TrustCallbackHandler {
         }
         String ownerPlayer = linkedPlayer.get();
 
-        try { // TODO move to top level (onCallback)
-            if (!context.getRepositories().getInteractionWrites().exists(interactorPlayer, ownerPlayer)) {
-                event.answer(messages.format("callback.interaction-gone"));
-                return;
-            }
+        if (!context.getRepositories().getInteractionWrites().exists(interactorPlayer, ownerPlayer)) {
+            event.answer(messages.format("callback.interaction-gone"));
+            return;
+        }
 
-            var decisions = context.getServices().getTrustDecisions();
+        var decisions = context.getServices().getTrustDecisions();
 
-            if (TrustCallbackPayloadService.ACTION_TRUST.equals(payload.getAction())) {
-                Outcome outcome = decisions.trust(ownerPlayer, interactorPlayer, telegramUserId);
-                if (outcome == Outcome.ALREADY_TRUSTED) {
-                    event.answer(messages.format(
-                            "callback.already-trusted",
-                            "owner", ownerPlayer,
-                            "interactor", interactorPlayer));
-                    return;
-                }
+        if (TrustCallbackPayloadService.ACTION_TRUST.equals(payload.getAction())) {
+            Outcome outcome = decisions.trust(ownerPlayer, interactorPlayer, telegramUserId);
+            if (outcome == Outcome.ALREADY_TRUSTED) {
                 event.answer(messages.format(
-                        "callback.trusted",
-                        "owner", ownerPlayer,
-                        "interactor", interactorPlayer));
-                return;
-            }
-
-            Outcome outcome = decisions.report(ownerPlayer, interactorPlayer, telegramUserId);
-            if (outcome == Outcome.ALREADY_REPORTED) {
-                event.answer(messages.format(
-                        "callback.already-reported",
+                        "callback.already-trusted",
                         "owner", ownerPlayer,
                         "interactor", interactorPlayer));
                 return;
             }
             event.answer(messages.format(
-                    "callback.reported",
+                    "callback.trusted",
                     "owner", ownerPlayer,
                     "interactor", interactorPlayer));
-        } catch (SQLException e) {
-            context.getLogger().warning("TrustMeBro callback failed: " + e.getMessage());
-            event.answer(messages.format("callback.db-error"));
+            return;
         }
+
+        Outcome outcome = decisions.report(ownerPlayer, interactorPlayer, telegramUserId);
+        if (outcome == Outcome.ALREADY_REPORTED) {
+            event.answer(messages.format(
+                    "callback.already-reported",
+                    "owner", ownerPlayer,
+                    "interactor", interactorPlayer));
+            return;
+        }
+        event.answer(messages.format(
+                "callback.reported",
+                "owner", ownerPlayer,
+                "interactor", interactorPlayer));
+
     }
 
     /**
@@ -134,6 +138,7 @@ public final class TrustCallbackHandler {
      * carries
      * one. Only the author of the command may press them.
      */
+    @SneakyThrows
     private void onProfileAction(CallbackQueryEvent event, Payload payload) {
         var messages = context.getMessages();
         long telegramUserId = event.getFrom().getId();
@@ -153,29 +158,24 @@ public final class TrustCallbackHandler {
         String profilePlayer = payload.getProfilePlayer().get();
         Optional<String> listedPlayer = payload.getListedPlayer();
 
-        try { // TODO: move to top level (onCallback)
-            String text;
-            String keyboard;
+        String text;
+        String keyboard;
 
-            if (listedPlayer.isPresent()) {
-                text = profileMessages.buildPlayerText(profilePlayer, section.get(), listedPlayer.get());
-                keyboard = profileMessages.buildPlayerKeyboard(
-                        profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
-            } else {
-                text = profileMessages.buildText(profilePlayer, section.get());
-                keyboard = profileMessages.buildKeyboard(
-                        profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
-            }
-
-            context.getBridge().getBot().editMessage(
-                    event.getMessage().getChat().getId(),
-                    event.getMessage().getMsgId(),
-                    text,
-                    keyboard);
-            event.answer("");
-        } catch (SQLException e) {
-            context.getLogger().warning("TrustMeBro profile callback failed: " + e.getMessage());
-            event.answer(messages.format("callback.db-error"));
+        if (listedPlayer.isPresent()) {
+            text = profileMessages.buildPlayerText(profilePlayer, section.get(), listedPlayer.get());
+            keyboard = profileMessages.buildPlayerKeyboard(
+                    profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
+        } else {
+            text = profileMessages.buildText(profilePlayer, section.get());
+            keyboard = profileMessages.buildKeyboard(
+                    profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
         }
+
+        context.getBridge().getBot().editMessage(
+                event.getMessage().getChat().getId(),
+                event.getMessage().getMsgId(),
+                text,
+                keyboard);
+        event.answer("");
     }
 }
