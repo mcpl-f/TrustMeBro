@@ -12,9 +12,9 @@ import com.google.common.eventbus.Subscribe;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler.Section;
 import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackHandler;
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 import me.fulcanelly.trust.me.bro.service.util.MinecraftPlayers;
 
 /**
@@ -34,7 +34,7 @@ public final class MyProfileCommand {
     private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_.]{1,37}");
 
     private final AppContext context;
-    private final ProfileMessageBuilder profileMessages;
+    private final ProfileCallbackHandler profileScreens;
 
     @Subscribe
     public void onCommand(CommandEvent event) {
@@ -78,9 +78,9 @@ public final class MyProfileCommand {
             // Plain send (not reply) so the buttons below can edit this message later.
             context.getBridge().getBot().sendMessage(
                     event.getMessage().getChat().getId(),
-                    profileMessages.buildText(profilePlayer, Section.MAIN),
-                    profileMessages.buildKeyboard(
-                            profilePlayer, Section.MAIN, ProfileMessageBuilder.FIRST_PAGE, telegramUserId));
+                    profileScreens.buildText(profilePlayer, Section.MAIN),
+                    profileScreens.buildKeyboard(
+                            profilePlayer, Section.MAIN, ProfileCallbackHandler.FIRST_PAGE, telegramUserId));
         } catch (SQLException e) {
             context.getLogger().warning("/rep failed: " + e.getMessage());
             event.getMessage().reply(context.getMessages().format("telegram.command.myprofile.failed"));

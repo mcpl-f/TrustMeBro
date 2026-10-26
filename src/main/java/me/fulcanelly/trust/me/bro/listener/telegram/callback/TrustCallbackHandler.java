@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.service.core.TrustDecisionService.Outcome;
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Payload;
 
@@ -18,7 +16,7 @@ import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Paylo
 public final class TrustCallbackHandler {
 
     private final AppContext context;
-    private final ProfileMessageBuilder profileMessages;
+    private final ProfileCallbackHandler profileCallbacks;
 
     @Subscribe
     public void onCallback(CallbackQueryEvent event) {
@@ -33,7 +31,7 @@ public final class TrustCallbackHandler {
 
         try {
             if (callbackPayloads.isProfileAction(action)) {
-                onProfileAction(event, payload.get());
+                profileCallbacks.onProfileAction(event, payload.get());
             } else if (callbackPayloads.isDecisionAction(action)) {
                 onDecisionAction(event, payload.get());
             } else if (TrustCallbackPayloadService.ACTION_NOOP.equals(action)) {
@@ -128,53 +126,5 @@ public final class TrustCallbackHandler {
                 "owner", ownerPlayer,
                 "interactor", interactorPlayer));
 
-    }
-
-    /**
-     * Profile buttons re-render the /rep message in place: the pressed
-     * button's section (the target of Back is just another section) of the player
-     * the button carries, or the screen of one listed player when the button
-     * carries
-     * one. Only the author of the command may press them.
-     */
-    @SneakyThrows
-    private void onProfileAction(CallbackQueryEvent event, Payload payload) {
-        var messages = context.getMessages();
-        long telegramUserId = event.getFrom().getId();
-
-        Optional<Section> section = Section.fromCode(payload.getAction());
-        if (section.isEmpty() || payload.getPage().isEmpty() || payload.getProfilePlayer().isEmpty()) {
-            event.answer(messages.format("callback.bad-action"));
-            return;
-        }
-
-        Optional<Long> allowedUser = payload.getAllowedTelegramUserId();
-        if (allowedUser.isEmpty() || allowedUser.get() != telegramUserId) {
-            event.answer(messages.format("callback.not-your-profile"));
-            return;
-        }
-
-        String profilePlayer = payload.getProfilePlayer().get();
-        Optional<String> listedPlayer = payload.getListedPlayer();
-
-        String text;
-        String keyboard;
-
-        if (listedPlayer.isPresent()) {
-            text = profileMessages.buildPlayerText(profilePlayer, section.get(), listedPlayer.get());
-            keyboard = profileMessages.buildPlayerKeyboard(
-                    profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
-        } else {
-            text = profileMessages.buildText(profilePlayer, section.get());
-            keyboard = profileMessages.buildKeyboard(
-                    profilePlayer, section.get(), payload.getPage().get(), telegramUserId);
-        }
-
-        context.getBridge().getBot().editMessage(
-                event.getMessage().getChat().getId(),
-                event.getMessage().getMsgId(),
-                text,
-                keyboard);
-        event.answer("");
     }
 }

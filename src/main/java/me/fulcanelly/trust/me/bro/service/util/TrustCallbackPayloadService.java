@@ -40,7 +40,7 @@ public final class TrustCallbackPayloadService {
     public static final String ACTION_NOOP = "n";
 
     /**
-     * Every /rep section code (see ProfileMessageBuilder.Section) starts with this,
+     * Every /rep section code (see ProfileCallbackHandler.Section) starts with this,
      * so the section list can grow without being repeated here.
      */
     private static final String PROFILE_ACTION_PREFIX = "p";

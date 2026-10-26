@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service.text;
+package me.fulcanelly.trust.me.bro.listener.telegram.callback;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler.Section;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**

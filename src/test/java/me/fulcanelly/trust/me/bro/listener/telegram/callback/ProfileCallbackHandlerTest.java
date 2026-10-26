@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service.text;
+package me.fulcanelly.trust.me.bro.listener.telegram.callback;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test;
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
 import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType;
-import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Section;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler.Section;
+import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
@@ -30,7 +31,7 @@ import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
  * The /rep keyboard. Only the messages that carry a placeholder are defined (see
  * MESSAGES); every other button text is its own message key.
  */
-public class ProfileMessageBuilderTest {
+public class ProfileCallbackHandlerTest {
 
     private static final long TELEGRAM_USER = 123L;
 
@@ -52,7 +53,7 @@ public class ProfileMessageBuilderTest {
 
     private Connection connection;
     private LocalRepositories repositories;
-    private ProfileMessageBuilder builder;
+    private ProfileCallbackHandler handler;
 
     @BeforeEach
     void openFreshDatabase() throws Exception {
@@ -72,7 +73,10 @@ public class ProfileMessageBuilderTest {
                     }
                     return null;
                 });
-        builder = new ProfileMessageBuilder(new LocalizationService(plugin), payloads, repositories);
+        LocalizationService messages = new LocalizationService(plugin);
+        // null bot: only onProfileAction edits messages, these tests build the screens
+        handler = new ProfileCallbackHandler(
+                messages, payloads, repositories, new ProfileMessageBuilder(messages), null);
     }
 
     @AfterEach
@@ -120,8 +124,8 @@ public class ProfileMessageBuilderTest {
         repositories.getTrust().trust("Pb", "Alice", null);
         repositories.getReports().report("Pc", null, "Alice", "Pc");
 
-        assertEquals("Alice: 2 trust, 1 reports", builder.buildText("Alice", Section.MAIN));
-        assertEquals("Alice: 2 trust, 1 reports\n\nR / T:", builder.buildText("Alice", Section.TRUSTERS));
+        assertEquals("Alice: 2 trust, 1 reports", handler.buildText("Alice", Section.MAIN));
+        assertEquals("Alice: 2 trust, 1 reports\n\nR / T:", handler.buildText("Alice", Section.TRUSTERS));
     }
 
     /*
@@ -132,7 +136,7 @@ public class ProfileMessageBuilderTest {
      */
     @Test
     void underscoreInPlayerNameIsEscapedInTextOnly() throws Exception {
-        assertEquals("v\\_mute: 0 trust, 0 reports", builder.buildText("v_mute", Section.MAIN));
+        assertEquals("v\\_mute: 0 trust, 0 reports", handler.buildText("v_mute", Section.MAIN));
         assertEquals(List.of(
                 "R>tmb:pr:123:0:v_mute",
                 "telegram.command.myprofile.title.ratings>tmb:pm:123:0:v_mute"),
@@ -240,9 +244,9 @@ public class ProfileMessageBuilderTest {
 
         assertEquals("@P_a>tmb:prt:123:0:Alice:P_a", keyboard("Alice", Section.TRUSTERS, 0).get(0));
         assertEquals("Alice | R / T / @P\\_a: | 2 to Alice, 1 to P\\_a",
-                builder.buildPlayerText("Alice", Section.TRUSTERS, "P_a"));
+                handler.buildPlayerText("Alice", Section.TRUSTERS, "P_a"));
         assertEquals(List.of("telegram.button.back>tmb:prt:123:1:Alice"),
-                lines(builder.buildPlayerKeyboard("Alice", Section.TRUSTERS, 1, TELEGRAM_USER)));
+                lines(handler.buildPlayerKeyboard("Alice", Section.TRUSTERS, 1, TELEGRAM_USER)));
     }
 
     /*
@@ -273,7 +277,7 @@ public class ProfileMessageBuilderTest {
 
     /** One line per keyboard row, buttons of a row joined by " | ". */
     private List<String> keyboard(String player, Section section, int page) throws Exception {
-        return lines(builder.buildKeyboard(player, section, page, TELEGRAM_USER));
+        return lines(handler.buildKeyboard(player, section, page, TELEGRAM_USER));
     }
 
     private List<String> lines(String json) throws Exception {
