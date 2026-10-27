@@ -19,11 +19,11 @@ import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepos
 import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.database.repository.model.NamedRegion;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService;
 import me.fulcanelly.trust.me.bro.service.activitybox.MessageBox;
 import me.fulcanelly.trust.me.bro.service.activitybox.ActivityBoxMessageGrouper;
 import me.fulcanelly.trust.me.bro.service.activitybox.ActivityBoxOwnerGroup;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
  * Builds the Telegram warning message and its two action buttons.
