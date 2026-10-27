@@ -25,7 +25,6 @@ import me.fulcanelly.trust.me.bro.database.repository.model.SuspiciousActionType
 import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler.Section;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
  * The /rep keyboard. Only the messages that carry a placeholder are defined (see

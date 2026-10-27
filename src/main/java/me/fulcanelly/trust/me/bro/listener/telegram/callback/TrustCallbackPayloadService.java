@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.service.util;
+package me.fulcanelly.trust.me.bro.listener.telegram.callback;
 
 import java.util.Optional;
 
@@ -107,7 +107,7 @@ public final class TrustCallbackPayloadService {
         if (profileArgs.length < PROFILE_ARGS || profileArgs[2].isEmpty()) {
             return Optional.empty();
         }
-        
+
         Optional<String> listedPlayer = Optional.empty();
         if (profileArgs.length == PROFILE_ARGS_WITH_LISTED) {
             if (profileArgs[3].isEmpty()) {

@@ -8,7 +8,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Payload;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService.Payload;
 
 public class TrustCallbackPayloadServiceTest {
 

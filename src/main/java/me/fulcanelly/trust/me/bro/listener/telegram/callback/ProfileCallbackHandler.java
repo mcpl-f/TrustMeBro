@@ -11,11 +11,10 @@ import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.TGBot;
 import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService.Payload;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder.Button;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Payload;
 
 /**
  * The /rep screens and what a profile button turns the message into.
@@ -122,7 +121,7 @@ public final class ProfileCallbackHandler {
             event.answer(messages.format("callback.bad-action"));
             return;
         }
-        
+
 
         Optional<Long> allowedUser = payload.getAllowedTelegramUserId();
         if (allowedUser.isEmpty() || allowedUser.get() != telegramUserId) {

@@ -9,7 +9,6 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler.Section;
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService;
 
 /**
  * Wiring of the /rep buttons: a pressed button is found by its callback code.
