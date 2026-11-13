@@ -97,6 +97,16 @@ command:
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
     created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
+  whosereg:
+    players-only: "Players only."
+    unknown-world: "This world is unknown to CoreProtect."
+    overlap-header: "⚠ Overlapping regions ({count}):"
+    closest: "No region here. Closest region is {distance} blocks away:"
+    none: "No named regions within 500 blocks."
+    more: "... and {count} more overlapping regions."
+    region: |-
+      #{id} "{name}" · mutable: {mutable} · created by: {creator}
+      AABB: X[{minX}..{maxX}] Z[{minZ}..{maxZ}]
   trust:
     players-only: "Players only."
     self: "You cannot trust yourself."
