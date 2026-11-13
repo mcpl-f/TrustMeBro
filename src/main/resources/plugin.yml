@@ -14,10 +14,6 @@ commands:
     description: Create a named trust region at your current position
     usage: /new_trust_region <radius> <name>
     permission: trusts.region.create
-  tgnotify:
-    description: Toggle your private Telegram notifications
-    usage: /tgnotify <on|off|status>
-    permission: trusts.command.tgnotify
   ttrust:
     description: Trust a player so they no longer trigger warnings for your blocks
     usage: /ttrust <player>
@@ -31,9 +27,6 @@ permissions:
   trusts.region.create:
     description: Allows creating named trust regions
     default: op
-  trusts.command.tgnotify:
-    description: Allows managing personal Telegram notification preferences
-    default: true
   trusts.command.trust:
     description: Allows /ttrust
     default: true
