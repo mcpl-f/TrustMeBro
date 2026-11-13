@@ -3,6 +3,7 @@ package me.fulcanelly.trust.me.bro.jobs;
 import java.sql.SQLException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -33,102 +34,147 @@ public final class NotificationService implements Runnable {
     @Override
     public void run() {
         // Do not reloadConfig() here — FileConfiguration reload is not async-safe.
-        // Admins: /reload or restart; getConfig() reads the in-memory copy each tick.
         var plugin = context.getPlugin();
         var mainConfig = context.getBridge().getMainConfig();
+        boolean groupNotificationsEnabled = plugin.getConfig().getBoolean("telegram.notify", true);
+        boolean ownerDmNotificationsEnabled = plugin.getConfig().getBoolean("telegram.owner-dm-notify", true);
 
-        if (!plugin.getConfig().getBoolean("telegram.notify", true)) {
+        Long groupChatId = null;
+        if (groupNotificationsEnabled && mainConfig.getChatId() != null
+                && !mainConfig.getChatId().isBlank()) {
+            try {
+                groupChatId = Long.parseLong(mainConfig.getChatId());
+            } catch (NumberFormatException e) {
+                context.getLogger().warning("Invalid Telegram group chat id: " + e.getMessage());
+            }
+        }
+        if (!groupNotificationsEnabled && !ownerDmNotificationsEnabled) {
             return;
         }
 
-        if (mainConfig.getChatId() == null || mainConfig.getChatId().isBlank()) {
-            return;
-        }
-
-        context.getLogger().info("Finding interactors ready for notification");
-        long chatId = Long.parseLong(mainConfig.getChatId());
         long debounceMillis = Math.max(1, plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
         MinInteractionThresholds minInteractions = MinInteractionThresholds.from(plugin.getConfig());
         try {
             var interactors = context.getRepositories().getPendingInteractions()
                     .findInteractorsReadyForNotification(debounceMillis, minInteractions);
 
-            context.getLogger().info("Found " + interactors.size() + " interactors ready for notification");
             for (String interactor : interactors) {
-
-                long start = System.currentTimeMillis();
-                Optional<String> skipReason = sendNotification(chatId, interactor, minInteractions);
-                long tookMs = System.currentTimeMillis() - start;
-
-                if (skipReason.isEmpty()) {
-                    context.getLogger().info("Sent notification about " + interactor + " in " + tookMs + "ms");
-                    return;
+                List<InteractionCount> pending = context.getRepositories().getPendingInteractions()
+                        .findPendingByInteractor(interactor, minInteractions);
+                if (pending.isEmpty()) {
+                    continue;
                 }
 
-                context.getLogger().info("Skipped " + interactor + " (" + skipReason.get() + ") in " + tookMs + "ms");
+                if (ownerDmNotificationsEnabled) {
+                    sendOwnerDirectMessages(interactor, pending);
+                }
+                if (groupChatId != null) {
+                    Optional<String> skipReason = sendGroupNotification(groupChatId, interactor, pending);
+                    if (skipReason.isPresent()) {
+                        context.getLogger().info("Skipped group notification for " + interactor
+                                + " (" + skipReason.get() + ")");
+                    }
+                }
             }
         } catch (Exception e) {
             context.getLogger().warning("Trust notification job failed: " + e.getMessage());
         }
     }
 
-    /**
-     * @return empty if a Telegram message was sent; otherwise the skip reason code
-     *         (also persisted on the pending rows when applicable)
-     */
-    private Optional<String> sendNotification(
+    private void sendOwnerDirectMessages(String interactor, List<InteractionCount> pending) {
+        Map<String, List<InteractionCount>> byOwner = pending.stream()
+                .collect(Collectors.groupingBy(
+                        InteractionCount::getOwnerPlayer,
+                        java.util.LinkedHashMap::new,
+                        Collectors.toList()));
+
+        for (Map.Entry<String, List<InteractionCount>> entry : byOwner.entrySet()) {
+            String owner = entry.getKey();
+            List<InteractionCount> ownerRows = entry.getValue();
+            try {
+                var notifications = context.getRepositories().getNotifications();
+                var preferences = context.getRepositories().getTelegramNotificationPreferences();
+                if (!preferences.isEnabled(owner)) {
+                    continue;
+                }
+
+                Optional<Long> linkedTelegramUser = context.getBridge().getReception().getTgByUser(owner);
+                if (linkedTelegramUser.isEmpty()) {
+                    continue;
+                }
+
+                List<InteractionCount> undelivered = ownerRows.stream()
+                        .filter(row -> {
+                            try {
+                                return !notifications.hasTelegramOwnerDelivery(row.getId());
+                            } catch (SQLException e) {
+                                throw new IllegalStateException(e);
+                            }
+                        })
+                        .collect(Collectors.toList());
+                if (undelivered.isEmpty()) {
+                    continue;
+                }
+
+                List<Long> ids = undelivered.stream()
+                        .map(InteractionCount::getId)
+                        .collect(Collectors.toList());
+                List<MaterialTotal> materials = context.getRepositories()
+                        .getInteractionMaterials()
+                        .sumByInteractionCountIds(ids);
+                int mergeDistance = Math.max(
+                        0,
+                        context.getPlugin().getConfig().getInt("detection.split-by-regions.merge-distance", 500));
+
+                String messageText = messageBuilder.build(
+                        interactor, undelivered, undelivered.size(), materials, mergeDistance);
+                Message message = context.getBridge().getBot().sendMessage(
+                        linkedTelegramUser.get(),
+                        messageText,
+                        messageBuilder.buildKeyboard(interactor));
+
+                for (InteractionCount row : undelivered) {
+                    notifications.markTelegramOwnerDelivered(row.getId(), owner, interactor);
+                }
+                context.getLogger().info("Sent private Telegram warning to " + owner + " about " + interactor
+                        + " (message " + message.getMsgId() + ")");
+            } catch (Exception e) {
+                context.getLogger().warning("Private Telegram warning to " + owner + " failed: " + e.getMessage());
+            }
+        }
+    }
+
+    private Optional<String> sendGroupNotification(
             long chatId,
             String interactor,
-            MinInteractionThresholds minInteractions //
-    ) throws SQLException {
-        var pendingInteractions = context.getRepositories().getPendingInteractions();
-        var notifications = context.getRepositories().getNotifications();
-        var plugin = context.getPlugin();
-
-        List<InteractionCount> pending = pendingInteractions.findPendingByInteractor(
-                interactor,
-                minInteractions);
-        if (pending.isEmpty()) {
-            return Optional.of(NotificationSkipReason.ALREADY_HANDLED);
-        }
-
-        var totalInteractions = pending.size();
-
+            List<InteractionCount> pending) throws SQLException {
         List<InteractionCount> counts = selectOwnersForNotification(pending);
-
         if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
             markSkipped(pending, NotificationSkipReason.NO_LINKED_OWNER);
             return Optional.of(NotificationSkipReason.NO_LINKED_OWNER);
         }
-
         if (counts.isEmpty()) {
             markSkipped(pending, NotificationSkipReason.NO_LINKED_OWNER);
             return Optional.of(NotificationSkipReason.NO_LINKED_OWNER);
         }
 
-        int mergeDistance = Math.max(
-                0,
-                plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
-
-        List<Long> interCountIds = counts.stream()
+        List<Long> ids = counts.stream()
                 .map(InteractionCount::getId)
                 .collect(Collectors.toList());
-
-        List<MaterialTotal> materialTotals = context.getRepositories()
+        List<MaterialTotal> materials = context.getRepositories()
                 .getInteractionMaterials()
-                .sumByInteractionCountIds(interCountIds);
+                .sumByInteractionCountIds(ids);
+        int mergeDistance = Math.max(
+                0,
+                context.getPlugin().getConfig().getInt("detection.split-by-regions.merge-distance", 500));
 
-        var messageText = messageBuilder.build(interactor,
-                counts, totalInteractions, materialTotals, mergeDistance);
+        String messageText = messageBuilder.build(interactor, counts, pending.size(), materials, mergeDistance);
+        Message message = context.getBridge().getBot().sendMessage(
+                chatId, messageText, messageBuilder.buildKeyboard(interactor));
 
-        Message message = context.getBridge()
-                .getBot().sendMessage(
-                        chatId,
-                        messageText,
-                        messageBuilder.buildKeyboard(interactor));
-
-        long notificationId = notifications.insertTelegram(interactor, chatId, message.getMsgId());
-        pendingInteractions.attachNotificationByIds(interCountIds, notificationId);
+        long notificationId = context.getRepositories().getNotifications()
+                .insertTelegram(interactor, chatId, message.getMsgId());
+        context.getRepositories().getPendingInteractions().attachNotificationByIds(ids, notificationId);
         return Optional.empty();
     }
 
@@ -143,8 +189,6 @@ public final class NotificationService implements Runnable {
         return pending.stream()
                 .sorted(Comparator
                         .comparing((InteractionCount count) -> isLinked(count.getOwnerPlayer()))
-                        // .thenComparing((InteractionCount count) ->
-                        // lastPlayed(count.getOwnerPlayer()))
                         .reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
@@ -160,13 +204,5 @@ public final class NotificationService implements Runnable {
 
     private boolean isLinked(String ownerPlayer) {
         return context.getBridge().getReception().getTgByUser(ownerPlayer).isPresent();
-    }
-
-    @SuppressWarnings("deprecation")
-    private long lastPlayed(String ownerPlayer) {
-        // Must not call OfflinePlayer from the async notification job.
-        // If lastPlayed sort is re-enabled: snapshot on the main thread (sync task /
-        // cache), then read the map here.
-        return context.getPlugin().getServer().getOfflinePlayer(ownerPlayer).getLastPlayed();
     }
 }
