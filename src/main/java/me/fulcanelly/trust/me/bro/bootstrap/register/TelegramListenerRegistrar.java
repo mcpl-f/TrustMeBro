@@ -8,6 +8,7 @@ import me.fulcanelly.trust.me.bro.listener.telegram.MyProfileCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.TelegramNotificationSettingsCommand;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 
 /**
@@ -35,12 +36,15 @@ public final class TelegramListenerRegistrar {
         MyTrustCommand myTrustCommand = new MyTrustCommand(context);
         TrustStatsCommand trustStatsCommand = new TrustStatsCommand(context);
         MyProfileCommand myProfileCommand = new MyProfileCommand(context, profileMessages);
+        TelegramNotificationSettingsCommand notificationSettingsCommand =
+                new TelegramNotificationSettingsCommand(context);
 
         eventBus.register(callbackHandler);
         eventBus.register(myTrustCommand);
         eventBus.register(trustStatsCommand);
         eventBus.register(myProfileCommand);
+        eventBus.register(notificationSettingsCommand);
 
-        return List.of(callbackHandler, myTrustCommand, trustStatsCommand, myProfileCommand);
+        return List.of(callbackHandler, myTrustCommand, trustStatsCommand, myProfileCommand, notificationSettingsCommand);
     }
 }
