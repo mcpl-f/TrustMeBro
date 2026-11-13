@@ -145,7 +145,7 @@ public final class NotificationService implements Runnable {
     private Optional<String> sendGroupNotification(
             long chatId,
             String interactor,
-            List<InteractionCount> pending // 
+            List<InteractionCount> pending //
     ) throws SQLException {
         List<InteractionCount> counts = selectOwnersForNotification(pending);
         if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
