@@ -17,6 +17,8 @@ detection:
 
 telegram:
   notify: true
+  owner-dm-notify: true
+  # Send private warnings to linked owners independently of the shared group notification.
 
   min-interactions:
     enabled: true
