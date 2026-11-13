@@ -25,7 +25,8 @@ public final class NotificationRepository {
     public void markTelegramOwnerDelivered(
             long interactionCountId,
             String ownerPlayer,
-            String interactorPlayer) throws SQLException {
+            String interactorPlayer // 
+    ) throws SQLException {
         database.withHandle(handle -> handle.createUpdate("""
                 INSERT OR IGNORE INTO telegram_notification_deliveries(
                     interaction_count_id, owner_mc_name, interactor_player, delivered_at
