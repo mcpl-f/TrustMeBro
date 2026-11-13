@@ -6,6 +6,9 @@ import java.util.regex.Pattern;
 
 import com.google.common.eventbus.Subscribe;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.tgbridge.tapi.events.CallbackQueryEvent;
 import me.fulcanelly.tgbridge.tapi.events.CommandEvent;
