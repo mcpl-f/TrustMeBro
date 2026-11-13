@@ -9,7 +9,6 @@ import me.fulcanelly.trust.me.bro.bootstrap.bundles.BridgeServices;
 import me.fulcanelly.trust.me.bro.bootstrap.bundles.LocalRepositories;
 import me.fulcanelly.trust.me.bro.bootstrap.register.MinecraftListenerRegistrar;
 import me.fulcanelly.trust.me.bro.bootstrap.register.NotificationJobScheduler;
-import me.fulcanelly.trust.me.bro.bootstrap.register.DirectTelegramNotificationJobScheduler;
 import me.fulcanelly.trust.me.bro.bootstrap.register.TelegramListenerRegistrar;
 import me.fulcanelly.trust.me.bro.database.LocalDatabase;
 import me.fulcanelly.trust.me.bro.database.MigrationRunner;
@@ -43,16 +42,14 @@ public final class TrustSysBootstrap {
 
         new MinecraftListenerRegistrar(app).register();
         List<Object> telegramListeners = new TelegramListenerRegistrar(app).register();
-        int notificationTaskId = new NotificationJobScheduler(app).start();
-        int directTelegramNotificationTaskId = new DirectTelegramNotificationJobScheduler(app).start();
+        List<Integer> notificationTaskIds = new NotificationJobScheduler(app).start();
 
         return Optional.of(new TrustSysRuntime(
                 plugin,
                 database,
                 bridge.getEventBus(),
                 telegramListeners,
-                notificationTaskId,
-                directTelegramNotificationTaskId));
+                notificationTaskIds));
     }
 
     private LocalDatabase database() throws SQLException {
