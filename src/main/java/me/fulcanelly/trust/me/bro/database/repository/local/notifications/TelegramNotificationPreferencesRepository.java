@@ -24,9 +24,11 @@ public final class TelegramNotificationPreferencesRepository {
     }
 
     public void setEnabled(String ownerPlayer, boolean enabled) throws SQLException {
-        int enabledValue = 0;
+        int enabledValue;
         if (enabled) {
             enabledValue = 1;
+        } else {
+            enabledValue = 0;
         }
         database.withHandle(handle -> handle.createUpdate("""
                 INSERT INTO telegram_notification_preferences(owner_mc_name, enabled, updated_at)
