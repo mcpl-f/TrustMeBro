@@ -41,7 +41,7 @@ public final class TelegramNotificationSettingsCommand {
             context.getBridge().getBot().sendMessage(
                     event.getMessage().getChat().getId(),
                     statusText(enabled),
-                    keyboard(enabled));
+                    keyboard(enabled, telegramUserId));
         } catch (SQLException e) {
             context.getLogger().warning("/trustmotify failed: " + e.getMessage());
             event.getMessage().reply(context.getMessages().format("telegram.command.notifications.failed"));
@@ -55,13 +55,18 @@ public final class TelegramNotificationSettingsCommand {
             return;
         }
 
-        String action = data.substring(CALLBACK_PREFIX.length());
-        if (!action.equals("on") && !action.equals("off")) {
+        String[] parts = data.substring(CALLBACK_PREFIX.length()).split(":", 2);
+        if (parts.length != 2 || !parts[1].equals("on") && !parts[1].equals("off")) {
             event.answer(context.getMessages().format("callback.bad-action"));
             return;
         }
 
         long telegramUserId = event.getFrom().getId();
+        if (!parts[0].equals(Long.toString(telegramUserId))) {
+            event.answer(context.getMessages().format("callback.not-your-profile"));
+            return;
+        }
+
         Optional<String> linkedPlayer = context.getBridge().getReception().getPlayerByTg(telegramUserId);
         if (linkedPlayer.isEmpty()) {
             event.answer(context.getMessages().format("callback.link-required"));
@@ -69,7 +74,7 @@ public final class TelegramNotificationSettingsCommand {
         }
 
         try {
-            boolean enabled = action.equals("on");
+            boolean enabled = parts[1].equals("on");
             context.getRepositories().getTelegramNotificationPreferences()
                     .setEnabled(linkedPlayer.get(), enabled);
             context.getBridge().getBot().editMessage(
@@ -91,12 +96,12 @@ public final class TelegramNotificationSettingsCommand {
                         : "telegram.command.notifications.status-disabled");
     }
 
-    private String keyboard(boolean enabled) {
+    private String keyboard(boolean enabled, long telegramUserId) {
         String buttonText = context.getMessages().format(
                 enabled
                         ? "telegram.command.notifications.button-disable"
                         : "telegram.command.notifications.button-enable");
-        String callbackData = CALLBACK_PREFIX + (enabled ? "off" : "on");
+        String callbackData = CALLBACK_PREFIX + telegramUserId + ":" + (enabled ? "off" : "on");
         return "{\"inline_keyboard\":[[{\"text\":\""
                 + buttonText
                 + "\",\"callback_data\":\""
