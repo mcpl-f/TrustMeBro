@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyProfileCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.TelegramNotificationSettingsCommand;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
 import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
-import me.fulcanelly.trust.me.bro.listener.telegram.TelegramNotificationSettingsCommand;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 
 /**
@@ -45,6 +45,11 @@ public final class TelegramListenerRegistrar {
         eventBus.register(myProfileCommand);
         eventBus.register(notificationSettingsCommand);
 
-        return List.of(callbackHandler, myTrustCommand, trustStatsCommand, myProfileCommand, notificationSettingsCommand);
+        return List.of(
+                callbackHandler,
+                myTrustCommand,
+                trustStatsCommand,
+                myProfileCommand,
+                notificationSettingsCommand);
     }
 }
