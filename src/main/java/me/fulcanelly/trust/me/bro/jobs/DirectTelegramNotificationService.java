@@ -41,10 +41,10 @@ public final class DirectTelegramNotificationService implements Runnable {
 
         try {
             var pendingRepository = context.getRepositories().getPendingInteractions();
-            List<String> interactors = pendingRepository.findInteractorsReadyForNotification(
+            List<String> interactors = pendingRepository.findInteractorsReadyForDirectTelegramNotification(
                     debounceMillis, thresholds);
             for (String interactor : interactors) {
-                List<InteractionCount> pending = pendingRepository.findPendingByInteractor(interactor, thresholds);
+                List<InteractionCount> pending = pendingRepository.findPendingForDirectTelegramNotification(interactor, thresholds);
                 if (!pending.isEmpty()) {
                     sendToOwners(interactor, pending);
                 }
@@ -74,16 +74,8 @@ public final class DirectTelegramNotificationService implements Runnable {
                     continue;
                 }
 
+                List<InteractionCount> undelivered = entry.getValue();
                 var deliveries = context.getRepositories().getDirectTelegramNotificationDeliveries();
-                List<InteractionCount> undelivered = new ArrayList<>();
-                for (InteractionCount row : entry.getValue()) {
-                    if (!deliveries.hasDelivery(row.getId())) {
-                        undelivered.add(row);
-                    }
-                }
-                if (undelivered.isEmpty()) {
-                    continue;
-                }
 
                 List<Long> ids = undelivered.stream()
                         .map(InteractionCount::getId)
