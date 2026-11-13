@@ -56,8 +56,10 @@ telegram:
       failed: "Не удалось загрузить профиль."
     notifications:
       not-linked: "Сначала привяжите Telegram к Minecraft."
-      enabled: "🔔 Личные Telegram-уведомления включены."
-      disabled: "🔕 Личные Telegram-уведомления выключены."
+      status-enabled: "🔔 Личные Telegram-уведомления сейчас включены."
+      status-disabled: "🔕 Личные Telegram-уведомления сейчас выключены."
+      button-disable: "🔕 Выключить"
+      button-enable: "🔔 Включить"
       failed: "Не удалось изменить настройки уведомлений."
     truststats:
       trusted-header: "Топ {n} самых доверенных:"
@@ -113,11 +115,6 @@ command:
     unknown-world: "Мир неизвестен CoreProtect; регион не создать."
     created: "Регион #{id} «{name}» создан: {world} {x}, {z} ± {radius}."
     failed: "Не удалось создать регион."
-  tgnotify:
-    players-only: "Только для игроков."
-    enabled: "Личные уведомления Telegram включены."
-    disabled: "Личные уведомления Telegram выключены."
-    failed: "Не удалось изменить настройки Telegram-уведомлений."
   trust:
     players-only: "Только для игроков."
     self: "Нельзя доверять самому себе."
