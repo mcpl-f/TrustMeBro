@@ -8,7 +8,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import me.fulcanelly.trust.me.bro.service.util.TrustCallbackPayloadService.Payload;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackPayloadService.Payload;
 
 public class TrustCallbackPayloadServiceTest {
 
@@ -37,6 +38,27 @@ public class TrustCallbackPayloadServiceTest {
         assertEquals(Optional.of(2), profile.getPage());
         assertEquals(Optional.of("Steve"), profile.getProfilePlayer());
         assertEquals(Optional.empty(), profile.getInteractorPlayer());
+    }
+
+    /*
+     * A profile button that opens one player of a list also carries that player.
+     *
+     *   tmb:prt:123:2:Steve:Alex  -> page 2 of Steve's trusters, Alex opened
+     *   tmb:prt:123:2:Steve       -> the list itself, nobody opened
+     *   tmb:prt:123:2:Steve:      -> opened player is empty -> rejected
+     */
+    @Test
+    void profileButtonMayCarryTheOpenedPlayer() {
+        Payload opened = payloads.decode(payloads.encodeProfile("prt", 123L, 2, "Steve", "Alex")).orElseThrow();
+        assertEquals("tmb:prt:123:2:Steve:Alex", payloads.encodeProfile("prt", 123L, 2, "Steve", "Alex"));
+        assertEquals(Optional.of("Steve"), opened.getProfilePlayer());
+        assertEquals(Optional.of("Alex"), opened.getListedPlayer());
+        assertEquals(Optional.of(2), opened.getPage());
+
+        Payload list = payloads.decode(payloads.encodeProfile("prt", 123L, 2, "Steve")).orElseThrow();
+        assertEquals(Optional.empty(), list.getListedPlayer());
+
+        assertTrue(payloads.decode("tmb:prt:123:2:Steve:").isEmpty());
     }
 
     /*

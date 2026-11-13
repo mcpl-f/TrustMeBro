@@ -104,7 +104,7 @@ public final class InteractionWriteRepository {
             int x,
             int z,
             int mergeDistance) {
-        return handle.createQuery(SqlResources.load("interactions/write/find-nearby-activity-box"))
+        return handle.createQuery(SqlResources.load("interactions/activity-box/find-nearby-activity-box"))
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .bind("wid", wid)
@@ -124,7 +124,7 @@ public final class InteractionWriteRepository {
         int placeDelta = actionType == SuspiciousActionType.PLACE_BLOCK ? 1 : 0;
         int containerDelta = actionType == SuspiciousActionType.INTERACT_CONTAINER ? 1 : 0;
 
-        var bounds = handle.createQuery(SqlResources.load("interactions/write/find-activity-box-bounds"))
+        var bounds = handle.createQuery(SqlResources.load("interactions/activity-box/find-activity-box-bounds"))
                 .bind("id", id)
                 .map((row, context) -> new int[] {
                         row.getInt("region_corner_a_x"),
@@ -139,7 +139,7 @@ public final class InteractionWriteRepository {
 
         int[] box = bounds.get();
         long updatedAt = System.currentTimeMillis();
-        handle.createUpdate(SqlResources.load("interactions/write/expand-activity-box"))
+        handle.createUpdate(SqlResources.load("interactions/activity-box/expand-activity-box"))
                 .bind("breakDelta", breakDelta)
                 .bind("placeDelta", placeDelta)
                 .bind("containerDelta", containerDelta)
@@ -167,7 +167,7 @@ public final class InteractionWriteRepository {
             int z,
             SuspiciousActionType actionType) {
         long now = System.currentTimeMillis();
-        return handle.createQuery(SqlResources.load("interactions/write/insert-activity-box"))
+        return handle.createQuery(SqlResources.load("interactions/activity-box/insert-activity-box"))
                 .bind("interactor", interactorPlayer)
                 .bind("owner", ownerPlayer)
                 .bind("breakDelta", actionType == SuspiciousActionType.BREAK_BLOCK ? 1 : 0)

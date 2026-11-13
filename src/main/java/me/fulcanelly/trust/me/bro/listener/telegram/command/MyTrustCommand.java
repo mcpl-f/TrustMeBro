@@ -1,4 +1,4 @@
-package me.fulcanelly.trust.me.bro.listener.telegram;
+package me.fulcanelly.trust.me.bro.listener.telegram.command;
 
 import java.util.Optional;
 import java.util.regex.Pattern;

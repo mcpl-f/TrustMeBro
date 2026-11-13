@@ -43,6 +43,13 @@ telegram:
         pending: "⏳ Ожидают решения"
       button-with-count: "{title} ({count})"
       player-button: "👤 {player}"
+      player-view: |-
+        Профиль репутации 👤 {player}
+
+        {path}
+
+        Интеракций в сторону {player}: {towardsPlayer}
+        Интеракций в сторону {other}: {towardsOther}
       not-linked: "Telegram не привязан к Minecraft. Привяжите аккаунт или укажите ник: /rep Steve"
       unknown-player: "Игрок {player} не найден."
       bad-name: "Ник должен быть от 1 до 37 символов: латиница, цифры, подчёркивание или точка"

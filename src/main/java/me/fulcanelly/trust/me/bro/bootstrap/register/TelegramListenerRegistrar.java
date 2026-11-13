@@ -4,10 +4,11 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
-import me.fulcanelly.trust.me.bro.listener.telegram.MyProfileCommand;
-import me.fulcanelly.trust.me.bro.listener.telegram.MyTrustCommand;
-import me.fulcanelly.trust.me.bro.listener.telegram.TrustCallbackHandler;
-import me.fulcanelly.trust.me.bro.listener.telegram.TrustStatsCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.ProfileCallbackHandler;
+import me.fulcanelly.trust.me.bro.listener.telegram.callback.TrustCallbackHandler;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.MyProfileCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.MyTrustCommand;
+import me.fulcanelly.trust.me.bro.listener.telegram.command.TrustStatsCommand;
 import me.fulcanelly.trust.me.bro.service.text.ProfileMessageBuilder;
 
 /**
@@ -26,15 +27,17 @@ public final class TelegramListenerRegistrar {
         var eventBus = context.getBridge().getEventBus();
 
         // Shared: the command sends the profile, the callback handler edits it.
-        ProfileMessageBuilder profileMessages = new ProfileMessageBuilder(
+        ProfileCallbackHandler profileCallbacks = new ProfileCallbackHandler(
                 context.getMessages(),
                 context.getCallbackPayloads(),
-                context.getRepositories());
+                context.getRepositories(),
+                new ProfileMessageBuilder(context.getMessages()),
+                context.getBridge().getBot());
 
-        TrustCallbackHandler callbackHandler = new TrustCallbackHandler(context, profileMessages);
+        TrustCallbackHandler callbackHandler = new TrustCallbackHandler(context, profileCallbacks);
         MyTrustCommand myTrustCommand = new MyTrustCommand(context);
         TrustStatsCommand trustStatsCommand = new TrustStatsCommand(context);
-        MyProfileCommand myProfileCommand = new MyProfileCommand(context, profileMessages);
+        MyProfileCommand myProfileCommand = new MyProfileCommand(context, profileCallbacks);
 
         eventBus.register(callbackHandler);
         eventBus.register(myTrustCommand);

@@ -20,6 +20,19 @@ public final class InteractionStatsRepository {
                 .one());
     }
 
+    /**
+     * @return how many {@code interaction_counts} rows the pair has (one per legacy
+     *         row and per activity box), not the sum of their counters
+     */
+    public int countInteractions(String interactorPlayer, String ownerPlayer) throws SQLException {
+        return database.withHandle(handle -> handle.createQuery(
+                "SELECT COUNT(*) FROM interaction_counts WHERE interactor_player = :interactor AND owner = :owner")
+                .bind("interactor", interactorPlayer)
+                .bind("owner", ownerPlayer)
+                .mapTo(Integer.class)
+                .one());
+    }
+
     public List<String> findUndecidedInteractors(String ownerPlayer, int limit, int offset) throws SQLException {
         return database.withHandle(handle -> handle.createQuery(SqlResources.load("interactions/stats/find-undecided"))
                 .bind("owner", ownerPlayer)
