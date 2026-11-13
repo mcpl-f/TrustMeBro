@@ -54,6 +54,11 @@ telegram:
       unknown-player: "Player {player} not found."
       bad-name: "Nickname must be 1-37 characters: latin letters, digits, underscore or dot"
       failed: "Failed to load your profile."
+    notifications:
+      not-linked: "Link your Telegram account to Minecraft first."
+      enabled: "🔔 Private Telegram notifications are enabled."
+      disabled: "🔕 Private Telegram notifications are disabled."
+      failed: "Could not update your notification settings."
     truststats:
       trusted-header: "Top {n} trusted players:"
       trusted-by-count: "- {player}, trusted by {count}"
@@ -108,6 +113,11 @@ command:
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
     created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
+  tgnotify:
+    players-only: "Players only."
+    enabled: "Private Telegram notifications enabled."
+    disabled: "Private Telegram notifications disabled."
+    failed: "Could not update your Telegram notification preference."
   trust:
     players-only: "Players only."
     self: "You cannot trust yourself."
