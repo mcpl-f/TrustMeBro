@@ -1,6 +1,7 @@
 package me.fulcanelly.trust.me.bro.jobs;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -103,15 +104,12 @@ public final class NotificationService implements Runnable {
                     continue;
                 }
 
-                List<InteractionCount> undelivered = ownerRows.stream()
-                        .filter(row -> {
-                            try {
-                                return !notifications.hasTelegramOwnerDelivery(row.getId());
-                            } catch (SQLException e) {
-                                throw new IllegalStateException(e);
-                            }
-                        })
-                        .collect(Collectors.toList());
+                List<InteractionCount> undelivered = new ArrayList<>();
+                for (InteractionCount row : ownerRows) {
+                    if (!notifications.hasTelegramOwnerDelivery(row.getId())) {
+                        undelivered.add(row);
+                    }
+                }
                 if (undelivered.isEmpty()) {
                     continue;
                 }
@@ -147,7 +145,8 @@ public final class NotificationService implements Runnable {
     private Optional<String> sendGroupNotification(
             long chatId,
             String interactor,
-            List<InteractionCount> pending) throws SQLException {
+            List<InteractionCount> pending // 
+    ) throws SQLException {
         List<InteractionCount> counts = selectOwnersForNotification(pending);
         if (requiresLinkedOwner() && !hasLinkedOwner(counts)) {
             markSkipped(pending, NotificationSkipReason.NO_LINKED_OWNER);
