@@ -97,6 +97,16 @@ command:
     unknown-world: "Мир неизвестен CoreProtect; регион не создать."
     created: "Регион #{id} «{name}» создан: {world} {x}, {z} ± {radius}."
     failed: "Не удалось создать регион."
+  whosereg:
+    players-only: "Только для игроков."
+    unknown-world: "Этот мир неизвестен CoreProtect."
+    overlap-header: "⚠ Пересечение регионов ({count}):"
+    closest: "Здесь региона нет. Ближайший регион в {distance} блоках:"
+    none: "В радиусе 500 блоков именных регионов нет."
+    more: "... и ещё {count} пересекающихся регионов."
+    region: |-
+      #{id} «{name}» · изменяемый: {mutable} · создал: {creator}
+      AABB: X[{minX}..{maxX}] Z[{minZ}..{maxZ}]
   trust:
     players-only: "Только для игроков."
     self: "Нельзя доверять самому себе."
