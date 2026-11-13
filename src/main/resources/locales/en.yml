@@ -47,6 +47,11 @@ telegram:
       unknown-player: "Player {player} not found."
       bad-name: "Nickname must be 1-37 characters: latin letters, digits, underscore or dot"
       failed: "Failed to load your profile."
+    notifications:
+      not-linked: "Link your Telegram account to Minecraft first."
+      enabled: "🔔 Private Telegram notifications are enabled."
+      disabled: "🔕 Private Telegram notifications are disabled."
+      failed: "Could not update your notification settings."
     truststats:
       trusted-header: "Top {n} trusted players:"
       trusted-by-count: "- {player}, trusted by {count}"
