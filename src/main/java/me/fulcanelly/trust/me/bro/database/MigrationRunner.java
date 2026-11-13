@@ -258,7 +258,7 @@ public final class MigrationRunner {
                 )
                 """);
         execute("""
-                CREATE TABLE IF NOT EXISTS telegram_notification_deliveries (
+                CREATE TABLE IF NOT EXISTS direct_telegram_notification_deliveries (
                   interaction_count_id INTEGER PRIMARY KEY,
 
                   owner_mc_name TEXT NOT NULL,
