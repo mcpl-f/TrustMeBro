@@ -93,22 +93,33 @@ public final class TelegramNotificationSettingsCommand {
     }
 
     private String statusText(boolean enabled) {
-        return context.getMessages().format(
-                enabled
-                        ? "telegram.command.notifications.status-enabled"
-                        : "telegram.command.notifications.status-disabled");
+        String key = "telegram.command.notifications.status-disabled";
+        if (enabled) {
+            key = "telegram.command.notifications.status-enabled";
+        }
+        return context.getMessages().format(key);
     }
 
+    @SuppressWarnings("unchecked")
     private String keyboard(boolean enabled, long telegramUserId) {
-        String buttonText = context.getMessages().format(
-                enabled
-                        ? "telegram.command.notifications.button-disable"
-                        : "telegram.command.notifications.button-enable");
-        String callbackData = CALLBACK_PREFIX + telegramUserId + ":" + (enabled ? "off" : "on");
-        return "{\"inline_keyboard\":[[{\"text\":\""
-                + buttonText
-                + "\",\"callback_data\":\""
-                + callbackData
-                + "\"}]]}";
+        String buttonKey = "telegram.command.notifications.button-enable";
+        String action = "on";
+        if (enabled) {
+            buttonKey = "telegram.command.notifications.button-disable";
+            action = "off";
+        }
+
+        JSONObject button = new JSONObject();
+        button.put("text", context.getMessages().format(buttonKey));
+        button.put("callback_data", CALLBACK_PREFIX + telegramUserId + ":" + action);
+
+        JSONArray row = new JSONArray();
+        row.add(button);
+        JSONArray rows = new JSONArray();
+        rows.add(row);
+
+        JSONObject keyboard = new JSONObject();
+        keyboard.put("inline_keyboard", rows);
+        return keyboard.toJSONString();
     }
 }
