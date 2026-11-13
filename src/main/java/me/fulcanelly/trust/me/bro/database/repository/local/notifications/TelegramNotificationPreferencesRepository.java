@@ -24,6 +24,10 @@ public final class TelegramNotificationPreferencesRepository {
     }
 
     public void setEnabled(String ownerPlayer, boolean enabled) throws SQLException {
+        int enabledValue = 0;
+        if (enabled) {
+            enabledValue = 1;
+        }
         database.withHandle(handle -> handle.createUpdate("""
                 INSERT INTO telegram_notification_preferences(owner_mc_name, enabled, updated_at)
                 VALUES (:owner, :enabled, :updatedAt)
@@ -32,7 +36,7 @@ public final class TelegramNotificationPreferencesRepository {
                     updated_at = excluded.updated_at
                 """)
                 .bind("owner", ownerPlayer)
-                .bind("enabled", enabled ? 1 : 0)
+                .bind("enabled", enabledValue)
                 .bind("updatedAt", System.currentTimeMillis())
                 .execute());
     }
