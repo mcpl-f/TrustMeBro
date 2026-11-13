@@ -3,6 +3,7 @@ package me.fulcanelly.trust.me.bro.bootstrap.register;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.jobs.NotificationService;
+import me.fulcanelly.trust.me.bro.jobs.DirectTelegramNotificationService;
 
 /**
  * Starts the repeating async Telegram notification job.
@@ -16,7 +17,7 @@ public final class NotificationJobScheduler {
 
     private final AppContext context;
 
-    public int start() {
+    public java.util.List<Integer> start() {
         var plugin = context.getPlugin();
 
         // Poll interval only; debounce itself is always re-read from config in NotificationService.
@@ -26,9 +27,19 @@ public final class NotificationJobScheduler {
 
         NotificationService notificationService = new NotificationService(context);
 
-        return plugin.getServer()
+        int notificationTaskId = plugin.getServer()
                 .getScheduler()
                 .runTaskTimerAsynchronously(plugin, notificationService, periodTicks, periodTicks)
                 .getTaskId();
+
+        DirectTelegramNotificationService directTelegramNotificationService =
+                new DirectTelegramNotificationService(context);
+        int directTelegramNotificationTaskId = plugin.getServer()
+                .getScheduler()
+                .runTaskTimerAsynchronously(
+                        plugin, directTelegramNotificationService, periodTicks, periodTicks)
+                .getTaskId();
+
+        return java.util.List.of(notificationTaskId, directTelegramNotificationTaskId);
     }
 }
