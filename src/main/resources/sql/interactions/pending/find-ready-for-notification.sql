@@ -1,4 +1,4 @@
--- Select debounced interactors with eligible rows, excluding players the owner already trusted or reported.
+-- Select debounced interactors eligible for the requested notification channel.
 SELECT DISTINCT interaction_counts.interactor_player
 FROM interaction_counts
 LEFT JOIN trust_edges
@@ -7,11 +7,21 @@ LEFT JOIN trust_edges
 LEFT JOIN reports
     ON interaction_counts.owner = reports.owner
     AND interaction_counts.interactor_player = reports.interactor_player
-WHERE interaction_counts.notification_id IS NULL
-    AND interaction_counts.skip_reason IS NULL
-    AND interaction_counts.updated_at <= :updatedAtCutoff
+WHERE interaction_counts.updated_at <= :updatedAtCutoff
     AND trust_edges.owner_mc_name IS NULL
     AND reports.owner IS NULL
+    AND (
+        (:directTelegram = 0
+            AND interaction_counts.notification_id IS NULL
+            AND interaction_counts.skip_reason IS NULL)
+        OR
+        (:directTelegram = 1
+            AND NOT EXISTS (
+                SELECT 1
+                FROM direct_telegram_notification_deliveries
+                WHERE interaction_count_id = interaction_counts.id
+            ))
+    )
     AND (
         :thresholdsEnabled = 0
         OR interaction_counts.count_placed_blocks >= :placeCount
