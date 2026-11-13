@@ -24,16 +24,10 @@ public final class TrustSysRuntime {
     private final LocalDatabase database;
     private final EventBus eventBus;
     private final List<Object> eventBusListeners;
-    private final int notificationTaskId;
-    private final int directTelegramNotificationTaskId;
+    private final List<Integer> notificationTaskIds;
 
     public void stop() {
-        if (notificationTaskId != -1) {
-            plugin.getServer().getScheduler().cancelTask(notificationTaskId);
-        }
-        if (directTelegramNotificationTaskId != -1) {
-            plugin.getServer().getScheduler().cancelTask(directTelegramNotificationTaskId);
-        }
+        notificationTaskIds.forEach(plugin.getServer().getScheduler()::cancelTask);
         eventBusListeners.forEach(eventBus::unregister);
         try {
             database.close();
