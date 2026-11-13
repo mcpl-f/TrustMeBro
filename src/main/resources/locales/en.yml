@@ -97,6 +97,11 @@ command:
     unknown-world: "This world is unknown to CoreProtect; cannot create region."
     created: "Region #{id} \"{name}\" created at {world} {x}, {z} ± {radius}."
     failed: "Failed to create region."
+  tgnotify:
+    players-only: "Players only."
+    enabled: "Private Telegram notifications enabled."
+    disabled: "Private Telegram notifications disabled."
+    failed: "Could not update your Telegram notification preference."
   trust:
     players-only: "Players only."
     self: "You cannot trust yourself."
