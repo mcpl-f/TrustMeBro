@@ -25,10 +25,14 @@ public final class TrustSysRuntime {
     private final EventBus eventBus;
     private final List<Object> eventBusListeners;
     private final int notificationTaskId;
+    private final int directTelegramNotificationTaskId;
 
     public void stop() {
         if (notificationTaskId != -1) {
             plugin.getServer().getScheduler().cancelTask(notificationTaskId);
+        }
+        if (directTelegramNotificationTaskId != -1) {
+            plugin.getServer().getScheduler().cancelTask(directTelegramNotificationTaskId);
         }
         eventBusListeners.forEach(eventBus::unregister);
         try {
