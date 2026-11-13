@@ -81,7 +81,7 @@ public final class TelegramNotificationSettingsCommand {
                     event.getMessage().getChat().getId(),
                     event.getMessage().getMsgId(),
                     statusText(enabled),
-                    keyboard(enabled));
+                    keyboard(enabled, telegramUserId));
             event.answer("");
         } catch (Exception e) {
             context.getLogger().warning("Telegram notification preference callback failed: " + e.getMessage());
