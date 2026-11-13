@@ -9,6 +9,7 @@ import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.ContainerInteraction
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.NewTrustRegionCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TReportCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TTrustCommand;
+import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TelegramNotificationsCommand;
 
 import org.bukkit.command.PluginCommand;
 
@@ -47,6 +48,7 @@ public final class MinecraftListenerRegistrar {
                 plugin);
 
         bindCommand("new_trust_region", new NewTrustRegionCommand(context));
+        bindCommand("tgnotify", new TelegramNotificationsCommand(context));
         bindCommand("ttrust", new TTrustCommand(context));
         bindCommand("treport", new TReportCommand(context));
     }
