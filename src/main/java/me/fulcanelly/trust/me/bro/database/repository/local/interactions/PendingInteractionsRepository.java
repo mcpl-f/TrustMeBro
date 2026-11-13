@@ -43,6 +43,31 @@ public final class PendingInteractionsRepository {
                 .list());
     }
 
+    public List<String> findInteractorsReadyForDirectTelegramNotification(
+            long olderThanMillis,
+            MinInteractionThresholds minInteractions) throws SQLException {
+        long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
+        return database.withHandle(handle -> bindThresholds(
+                        handle.createQuery(SqlResources.load(
+                                "interactions/pending/find-ready-for-direct-telegram-notification"))
+                                .bind("updatedAtCutoff", updatedAtCutoff),
+                        minInteractions)
+                .mapTo(String.class)
+                .list());
+    }
+
+    public List<InteractionCount> findPendingForDirectTelegramNotification(
+            String interactorPlayer,
+            MinInteractionThresholds minInteractions) throws SQLException {
+        return database.withHandle(handle -> bindThresholds(
+                        handle.createQuery(SqlResources.load(
+                                "interactions/pending/find-for-direct-telegram-notification"))
+                                .bind("interactor", interactorPlayer),
+                        minInteractions)
+                .map(INTERACTION_COUNT_MAPPER)
+                .list());
+    }
+
     public List<InteractionCount> findPendingForOwner(String ownerPlayer) throws SQLException {
         return database.withHandle(handle -> handle.createQuery(
                 SqlResources.load("interactions/pending/find-for-owner"))
