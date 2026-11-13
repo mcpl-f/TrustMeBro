@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A newer commit on the same ref makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # `cache: maven` caches ~/.m2/repository, keyed on pom.xml
+      # (falls back to the newest cache when the pom changes).
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+
+      # `package` compiles, runs the tests and shades the jar.
+      - name: Build and test
+        run: mvn -B -ntp package
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: trust-me-bro.jar
+          path: target/trust-me-bro-*.jar
