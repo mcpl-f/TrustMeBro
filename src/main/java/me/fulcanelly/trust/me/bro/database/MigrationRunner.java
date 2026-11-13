@@ -251,16 +251,21 @@ public final class MigrationRunner {
         execute("""
                 CREATE TABLE IF NOT EXISTS telegram_notification_preferences (
                   owner_mc_name TEXT PRIMARY KEY,
+
                   enabled INTEGER NOT NULL DEFAULT 1,
+
                   updated_at INTEGER NOT NULL
                 )
                 """);
         execute("""
                 CREATE TABLE IF NOT EXISTS telegram_notification_deliveries (
                   interaction_count_id INTEGER PRIMARY KEY,
+
                   owner_mc_name TEXT NOT NULL,
                   interactor_player TEXT NOT NULL,
+
                   delivered_at INTEGER NOT NULL,
+
                   FOREIGN KEY (interaction_count_id) REFERENCES interaction_counts(id)
                 )
                 """);
