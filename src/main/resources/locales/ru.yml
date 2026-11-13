@@ -97,6 +97,11 @@ command:
     unknown-world: "Мир неизвестен CoreProtect; регион не создать."
     created: "Регион #{id} «{name}» создан: {world} {x}, {z} ± {radius}."
     failed: "Не удалось создать регион."
+  tgnotify:
+    players-only: "Только для игроков."
+    enabled: "Личные уведомления Telegram включены."
+    disabled: "Личные уведомления Telegram выключены."
+    failed: "Не удалось изменить настройки Telegram-уведомлений."
   trust:
     players-only: "Только для игроков."
     self: "Нельзя доверять самому себе."
