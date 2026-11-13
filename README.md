@@ -81,10 +81,11 @@ Top 3 most reported:
 | --- | --- |
 | *(auto warning)* | Message + **Trust** / **Report** buttons when someone messes with linked owners’ stuff |
 | `/truststats` | Top trusted, suspicious (with regions), and most reported players |
+| `/notifications [on|off|status]` | Enable, disable, or inspect your private Telegram warning messages |
 | `/myprofile` | Your profile: who trusts / reported you, your own trust and report counts, players still waiting for your decision (watch is a placeholder). Buttons *My reputation* / *My decisions* switch the message in place (stubs for now), *Back* restores it; only the author can press them |
 | `/mctrust` | Stub / linked account check (WIP) |
 
-Same decisions in-game: `/ttrust <player>`, `/treport <player>`. Optional join reminder in Minecraft chat (`minecraft.notify-on-join`). Staff can name places with `/new_trust_region`.
+Same decisions in-game: `/ttrust <player>`, `/treport <player>`. In-game, `/tgnotify <on|off|status>` controls the same private Telegram notification preference. Optional join reminder in Minecraft chat (`minecraft.notify-on-join`). Staff can name places with `/new_trust_region`.
 
 ## In-game commands
 
