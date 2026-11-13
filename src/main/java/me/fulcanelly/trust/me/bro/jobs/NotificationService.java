@@ -93,7 +93,7 @@ public final class NotificationService implements Runnable {
             String owner = entry.getKey();
             List<InteractionCount> ownerRows = entry.getValue();
             try {
-                var notifications = context.getRepositories().getNotifications();
+                var deliveries = context.getRepositories().getDirectTelegramNotificationDeliveries();
                 var preferences = context.getRepositories().getTelegramNotificationPreferences();
                 if (!preferences.isEnabled(owner)) {
                     continue;
@@ -106,7 +106,7 @@ public final class NotificationService implements Runnable {
 
                 List<InteractionCount> undelivered = new ArrayList<>();
                 for (InteractionCount row : ownerRows) {
-                    if (!notifications.hasTelegramOwnerDelivery(row.getId())) {
+                    if (!deliveries.hasDelivery(row.getId())) {
                         undelivered.add(row);
                     }
                 }
@@ -132,7 +132,7 @@ public final class NotificationService implements Runnable {
                         messageBuilder.buildKeyboard(interactor));
 
                 for (InteractionCount row : undelivered) {
-                    notifications.markTelegramOwnerDelivered(row.getId(), owner, interactor);
+                    deliveries.markDelivered(row.getId(), owner, interactor);
                 }
                 context.getLogger().info("Sent private Telegram warning to " + owner + " about " + interactor
                         + " (message " + message.getMsgId() + ")");
