@@ -39,7 +39,9 @@ public final class DirectTelegramNotificationService {
 
         PairKey key = new PairKey(owner, interactor);
         BukkitTask previous = pendingTasks.remove(key);
-        previous?.cancel();
+        if (previous != null) {
+            previous.cancel();
+        }
 
         long debounceSeconds = Math.max(
                 1,
