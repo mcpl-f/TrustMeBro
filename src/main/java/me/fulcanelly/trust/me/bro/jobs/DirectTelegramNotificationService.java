@@ -87,10 +87,6 @@ public final class DirectTelegramNotificationService {
             long cutoff = System.currentTimeMillis() - debounceMillis;
 
             var deliveries = repositories.getDirectTelegramNotificationDeliveries();
-            if (deliveries.hasDelivery(owner, interactor)) {
-                return;
-            }
-
             List<InteractionCount> pending = repositories.getPendingInteractions()
                     .findUndeliveredForOwnerAndInteractor(owner, interactor, cutoff);
             if (pending.isEmpty()) {
