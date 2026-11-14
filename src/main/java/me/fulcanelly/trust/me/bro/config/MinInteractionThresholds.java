@@ -16,6 +16,13 @@ public class MinInteractionThresholds {
     int breakCount;
     int chestInterCount;
 
+    public boolean meets(long placed, long broken, long containers) {
+        return !enabled
+                || placed >= placeCount
+                || broken >= breakCount
+                || containers >= chestInterCount;
+    }
+
     public static MinInteractionThresholds from(Configuration config) {
         return new MinInteractionThresholds(
                 config.getBoolean("telegram.min-interactions.enabled", true),

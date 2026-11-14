@@ -9,6 +9,8 @@ import me.fulcanelly.trust.me.bro.database.repository.local.interactions.Interac
 import me.fulcanelly.trust.me.bro.database.repository.local.interactions.InteractionWriteRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.interactions.PendingInteractionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.notifications.NotificationRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.notifications.DirectTelegramNotificationDeliveryRepository;
+import me.fulcanelly.trust.me.bro.database.repository.local.notifications.TelegramNotificationPreferencesRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.regions.RegionsRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.reports.ReportRepository;
 import me.fulcanelly.trust.me.bro.database.repository.local.reports.ReportStatsRepository;
@@ -32,6 +34,8 @@ public class LocalRepositories {
     InteractionStatsRepository interactionStats;
     InteractionMaterialCountsRepository interactionMaterials;
     NotificationRepository notifications;
+    DirectTelegramNotificationDeliveryRepository directTelegramNotificationDeliveries;
+    TelegramNotificationPreferencesRepository telegramNotificationPreferences;
     ReportRepository reports;
     ReportStatsRepository reportStats;
     RegionsRepository regions;
@@ -46,6 +50,8 @@ public class LocalRepositories {
                 new InteractionStatsRepository(database),
                 new InteractionMaterialCountsRepository(database),
                 new NotificationRepository(database),
+                new DirectTelegramNotificationDeliveryRepository(database),
+                new TelegramNotificationPreferencesRepository(database),
                 new ReportRepository(database),
                 new ReportStatsRepository(database),
                 new RegionsRepository(database));

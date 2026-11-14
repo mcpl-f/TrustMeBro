@@ -81,6 +81,7 @@ Top 3 most reported:
 | --- | --- |
 | *(auto warning)* | Message + **Trust** / **Report** buttons when someone messes with linked owners’ stuff |
 | `/truststats` | Top trusted, suspicious (with regions), and most reported players |
+| `/trustmotify` | Show private Telegram notification status and toggle it with an inline button |
 | `/myprofile` | Your profile: who trusts / reported you, your own trust and report counts, players still waiting for your decision (watch is a placeholder). Buttons *My reputation* / *My decisions* switch the message in place (stubs for now), *Back* restores it; only the author can press them |
 | `/mctrust` | Stub / linked account check (WIP) |
 

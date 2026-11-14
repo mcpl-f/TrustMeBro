@@ -104,6 +104,7 @@ public final class SuspicionDetectionService {
                 interactionMaterials.increment(interactionCountId, material.getKey().toString(), actionType);
             }
 
+            context.getServices().getDirectTelegramNotifications().schedule(owner, interactorPlayer);
             instantNotify.notifyOwnerIfEnabled(owner);
         }
     }
