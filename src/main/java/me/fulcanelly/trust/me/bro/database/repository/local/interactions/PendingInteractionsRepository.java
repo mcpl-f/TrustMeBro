@@ -46,14 +46,12 @@ public final class PendingInteractionsRepository {
     public List<InteractionCount> findUndeliveredForOwnerAndInteractor(
             String ownerPlayer,
             String interactorPlayer,
-            long updatedAtCutoff,
-            long lastDeliveredAt) throws SQLException {
+            long updatedAtCutoff) throws SQLException {
         return database.withHandle(handle -> handle.createQuery(SqlResources.load(
                         "interactions/pending/find-undelivered-for-owner-and-interactor"))
                 .bind("owner", ownerPlayer)
                 .bind("interactor", interactorPlayer)
                 .bind("updatedAtCutoff", updatedAtCutoff)
-                .bind("lastDeliveredAt", lastDeliveredAt)
                 .map(INTERACTION_COUNT_MAPPER)
                 .list());
     }
