@@ -1,8 +1,11 @@
 package me.fulcanelly.trust.me.bro.jobs;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.bukkit.scheduler.BukkitTask;
 
 import me.fulcanelly.tgbridge.tapi.Message;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
@@ -11,10 +14,11 @@ import me.fulcanelly.trust.me.bro.database.repository.model.InteractionCount;
 import me.fulcanelly.trust.me.bro.database.repository.model.MaterialTotal;
 import me.fulcanelly.trust.me.bro.service.text.TelegramWarningMessageBuilder;
 
-public final class DirectTelegramNotificationService implements Runnable {
+public final class DirectTelegramNotificationService {
 
     private final AppContext context;
     private final TelegramWarningMessageBuilder messageBuilder;
+    private final Map<PairKey, BukkitTask> pendingTasks = new HashMap<>();
 
     public DirectTelegramNotificationService(AppContext context) {
         this.context = context;
@@ -27,80 +31,95 @@ public final class DirectTelegramNotificationService implements Runnable {
                 context.getRepositories().getRegions());
     }
 
-    @Override
-    public void run() {
+    /** Reset the quiet-period timer for this owner/interactor pair. */
+    public synchronized void schedule(String owner, String interactor) {
         if (!context.getPlugin().getConfig().getBoolean("telegram.owner-dm-notify", true)) {
             return;
         }
 
-        long debounceMillis = Math.max(
+        PairKey key = new PairKey(owner, interactor);
+        BukkitTask previous = pendingTasks.remove(key);
+        previous?.cancel();
+
+        long debounceSeconds = Math.max(
                 1,
-                context.getPlugin().getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
-        MinInteractionThresholds thresholds = MinInteractionThresholds.from(context.getPlugin().getConfig());
+                context.getPlugin().getConfig().getLong("detection.debounce-time-sec", 60));
+        long delayTicks = Math.max(1L, (debounceSeconds * 1000L + 49L) / 50L);
+
+        AtomicReference<BukkitTask> taskRef = new AtomicReference<>();
+        BukkitTask task = context.getPlugin().getServer().getScheduler().runTaskLaterAsynchronously(
+                context.getPlugin(),
+                () -> {
+                    synchronized (this) {
+                        pendingTasks.remove(key, taskRef.get());
+                    }
+                    notifyPair(owner, interactor);
+                },
+                delayTicks);
+        taskRef.set(task);
+        pendingTasks.put(key, task);
+    }
+
+    private void notifyPair(String owner, String interactor) {
+        var plugin = context.getPlugin();
+        if (!plugin.getConfig().getBoolean("telegram.owner-dm-notify", true)) {
+            return;
+        }
 
         try {
-            var pendingRepository = context.getRepositories().getPendingInteractions();
-            List<String> interactors = pendingRepository.findInteractorsReadyForDirectTelegramNotification(
-                    debounceMillis, thresholds);
-            for (String interactor : interactors) {
-                List<InteractionCount> pending = pendingRepository.findPendingForDirectTelegramNotification(interactor, thresholds);
-                if (!pending.isEmpty()) {
-                    sendToOwners(interactor, pending);
-                }
+            var repositories = context.getRepositories();
+            if (repositories.getTrust().isTrusted(owner, interactor)
+                    || repositories.getReports().exists(interactor, owner)
+                    || !repositories.getTelegramNotificationPreferences().isEnabled(owner)) {
+                return;
             }
+
+            var telegramUserId = context.getBridge().getReception().getTgByUser(owner);
+            if (telegramUserId.isEmpty()) {
+                return;
+            }
+
+            long debounceMillis = Math.max(
+                    1,
+                    plugin.getConfig().getLong("detection.debounce-time-sec", 60)) * 1000L;
+            long cutoff = System.currentTimeMillis() - debounceMillis;
+
+            var deliveries = repositories.getDirectTelegramNotificationDeliveries();
+            long lastDeliveredAt = deliveries.findLastDeliveredAt(owner, interactor);
+            List<InteractionCount> pending = repositories.getPendingInteractions()
+                    .findUndeliveredForOwnerAndInteractor(owner, interactor, cutoff, lastDeliveredAt);
+            if (pending.isEmpty()) {
+                return;
+            }
+
+            MinInteractionThresholds thresholds = MinInteractionThresholds.from(plugin.getConfig());
+            long placed = pending.stream().mapToLong(InteractionCount::getCountPlacedBlocks).sum();
+            long broken = pending.stream().mapToLong(InteractionCount::getCountBreakBlocks).sum();
+            long containers = pending.stream().mapToLong(InteractionCount::getCountInteractContainers).sum();
+            if (!thresholds.meets(placed, broken, containers)) {
+                return;
+            }
+
+            List<Long> ids = pending.stream().map(InteractionCount::getId).toList();
+            List<MaterialTotal> materials = repositories.getInteractionMaterials().sumByInteractionCountIds(ids);
+            int mergeDistance = Math.max(
+                    0,
+                    plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
+
+            String text = messageBuilder.build(interactor, pending, pending.size(), materials, mergeDistance);
+            Message message = context.getBridge().getBot().sendMessage(
+                    telegramUserId.get(), text, messageBuilder.buildKeyboard(interactor));
+
+            // Use the debounce cutoff as a watermark; events arriving during send remain pending.
+            deliveries.markDelivered(owner, interactor, cutoff);
+            context.getLogger().info("Sent direct Telegram notification to " + owner
+                    + " about " + interactor + " (message " + message.getMsgId() + ")");
         } catch (Exception e) {
-            context.getLogger().warning("Direct Telegram notification job failed: " + e.getMessage());
+            context.getLogger().warning("Direct Telegram notification to " + owner
+                    + " about " + interactor + " failed: " + e.getMessage());
         }
     }
 
-    private void sendToOwners(String interactor, List<InteractionCount> pending) {
-        Map<String, List<InteractionCount>> byOwner = pending.stream()
-                .collect(Collectors.groupingBy(
-                        InteractionCount::getOwnerPlayer,
-                        java.util.LinkedHashMap::new,
-                        Collectors.toList()));
-
-        for (Map.Entry<String, List<InteractionCount>> entry : byOwner.entrySet()) {
-            String owner = entry.getKey();
-            try {
-                var preferences = context.getRepositories().getTelegramNotificationPreferences();
-                if (!preferences.isEnabled(owner)) {
-                    continue;
-                }
-
-                var telegramUserId = context.getBridge().getReception().getTgByUser(owner);
-                if (telegramUserId.isEmpty()) {
-                    continue;
-                }
-
-                List<InteractionCount> undelivered = entry.getValue();
-                var deliveries = context.getRepositories().getDirectTelegramNotificationDeliveries();
-
-                List<Long> ids = undelivered.stream()
-                        .map(InteractionCount::getId)
-                        .collect(Collectors.toList());
-                List<MaterialTotal> materials = context.getRepositories()
-                        .getInteractionMaterials()
-                        .sumByInteractionCountIds(ids);
-                int mergeDistance = Math.max(
-                        0,
-                        context.getPlugin().getConfig().getInt(
-                                "detection.split-by-regions.merge-distance", 500));
-
-                String text = messageBuilder.build(
-                        interactor, undelivered, undelivered.size(), materials, mergeDistance);
-                Message message = context.getBridge().getBot().sendMessage(
-                        telegramUserId.get(), text, messageBuilder.buildKeyboard(interactor));
-
-                for (InteractionCount row : undelivered) {
-                    deliveries.markDelivered(row.getId(), owner, interactor);
-                }
-                context.getLogger().info("Sent direct Telegram notification to " + owner
-                        + " (message " + message.getMsgId() + ")");
-            } catch (Exception e) {
-                context.getLogger().warning("Direct Telegram notification to " + owner
-                        + " failed: " + e.getMessage());
-            }
-        }
+    private record PairKey(String owner, String interactor) {
     }
 }
