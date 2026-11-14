@@ -87,9 +87,12 @@ public final class DirectTelegramNotificationService {
             long cutoff = System.currentTimeMillis() - debounceMillis;
 
             var deliveries = repositories.getDirectTelegramNotificationDeliveries();
-            long lastDeliveredAt = deliveries.findLastDeliveredAt(owner, interactor);
+            if (deliveries.hasDelivery(owner, interactor)) {
+                return;
+            }
+
             List<InteractionCount> pending = repositories.getPendingInteractions()
-                    .findUndeliveredForOwnerAndInteractor(owner, interactor, cutoff, lastDeliveredAt);
+                    .findUndeliveredForOwnerAndInteractor(owner, interactor, cutoff);
             if (pending.isEmpty()) {
                 return;
             }
@@ -112,8 +115,7 @@ public final class DirectTelegramNotificationService {
             Message message = context.getBridge().getBot().sendMessage(
                     telegramUserId.get(), text, messageBuilder.buildKeyboard(interactor));
 
-            // Use the debounce cutoff as a watermark; events arriving during send remain pending.
-            deliveries.markDelivered(owner, interactor, cutoff);
+            deliveries.markDelivered(owner, interactor);
             context.getLogger().info("Sent direct Telegram notification to " + owner
                     + " about " + interactor + " (message " + message.getMsgId() + ")");
         } catch (Exception e) {
