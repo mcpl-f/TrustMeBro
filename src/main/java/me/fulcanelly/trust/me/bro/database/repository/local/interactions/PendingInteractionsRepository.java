@@ -26,8 +26,7 @@ public final class PendingInteractionsRepository {
         long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
         return database.withHandle(handle -> bindThresholds(
                         handle.createQuery(SqlResources.load("interactions/pending/find-ready-for-notification"))
-                                .bind("updatedAtCutoff", updatedAtCutoff)
-                                .bind("directTelegram", false),
+                                .bind("updatedAtCutoff", updatedAtCutoff),
                         minInteractions)
                 .mapTo(String.class)
                 .list());
@@ -38,8 +37,7 @@ public final class PendingInteractionsRepository {
             MinInteractionThresholds minInteractions) throws SQLException {
         return database.withHandle(handle -> bindThresholds(
                         handle.createQuery(SqlResources.load("interactions/pending/find-by-interactor"))
-                                .bind("interactor", interactorPlayer)
-                                .bind("directTelegram", false),
+                                .bind("interactor", interactorPlayer),
                         minInteractions)
                 .map(INTERACTION_COUNT_MAPPER)
                 .list());
@@ -50,9 +48,9 @@ public final class PendingInteractionsRepository {
             MinInteractionThresholds minInteractions) throws SQLException {
         long updatedAtCutoff = System.currentTimeMillis() - olderThanMillis;
         return database.withHandle(handle -> bindThresholds(
-                        handle.createQuery(SqlResources.load("interactions/pending/find-ready-for-notification"))
-                                .bind("updatedAtCutoff", updatedAtCutoff)
-                                .bind("directTelegram", true),
+                        handle.createQuery(SqlResources.load(
+                                "interactions/pending/find-ready-for-direct-telegram-notification"))
+                                .bind("updatedAtCutoff", updatedAtCutoff),
                         minInteractions)
                 .mapTo(String.class)
                 .list());
@@ -62,9 +60,9 @@ public final class PendingInteractionsRepository {
             String interactorPlayer,
             MinInteractionThresholds minInteractions) throws SQLException {
         return database.withHandle(handle -> bindThresholds(
-                        handle.createQuery(SqlResources.load("interactions/pending/find-by-interactor"))
-                                .bind("interactor", interactorPlayer)
-                                .bind("directTelegram", true),
+                        handle.createQuery(SqlResources.load(
+                                "interactions/pending/find-for-direct-telegram-notification"))
+                                .bind("interactor", interactorPlayer),
                         minInteractions)
                 .map(INTERACTION_COUNT_MAPPER)
                 .list());
