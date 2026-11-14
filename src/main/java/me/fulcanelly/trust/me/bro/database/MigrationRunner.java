@@ -56,10 +56,6 @@ public final class MigrationRunner {
             applyMigration05TelegramOwnerNotifications();
             markApplied(5);
         }
-        if (!applied.contains(6)) {
-            applyMigration06PairBasedTelegramDeliveries();
-            markApplied(6);
-        }
     }
 
     private void applyBaseline() throws SQLException {
@@ -263,41 +259,14 @@ public final class MigrationRunner {
                 """);
         execute("""
                 CREATE TABLE IF NOT EXISTS direct_telegram_notification_deliveries (
-                  interaction_count_id INTEGER PRIMARY KEY,
-
                   owner_mc_name TEXT NOT NULL,
                   interactor_player TEXT NOT NULL,
 
                   delivered_at INTEGER NOT NULL,
 
-                  FOREIGN KEY (interaction_count_id) REFERENCES interaction_counts(id)
-                )
-                """);
-    }
-
-    /**
-     * DM delivery belongs to an owner/interactor pair, not an individual activity box.
-     * Preserve the latest delivered watermark when upgrading the earlier per-row ledger.
-     */
-    private void applyMigration06PairBasedTelegramDeliveries() throws SQLException {
-        execute("""
-                CREATE TABLE direct_telegram_notification_deliveries_v6 (
-                  owner_mc_name TEXT NOT NULL,
-                  interactor_player TEXT NOT NULL,
-                  delivered_at INTEGER NOT NULL,
                   PRIMARY KEY (owner_mc_name, interactor_player)
                 )
                 """);
-        execute("""
-                INSERT INTO direct_telegram_notification_deliveries_v6 (
-                  owner_mc_name, interactor_player, delivered_at
-                )
-                SELECT owner_mc_name, interactor_player, MAX(delivered_at)
-                FROM direct_telegram_notification_deliveries
-                GROUP BY owner_mc_name, interactor_player
-                """);
-        execute("DROP TABLE direct_telegram_notification_deliveries");
-        execute("ALTER TABLE direct_telegram_notification_deliveries_v6 RENAME TO direct_telegram_notification_deliveries");
     }
 
     private Set<Integer> loadAppliedVersions() throws SQLException {
