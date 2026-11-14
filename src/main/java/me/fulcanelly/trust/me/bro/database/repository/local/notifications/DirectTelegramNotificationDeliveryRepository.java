@@ -10,31 +10,30 @@ public final class DirectTelegramNotificationDeliveryRepository {
 
     private final SqliteJdbi database;
 
-    public boolean hasDelivery(long interactionCountId) throws SQLException {
+    public long findLastDeliveredAt(String ownerPlayer, String interactorPlayer) throws SQLException {
         return database.withHandle(handle -> handle.createQuery("""
-                SELECT 1 FROM direct_telegram_notification_deliveries
-                WHERE interaction_count_id = :interactionCountId
+                SELECT delivered_at
+                FROM direct_telegram_notification_deliveries
+                WHERE owner_mc_name = :owner AND interactor_player = :interactor
                 """)
-                .bind("interactionCountId", interactionCountId)
-                .mapTo(Integer.class)
-                .findOne()
-                .isPresent());
-    }
-
-    public void markDelivered(
-            long interactionCountId,
-            String ownerPlayer,
-            String interactorPlayer //
-    ) throws SQLException {
-        database.withHandle(handle -> handle.createUpdate("""
-                INSERT OR IGNORE INTO direct_telegram_notification_deliveries(
-                    interaction_count_id, owner_mc_name, interactor_player, delivered_at
-                ) VALUES (:interactionCountId, :owner, :interactor, :deliveredAt)
-                """)
-                .bind("interactionCountId", interactionCountId)
                 .bind("owner", ownerPlayer)
                 .bind("interactor", interactorPlayer)
-                .bind("deliveredAt", System.currentTimeMillis())
+                .mapTo(Long.class)
+                .findOne()
+                .orElse(0L));
+    }
+
+    public void markDelivered(String ownerPlayer, String interactorPlayer, long deliveredThrough) throws SQLException {
+        database.withHandle(handle -> handle.createUpdate("""
+                INSERT INTO direct_telegram_notification_deliveries(
+                    owner_mc_name, interactor_player, delivered_at
+                ) VALUES (:owner, :interactor, :deliveredAt)
+                ON CONFLICT(owner_mc_name, interactor_player) DO UPDATE SET
+                    delivered_at = MAX(delivered_at, excluded.delivered_at)
+                """)
+                .bind("owner", ownerPlayer)
+                .bind("interactor", interactorPlayer)
+                .bind("deliveredAt", deliveredThrough)
                 .execute());
     }
 }
