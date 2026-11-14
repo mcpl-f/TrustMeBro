@@ -3,10 +3,9 @@ package me.fulcanelly.trust.me.bro.bootstrap.register;
 import lombok.RequiredArgsConstructor;
 import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.jobs.NotificationService;
-import me.fulcanelly.trust.me.bro.jobs.DirectTelegramNotificationService;
 
 /**
- * Starts the repeating async Telegram notification job.
+ * Starts the repeating group-chat notification job.
  *
  * Scheduling is a lifecycle side effect, separate from service construction.
  * The class uses the shared app context so the job dependencies and
@@ -32,14 +31,7 @@ public final class NotificationJobScheduler {
                 .runTaskTimerAsynchronously(plugin, notificationService, periodTicks, periodTicks)
                 .getTaskId();
 
-        DirectTelegramNotificationService directTelegramNotificationService =
-                new DirectTelegramNotificationService(context);
-        int directTelegramNotificationTaskId = plugin.getServer()
-                .getScheduler()
-                .runTaskTimerAsynchronously(
-                        plugin, directTelegramNotificationService, periodTicks, periodTicks)
-                .getTaskId();
 
-        return java.util.List.of(notificationTaskId, directTelegramNotificationTaskId);
+        return java.util.List.of(notificationTaskId);
     }
 }
