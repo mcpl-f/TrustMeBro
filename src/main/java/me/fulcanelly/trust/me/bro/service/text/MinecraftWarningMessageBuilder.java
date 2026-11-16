@@ -32,7 +32,7 @@ public final class MinecraftWarningMessageBuilder {
     private final CoreProtectReadRepository coreProtect;
     private final RegionsRepository regions;
 
-    public BaseComponent[] build(List<InteractionCount> counts, int remainingInteractions, int mergeDistance) {
+    public BaseComponent[] build(List<InteractionCount> counts, String remainingInteractions, int mergeDistance) {
         List<BaseComponent> parts = new ArrayList<>();
         List<NamedRegion> namedRegions = loadNamedRegions();
 
@@ -77,7 +77,7 @@ public final class MinecraftWarningMessageBuilder {
             }
         }
 
-        if (remainingInteractions > 0) {
+        if (!remainingInteractions.isBlank() && !remainingInteractions.equals("0")) {
             parts.add(newline());
             appendLine(parts, ChatColor.GRAY, messages.format("minecraft.warning.more-interactions", "count", remainingInteractions));
         }
