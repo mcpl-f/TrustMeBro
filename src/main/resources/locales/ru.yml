@@ -71,6 +71,7 @@ telegram:
 minecraft:
   warning:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с вами"
+    more-interactions: "... и ещё {count} записей взаимодействий"
     question: "Доверяете этому игроку?"
     count-line: "- {count} {label}"
     button:
