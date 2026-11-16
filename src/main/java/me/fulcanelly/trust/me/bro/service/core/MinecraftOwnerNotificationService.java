@@ -62,17 +62,20 @@ public final class MinecraftOwnerNotificationService {
         try {
             var pendingRepository = context.getRepositories().getPendingInteractions();
             List<InteractionCount> pending = pendingRepository.findTopPendingInteractionsForOwner(
-                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION);
+                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION + 10);
             if (pending.isEmpty()) {
                 context.getLogger().info("No pending interaction found for owner: " + player.getName());
                 return;
             }
 
-            int remainingInteractions = Math.max(
-                    0, pendingRepository.countPendingInteractionsForOwner(player.getName()) - pending.size());
+            List<InteractionCount> displayed = pending.subList(0, Math.min(MAX_INTERACTIONS_PER_NOTIFICATION, pending.size()));
+            int remainingCount = pending.size() - displayed.size();
+            String remainingInteractions = pending.size() == MAX_INTERACTIONS_PER_NOTIFICATION + 10
+                    ? "10+"
+                    : Integer.toString(remainingCount);
             context.getLogger().info("Found " + pending.size() + " pending interactions for owner: "
                     + player.getName());
-            BaseComponent[] message = messageBuilder.build(pending, remainingInteractions, mergeDistance);
+            BaseComponent[] message = messageBuilder.build(displayed, remainingInteractions, mergeDistance);
             plugin.getServer().getScheduler().runTask(plugin, () -> sendWarning(player, message));
         } catch (SQLException e) {
             context.getLogger().warning("Trust owner notification failed: " + e.getMessage());
