@@ -23,28 +23,7 @@ import me.fulcanelly.trust.me.bro.service.activitybox.MessageBox;
 import me.fulcanelly.trust.me.bro.service.util.LocalizationService;
 
 /**
- * Builds the in-game join warning with clickable Trust / Report actions.
- *
- * Mirrors the Telegram warning layout from the owner's point of view:
- * one interactor, region headers, count lines, then question + buttons.
- *
- * ------------
- * Игрок $NAME взаимодействовал с блоками связанными с вами
- *
- * > регион <<$REGION_NAMES.join(" / ")>>
- *     в <<$WORLD>> x: <<$X>>, z: <<$Z>>
- *     ± <<$RADIUS>>
- *
- * - x broken blocks (if present)
- * - x placed blocks
- * - x container interactions
- *
- * Доверяете этому игроку?
- * [Доверять] [Пожаловаться]
- *
- * нажмите или пропишите комманду /ttrust <player> или /treport <player>
- * ------------
- * // TODO use import net.kyori.adventure.text.Component;
+ * Builds the in-game warning with clickable Trust / Report actions for each interaction row.
  */
 @RequiredArgsConstructor
 public final class MinecraftWarningMessageBuilder {
@@ -53,72 +32,55 @@ public final class MinecraftWarningMessageBuilder {
     private final CoreProtectReadRepository coreProtect;
     private final RegionsRepository regions;
 
-    public BaseComponent[] build(InteractionCount count, int mergeDistance) {
-        String interactorPlayer = count.getInteractorPlayer();
+    public BaseComponent[] build(List<InteractionCount> counts, int remainingInteractions, int mergeDistance) {
         List<BaseComponent> parts = new ArrayList<>();
+        List<NamedRegion> namedRegions = loadNamedRegions();
 
-        // Игрок Steve взаимодействовал с блоками, связанными с вами
-        // <blank>
-        appendLine(
-                parts,
-                ChatColor.YELLOW,
-                messages.format("minecraft.warning.header", "interactor", interactorPlayer));
-        parts.add(newline());
+        for (int i = 0; i < counts.size(); i++) {
+            InteractionCount count = counts.get(i);
+            String interactorPlayer = count.getInteractorPlayer();
 
-        // > регион «Spawn»
-        //     в Обычный мир x: 100, z: -20
-        //       ± 50
-        // (or region.at without name)
-        if (count.hasActivityBox()) {
-            appendPlainLines(
+            appendLine(
                     parts,
-                    ChatColor.WHITE,
-                    formatBox(
-                            MessageBox.fromInteraction(count),
-                            loadNamedRegions(),
-                            mergeDistance));
+                    ChatColor.YELLOW,
+                    messages.format("minecraft.warning.header", "interactor", interactorPlayer));
+            parts.add(newline());
+
+            if (count.hasActivityBox()) {
+                appendPlainLines(
+                        parts,
+                        ChatColor.WHITE,
+                        formatBox(MessageBox.fromInteraction(count), namedRegions, mergeDistance));
+            }
+
+            appendCountLine(parts, count.getCountBreakBlocks(), messages.format("count.removed"));
+            appendCountLine(parts, count.getCountPlacedBlocks(), messages.format("count.placed"));
+            appendCountLine(
+                    parts,
+                    count.getCountInteractContainers(),
+                    messages.format("count.container-interactions"));
+
+            parts.add(actionButton(
+                    messages.format("minecraft.warning.button.trust"),
+                    ChatColor.GREEN,
+                    "/ttrust " + interactorPlayer,
+                    messages.format("minecraft.warning.button.trust-hover", "interactor", interactorPlayer)));
+            parts.add(plain(ChatColor.WHITE, " "));
+            parts.add(actionButton(
+                    messages.format("minecraft.warning.button.report"),
+                    ChatColor.RED,
+                    "/treport " + interactorPlayer,
+                    messages.format("minecraft.warning.button.report-hover", "interactor", interactorPlayer)));
+            parts.add(newline());
+            if (i < counts.size() - 1) {
+                parts.add(newline());
+            }
         }
 
-        // TODO: material breakdown for this row (InteractionMaterialCountsRepository.sumByInteractionCountIds)
-        // - 3 сломано
-        // - 1 поставлено
-        // - 2 действий с контейнерами
-        // <blank>
-        appendCountLine(parts, count.getCountBreakBlocks(), messages.format("count.removed"));
-        appendCountLine(parts, count.getCountPlacedBlocks(), messages.format("count.placed"));
-        appendCountLine(
-                parts,
-                count.getCountInteractContainers(),
-                messages.format("count.container-interactions"));
-        parts.add(newline());
-
-        // Доверяете этому игроку?
-        // <blank>
-        appendLine(parts, ChatColor.YELLOW, messages.format("minecraft.warning.question"));
-        parts.add(newline());
-
-        // [Доверять] [Пожаловаться]   ← click / hover → /ttrust|/treport Steve
-        // <blank>
-        parts.add(actionButton(
-                messages.format("minecraft.warning.button.trust"),
-                ChatColor.GREEN,
-                "/ttrust " + interactorPlayer,
-                messages.format("minecraft.warning.button.trust-hover", "interactor", interactorPlayer)));
-        parts.add(plain(ChatColor.WHITE, " "));
-
-        parts.add(actionButton(
-                messages.format("minecraft.warning.button.report"),
-                ChatColor.RED,
-                "/treport " + interactorPlayer,
-                messages.format("minecraft.warning.button.report-hover", "interactor", interactorPlayer)));
-        parts.add(newline());
-        parts.add(newline());
-
-        // Нажмите или пропишите команду /ttrust Steve или /treport Steve
-        appendLine(
-                parts,
-                ChatColor.WHITE,
-                messages.format("minecraft.warning.hint", "interactor", interactorPlayer));
+        if (remainingInteractions > 0) {
+            parts.add(newline());
+            appendLine(parts, ChatColor.GRAY, "... and " + remainingInteractions + " more interaction records.");
+        }
 
         return parts.toArray(new BaseComponent[0]);
     }
@@ -165,10 +127,9 @@ public final class MinecraftWarningMessageBuilder {
     }
 
     private TextComponent newline() {
-        return new TextComponent("\n");
+        return new TextComponent("\\n");
     }
 
-    // TODO extract into common text formatter service
     private List<NamedRegion> loadNamedRegions() {
         try {
             return regions.findAll();
@@ -177,12 +138,7 @@ public final class MinecraftWarningMessageBuilder {
         }
     }
 
-    // TODO extract into common text formatter service
-    private String formatBox(
-            MessageBox box,
-            List<NamedRegion> namedRegions,
-            int mergeDistance //
-    ) {
+    private String formatBox(MessageBox box, List<NamedRegion> namedRegions, int mergeDistance) {
         String world = formatWorld(box.getWorldId());
         String matchingNames = matchingNamedRegionLabels(box, namedRegions, mergeDistance);
 
@@ -203,15 +159,9 @@ public final class MinecraftWarningMessageBuilder {
                 "radius", box.displayRadius());
     }
 
-    // TODO extract into common text formatter service
-    private String matchingNamedRegionLabels(
-            MessageBox interactionArea,
-            List<NamedRegion> namedRegions,
-            int mergeDistance //
-    ) {
+    private String matchingNamedRegionLabels(MessageBox interactionArea, List<NamedRegion> namedRegions, int mergeDistance) {
         return namedRegions.stream()
-                .filter(named -> interactionArea.isWithinMergeDistanceOf(
-                        named.toMessageBox(), mergeDistance))
+                .filter(named -> interactionArea.isWithinMergeDistanceOf(named.toMessageBox(), mergeDistance))
                 .map(NamedRegion::getName)
                 .collect(Collectors.joining(" / "));
     }
