@@ -53,13 +53,7 @@ public final class PendingInteractionsRepository {
 
     public Optional<InteractionCount> findTopPendingInteractionForOwner(String ownerPlayer, String strategy)
             throws SQLException {
-        boolean biggest = "biggest".equalsIgnoreCase(strategy);
-        return database.withHandle(handle -> handle.createQuery(
-                SqlResources.load("interactions/pending/find-top-for-owner"))
-                .bind("owner", ownerPlayer)
-                .bind("biggest", biggest)
-                .map(INTERACTION_COUNT_MAPPER)
-                .findOne());
+        return findTopPendingInteractionsForOwner(ownerPlayer, strategy, 1).stream().findFirst();
     }
 
     public List<InteractionCount> findTopPendingInteractionsForOwner(
@@ -71,20 +65,12 @@ public final class PendingInteractionsRepository {
         }
         boolean biggest = "biggest".equalsIgnoreCase(strategy);
         return database.withHandle(handle -> handle.createQuery(
-                        SqlResources.load("interactions/pending/find-top-two-for-owner"))
+                        SqlResources.load("interactions/pending/find-top-for-owner"))
                 .bind("owner", ownerPlayer)
                 .bind("biggest", biggest)
                 .bind("limit", limit)
                 .map(INTERACTION_COUNT_MAPPER)
                 .list());
-    }
-
-    public int countPendingInteractionsForOwner(String ownerPlayer) throws SQLException {
-        return database.withHandle(handle -> handle.createQuery(
-                        SqlResources.load("interactions/pending/count-for-owner"))
-                .bind("owner", ownerPlayer)
-                .mapTo(Integer.class)
-                .one());
     }
 
     public void markSkippedByIds(List<Long> ids, String skipReason) throws SQLException {
