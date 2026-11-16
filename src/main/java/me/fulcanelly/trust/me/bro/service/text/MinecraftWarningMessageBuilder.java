@@ -79,7 +79,7 @@ public final class MinecraftWarningMessageBuilder {
 
         if (remainingInteractions > 0) {
             parts.add(newline());
-            appendLine(parts, ChatColor.GRAY, "... and " + remainingInteractions + " more interaction records.");
+            appendLine(parts, ChatColor.GRAY, messages.format("minecraft.warning.more-interactions", "count", remainingInteractions));
         }
 
         return parts.toArray(new BaseComponent[0]);
