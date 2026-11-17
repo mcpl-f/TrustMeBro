@@ -1,7 +1,7 @@
 package me.fulcanelly.trust.me.bro.service.core;
 
 import java.sql.SQLException;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.entity.Player;
@@ -17,6 +17,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
  */
 public final class MinecraftOwnerNotificationService {
 
+    private static final int MAX_INTERACTIONS_PER_NOTIFICATION = 2;
     private static final long DELAY_MIN_TICKS = 20L;
     private static final long DELAY_MAX_TICKS = 40L;
 
@@ -59,16 +60,22 @@ public final class MinecraftOwnerNotificationService {
                 plugin.getConfig().getInt("detection.split-by-regions.merge-distance", 500));
 
         try {
-            Optional<InteractionCount> pending = context.getRepositories()
-                    .getPendingInteractions()
-                    .findTopPendingInteractionForOwner(player.getName(), strategy);
+            var pendingRepository = context.getRepositories().getPendingInteractions();
+            List<InteractionCount> pending = pendingRepository.findTopPendingInteractionsForOwner(
+                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION + 10);
             if (pending.isEmpty()) {
                 context.getLogger().info("No pending interaction found for owner: " + player.getName());
                 return;
             }
 
-            context.getLogger().info("Found pending interaction for owner: " + player.getName());
-            BaseComponent[] message = messageBuilder.build(pending.get(), mergeDistance);
+            List<InteractionCount> displayed = pending.subList(0, Math.min(MAX_INTERACTIONS_PER_NOTIFICATION, pending.size()));
+            int remainingCount = pending.size() - displayed.size();
+            String remainingInteractions = pending.size() == MAX_INTERACTIONS_PER_NOTIFICATION + 10
+                    ? "10+"
+                    : Integer.toString(remainingCount);
+            context.getLogger().info("Found " + pending.size() + " pending interactions for owner: "
+                    + player.getName());
+            BaseComponent[] message = messageBuilder.build(displayed, remainingInteractions, mergeDistance);
             plugin.getServer().getScheduler().runTask(plugin, () -> sendWarning(player, message));
         } catch (SQLException e) {
             context.getLogger().warning("Trust owner notification failed: " + e.getMessage());

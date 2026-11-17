@@ -1,4 +1,4 @@
--- Find the next owner warning, excluding decisions already made; choose by configured strategy, then recency.
+-- Find pending owner warnings, excluding decisions already made; choose by configured strategy, then recency.
 SELECT interaction_counts.id, interaction_counts.interactor_player, interaction_counts.owner,
        interaction_counts.count_break_blocks, interaction_counts.count_placed_blocks,
        interaction_counts.count_interact_containers,
@@ -24,4 +24,4 @@ ORDER BY
   END DESC,
   interaction_counts.updated_at DESC,
   interaction_counts.id DESC
-LIMIT 1
+LIMIT :limit
