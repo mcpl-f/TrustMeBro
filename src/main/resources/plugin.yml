@@ -14,6 +14,10 @@ commands:
     description: Create a named trust region at your current position
     usage: /new_trust_region <radius> <name>
     permission: trusts.region.create
+  whosereg:
+    description: Inspect named regions at or near your position
+    usage: /whosereg
+    permission: trusts.region.inspect
   ttrust:
     description: Trust a player so they no longer trigger warnings for your blocks
     usage: /ttrust <player>
@@ -26,6 +30,9 @@ commands:
 permissions:
   trusts.region.create:
     description: Allows creating named trust regions
+    default: op
+  trusts.region.inspect:
+    description: Allows inspecting named trust regions
     default: op
   trusts.command.trust:
     description: Allows /ttrust
