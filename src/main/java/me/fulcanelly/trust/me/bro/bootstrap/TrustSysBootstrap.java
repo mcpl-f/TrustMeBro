@@ -42,14 +42,14 @@ public final class TrustSysBootstrap {
 
         new MinecraftListenerRegistrar(app).register();
         List<Object> telegramListeners = new TelegramListenerRegistrar(app).register();
-        int notificationTaskId = new NotificationJobScheduler(app).start();
+        List<Integer> notificationTaskIds = new NotificationJobScheduler(app).start();
 
         return Optional.of(new TrustSysRuntime(
                 plugin,
                 database,
                 bridge.getEventBus(),
                 telegramListeners,
-                notificationTaskId));
+                notificationTaskIds));
     }
 
     private LocalDatabase database() throws SQLException {
