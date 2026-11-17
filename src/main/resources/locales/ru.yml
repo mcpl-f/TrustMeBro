@@ -119,7 +119,7 @@ command:
     unknown-player: "Игрок {player} не найден."
 
 region:
-  at: " 🗺 {world} · x: {x}, z: {z} ± {radius}"
+  at: " > 🗺 {world} · x: {x}, z: {z} ± {radius}"
   at-named: |
     > регион «{name}»
     🗺 в {world} x: {x}, z: {z}
