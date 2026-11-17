@@ -1,9 +1,10 @@
 telegram:
   warning:
     header: "Player {interactor} interacted with blocks associated with:\n"
-    question: "Do you trust this player?"
+    question: "Do you trust this player? 🤝"
     materials-header: "Materials (total):"
     materials-more: "... and {count} more materials"
+    owner-icon: " 👥"
   button:
     trust: "Trust ✅"
     report: "Report ❌"
@@ -97,9 +98,9 @@ feedback:
   reported: "🚩 {owner} reported you."
 
 count:
-  removed: "removed"
-  placed: "placed"
-  container-interactions: "container interactions"
+  removed: "removed 🪓"
+  placed: "placed 🧱"
+  container-interactions: "container interactions 🗃"
 
 command:
   new-trust-region:
