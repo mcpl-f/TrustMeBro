@@ -1,7 +1,7 @@
 telegram:
   warning:
     header: "Player {interactor} interacted with blocks associated with:\n"
-    question: "Do you trust this player?"
+    question: "Do you trust this player? 🤝"
     materials-header: "Materials (total):"
     materials-more: "... and {count} more materials"
     owner-icon: " 👥"
