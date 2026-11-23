@@ -4,7 +4,6 @@ telegram:
     question: "Доверяете этому игроку?"
     materials-header: "Материалы (всего):"
     materials-more: "... и ещё {count} материалов"
-    owner-icon: " 👥"
   button:
     trust: "Доверять ✅"
     report: "Пожаловаться ❌"
@@ -73,6 +72,7 @@ minecraft:
   warning:
     header: "Игрок {interactor} взаимодействовал с блоками, связанными с вами"
     more-interactions: "... и ещё {count} записей взаимодействий"
+    more-interactions: "... и ещё {count} записей взаимодействий"
     question: "Доверяете этому игроку?"
     count-line: "- {count} {label}"
     button:
@@ -99,9 +99,9 @@ feedback:
   reported: "🚩 {owner} пожаловался на вас."
 
 count:
-  removed: "сломано 🪓"
-  placed: "поставлено 🧱"
-  container-interactions: "действий с контейнерами 🗃"
+  removed: "сломано"
+  placed: "поставлено"
+  container-interactions: "действий с контейнерами"
 
 command:
   new-trust-region:
