@@ -53,6 +53,25 @@ public final class MinecraftWarningMessageBuilder {
     private final CoreProtectReadRepository coreProtect;
     private final RegionsRepository regions;
 
+    public BaseComponent[] build(List<InteractionCount> counts, String remainingInteractions, int mergeDistance) {
+        List<BaseComponent> parts = new ArrayList<>();
+        for (InteractionCount count : counts) {
+            if (!parts.isEmpty()) {
+                parts.add(newline());
+            }
+            for (BaseComponent component : build(count, mergeDistance)) {
+                parts.add(component);
+            }
+        }
+        if (!remainingInteractions.isEmpty()) {
+            appendLine(
+                    parts,
+                    ChatColor.GRAY,
+                    messages.format("minecraft.warning.more-interactions", "count", remainingInteractions));
+        }
+        return parts.toArray(new BaseComponent[0]);
+    }
+
     public BaseComponent[] build(InteractionCount count, int mergeDistance) {
         String interactorPlayer = count.getInteractorPlayer();
         List<BaseComponent> parts = new ArrayList<>();

@@ -72,6 +72,7 @@ telegram:
 minecraft:
   warning:
     header: "Player {interactor} interacted with blocks associated with you"
+    more-interactions: "... and {count} more interaction records"
     question: "Do you trust this player?"
     count-line: "- {count} {label}"
     button:

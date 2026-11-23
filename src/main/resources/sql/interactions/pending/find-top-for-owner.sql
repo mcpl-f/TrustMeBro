@@ -24,4 +24,4 @@ ORDER BY
   END DESC,
   interaction_counts.updated_at DESC,
   interaction_counts.id DESC
-LIMIT 1
+LIMIT :limit

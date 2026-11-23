@@ -53,13 +53,24 @@ public final class PendingInteractionsRepository {
 
     public Optional<InteractionCount> findTopPendingInteractionForOwner(String ownerPlayer, String strategy)
             throws SQLException {
+        return findTopPendingInteractionsForOwner(ownerPlayer, strategy, 1).stream().findFirst();
+    }
+
+    public List<InteractionCount> findTopPendingInteractionsForOwner(
+            String ownerPlayer,
+            String strategy,
+            int limit) throws SQLException {
+        if (limit <= 0) {
+            return List.of();
+        }
         boolean biggest = "biggest".equalsIgnoreCase(strategy);
         return database.withHandle(handle -> handle.createQuery(
                 SqlResources.load("interactions/pending/find-top-for-owner"))
                 .bind("owner", ownerPlayer)
                 .bind("biggest", biggest)
+                .bind("limit", limit)
                 .map(INTERACTION_COUNT_MAPPER)
-                .findOne());
+                .list());
     }
 
     public void markSkippedByIds(List<Long> ids, String skipReason) throws SQLException {
