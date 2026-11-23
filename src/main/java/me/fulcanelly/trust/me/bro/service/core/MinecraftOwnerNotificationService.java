@@ -62,7 +62,7 @@ public final class MinecraftOwnerNotificationService {
         try {
             var pendingRepository = context.getRepositories().getPendingInteractions();
             List<InteractionCount> pending = pendingRepository.findTopPendingInteractionsForOwner(
-                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION + 10);
+                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION + 11);
             if (pending.isEmpty()) {
                 context.getLogger().info("No pending interaction found for owner: " + player.getName());
                 return;
@@ -70,7 +70,7 @@ public final class MinecraftOwnerNotificationService {
 
             List<InteractionCount> displayed = pending.subList(0, Math.min(MAX_INTERACTIONS_PER_NOTIFICATION, pending.size()));
             int remainingCount = pending.size() - displayed.size();
-            String remainingInteractions = pending.size() == MAX_INTERACTIONS_PER_NOTIFICATION + 10
+            String remainingInteractions = pending.size() == MAX_INTERACTIONS_PER_NOTIFICATION + 11
                     ? "10+"
                     : Integer.toString(remainingCount);
             context.getLogger().info("Found " + pending.size() + " pending interactions for owner: "
