@@ -18,6 +18,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 public final class MinecraftOwnerNotificationService {
 
     private static final int MAX_INTERACTIONS_PER_NOTIFICATION = 2;
+    private static final int MAX_REMAINING_INTERACTIONS = 10;
     private static final long DELAY_MIN_TICKS = 20L;
     private static final long DELAY_MAX_TICKS = 40L;
 
@@ -62,17 +63,23 @@ public final class MinecraftOwnerNotificationService {
         try {
             var pendingRepository = context.getRepositories().getPendingInteractions();
             List<InteractionCount> pending = pendingRepository.findTopPendingInteractionsForOwner(
-                    player.getName(), strategy, MAX_INTERACTIONS_PER_NOTIFICATION + 11);
+                    player.getName(), strategy,
+                    MAX_INTERACTIONS_PER_NOTIFICATION + MAX_REMAINING_INTERACTIONS + 1);
             if (pending.isEmpty()) {
                 context.getLogger().info("No pending interaction found for owner: " + player.getName());
                 return;
             }
 
-            List<InteractionCount> displayed = pending.subList(0, Math.min(MAX_INTERACTIONS_PER_NOTIFICATION, pending.size()));
-            int remainingCount = pending.size() - displayed.size();
-            String remainingInteractions = pending.size() == MAX_INTERACTIONS_PER_NOTIFICATION + 11
-                    ? "10+"
-                    : Integer.toString(remainingCount);
+            int displayedCount = Math.min(MAX_INTERACTIONS_PER_NOTIFICATION, pending.size());
+            List<InteractionCount> displayed = pending.subList(0, displayedCount);
+            int remainingCount = pending.size() - displayedCount;
+            String remainingInteractions = Integer.toString(remainingCount);
+            if (remainingCount > MAX_REMAINING_INTERACTIONS) {
+                remainingInteractions = MAX_REMAINING_INTERACTIONS + "+";
+            }
+            if (remainingCount == 0) {
+                remainingInteractions = "";
+            }
             context.getLogger().info("Found " + pending.size() + " pending interactions for owner: "
                     + player.getName());
             BaseComponent[] message = messageBuilder.build(displayed, remainingInteractions, mergeDistance);
