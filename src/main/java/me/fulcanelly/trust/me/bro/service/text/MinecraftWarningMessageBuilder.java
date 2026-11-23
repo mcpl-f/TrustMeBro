@@ -59,11 +59,15 @@ public final class MinecraftWarningMessageBuilder {
             if (!parts.isEmpty()) {
                 parts.add(newline());
             }
-            parts.addAll(List.of(build(count, mergeDistance)));
+            for (BaseComponent component : build(count, mergeDistance)) {
+                parts.add(component);
+            }
         }
-        if (!remainingInteractions.isBlank() && !remainingInteractions.equals("0")) {
-            parts.add(newline());
-            appendLine(parts, ChatColor.GRAY, messages.format("minecraft.warning.more-interactions", "count", remainingInteractions));
+        if (!remainingInteractions.isEmpty()) {
+            appendLine(
+                    parts,
+                    ChatColor.GRAY,
+                    messages.format("minecraft.warning.more-interactions", "count", remainingInteractions));
         }
         return parts.toArray(new BaseComponent[0]);
     }
