@@ -65,7 +65,7 @@ public final class PendingInteractionsRepository {
         }
         boolean biggest = "biggest".equalsIgnoreCase(strategy);
         return database.withHandle(handle -> handle.createQuery(
-                        SqlResources.load("interactions/pending/find-top-for-owner"))
+                SqlResources.load("interactions/pending/find-top-for-owner"))
                 .bind("owner", ownerPlayer)
                 .bind("biggest", biggest)
                 .bind("limit", limit)
