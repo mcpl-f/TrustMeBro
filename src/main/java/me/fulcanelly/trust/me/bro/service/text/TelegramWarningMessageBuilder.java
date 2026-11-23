@@ -183,9 +183,8 @@ public final class TelegramWarningMessageBuilder {
 
     private String formatOwner(String player) {
         Optional<Long> telegramId = reception.getTgByUser(player);
-        String owner = telegramId.map(id -> UsefulStuff.telegramUserLink(player, id))
+        return telegramId.map(id -> UsefulStuff.telegramUserLink(player, id))
                 .orElseGet(() -> escape(player));
-        return owner + messages.format("telegram.warning.owner-icon");
     }
 
     private String formatCounts(InteractionCount count) {
