@@ -9,16 +9,10 @@ import me.fulcanelly.trust.me.bro.listener.minecraft.blocks.ContainerInteraction
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.NewTrustRegionCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TReportCommand;
 import me.fulcanelly.trust.me.bro.listener.minecraft.commands.TTrustCommand;
+import me.fulcanelly.trust.me.bro.listener.minecraft.commands.WhoIsRegCommand;
 
 import org.bukkit.command.PluginCommand;
 
-/**
- * Registers Bukkit-side listeners for block, container, and join events.
- *
- * The listeners are side effects, so they stay out of DTO/factory classes.
- * This class receives the shared app context and only performs Bukkit
- * listener registration based on config flags.
- */
 @RequiredArgsConstructor
 public final class MinecraftListenerRegistrar {
 
@@ -47,6 +41,7 @@ public final class MinecraftListenerRegistrar {
                 plugin);
 
         bindCommand("new_trust_region", new NewTrustRegionCommand(context));
+        bindCommand("whosereg", new WhoIsRegCommand(context));
         bindCommand("ttrust", new TTrustCommand(context));
         bindCommand("treport", new TReportCommand(context));
     }
