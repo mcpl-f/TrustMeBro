@@ -52,6 +52,10 @@ public final class MigrationRunner {
             applyMigration04MaterialCounts();
             markApplied(4);
         }
+        if (!applied.contains(5)) {
+            applyMigration05TelegramOwnerNotifications();
+            markApplied(5);
+        }
     }
 
     private void applyBaseline() throws SQLException {
@@ -239,6 +243,28 @@ public final class MigrationRunner {
 
                   UNIQUE (interaction_count_id, material),
                   FOREIGN KEY (interaction_count_id) REFERENCES interaction_counts(id)
+                )
+                """);
+    }
+
+    private void applyMigration05TelegramOwnerNotifications() throws SQLException {
+        execute("""
+                CREATE TABLE IF NOT EXISTS telegram_notification_preferences (
+                  owner_mc_name TEXT PRIMARY KEY,
+
+                  enabled INTEGER NOT NULL DEFAULT 1,
+
+                  updated_at INTEGER NOT NULL
+                )
+                """);
+        execute("""
+                CREATE TABLE IF NOT EXISTS direct_telegram_notification_deliveries (
+                  owner_mc_name TEXT NOT NULL,
+                  interactor_player TEXT NOT NULL,
+
+                  delivered_at INTEGER NOT NULL,
+
+                  PRIMARY KEY (owner_mc_name, interactor_player)
                 )
                 """);
     }

@@ -13,6 +13,7 @@
 - Ask through the `AskUserQuestion` tool (a quiz the user clicks through), not as a text list in the reply: it is easier to read. Keep options short, ask in the language the user is currently writing in, and if a free-text "Other" answer is unclear, ask a follow-up quiz instead of guessing.
 
 ## How to write code
+- Never use ternary operators (`condition ? a : b`); use explicit `if` statements instead.
 Readability > cleverness > theoretical purity. The package tree should explain what the plugin does.
 
 - Organize by domain/component; keep nesting shallow. Add a subpackage only when it groups several related classes. Before adding a class or package, decide which domain owns it.

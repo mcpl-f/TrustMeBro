@@ -5,7 +5,7 @@ import me.fulcanelly.trust.me.bro.bootstrap.AppContext;
 import me.fulcanelly.trust.me.bro.jobs.NotificationService;
 
 /**
- * Starts the repeating async Telegram notification job.
+ * Starts the repeating group-chat notification job.
  *
  * Scheduling is a lifecycle side effect, separate from service construction.
  * The class uses the shared app context so the job dependencies and
@@ -16,7 +16,7 @@ public final class NotificationJobScheduler {
 
     private final AppContext context;
 
-    public int start() {
+    public java.util.List<Integer> start() {
         var plugin = context.getPlugin();
 
         // Poll interval only; debounce itself is always re-read from config in NotificationService.
@@ -26,9 +26,12 @@ public final class NotificationJobScheduler {
 
         NotificationService notificationService = new NotificationService(context);
 
-        return plugin.getServer()
+        int notificationTaskId = plugin.getServer()
                 .getScheduler()
                 .runTaskTimerAsynchronously(plugin, notificationService, periodTicks, periodTicks)
                 .getTaskId();
+
+
+        return java.util.List.of(notificationTaskId);
     }
 }
